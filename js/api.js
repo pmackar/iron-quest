@@ -4,13 +4,13 @@
  */
 
 const API = {
-    // Production API URL - update this after deploying backend to Railway
+    // Production API URL
     PRODUCTION_API_URL: 'https://iron-quest-production.up.railway.app',
 
     // Use production URL or localhost in development
     baseUrl: window.location.hostname === 'localhost'
         ? 'http://localhost:3001/api'
-        : (window.IRON_QUEST_API_URL || 'https://iron-quest-production.up.railway.app') + '/api',
+        : 'https://iron-quest-production.up.railway.app/api',
     token: null,
     socket: null,
 
