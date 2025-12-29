@@ -498,11 +498,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Icon selection for workout creation
-    document.querySelectorAll('#workoutIconSelector .icon-option-sm').forEach(option => {
+    // Icon picker for workout creation (new design)
+    document.querySelectorAll('#iconPickerDropdown .icon-pick').forEach(option => {
         option.addEventListener('click', () => {
-            document.querySelectorAll('#workoutIconSelector .icon-option-sm').forEach(o => o.classList.remove('selected'));
-            option.classList.add('selected');
+            const icon = option.dataset.icon;
+            selectWorkoutIcon(icon);
         });
     });
 
@@ -518,6 +518,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         initializeDefaultPrograms();
     }, 100);
+
 });
 
 // ============================================
@@ -609,15 +610,22 @@ function goToAuth() {
 function showLoginForm() {
     document.getElementById('loginForm').style.display = 'block';
     document.getElementById('registerForm').style.display = 'none';
-    document.querySelector('.auth-toggle-btn:first-child').classList.add('active');
-    document.querySelector('.auth-toggle-btn:last-child').classList.remove('active');
 }
 
 function showRegisterForm() {
     document.getElementById('loginForm').style.display = 'none';
     document.getElementById('registerForm').style.display = 'block';
-    document.querySelector('.auth-toggle-btn:first-child').classList.remove('active');
-    document.querySelector('.auth-toggle-btn:last-child').classList.add('active');
+}
+
+// Intro Scene Functions
+function showAuthOptions() {
+    document.getElementById('introScene').classList.add('hidden');
+    document.getElementById('authFormsContainer').classList.add('active');
+}
+
+function hideAuthForms() {
+    document.getElementById('authFormsContainer').classList.remove('active');
+    document.getElementById('introScene').classList.remove('hidden');
 }
 
 async function handleLogin(event) {
@@ -803,6 +811,10 @@ function escapeHtml(text) {
 
 function renderCharacterSlots() {
     const container = document.getElementById('characterSlots');
+    if (!container) {
+        console.warn('characterSlots container not found');
+        return;
+    }
     container.innerHTML = saveSlots.map((slot, index) => {
         if (slot) {
             return `
@@ -956,6 +968,200 @@ function formatNumber(num) {
     if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
     if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
     return num.toLocaleString();
+}
+
+function getEquipmentIcon(equipment) {
+    const icons = {
+        'barbell': '🏋️',
+        'dumbbell': '💪',
+        'cable': '🔗',
+        'machine': '⚙️',
+        'bodyweight': '🤸',
+        'kettlebell': '🔔',
+        'other': '📦'
+    };
+    return icons[equipment] || icons['other'];
+}
+
+// ============================================
+// STAT HISTORY
+// ============================================
+
+function showStatHistory(type) {
+    if (!gameState || !gameState.workoutHistory || gameState.workoutHistory.length === 0) {
+        showToast('No workout history yet!');
+        return;
+    }
+
+    const history = gameState.workoutHistory.slice().reverse(); // Most recent first
+    const titleEl = document.getElementById('statHistoryTitle');
+    const summaryEl = document.getElementById('statHistorySummary');
+    const listEl = document.getElementById('statHistoryList');
+
+    let summaryHTML = '';
+    let listHTML = '';
+
+    if (type === 'workouts') {
+        titleEl.textContent = 'WORKOUT HISTORY';
+
+        // Summary stats
+        const thisWeek = history.filter(w => isThisWeek(new Date(w.date))).length;
+        const thisMonth = history.filter(w => isThisMonth(new Date(w.date))).length;
+
+        summaryHTML = `
+            <div class="stat-summary-grid">
+                <div class="summary-item">
+                    <div class="summary-value">${history.length}</div>
+                    <div class="summary-label">Total</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value">${thisWeek}</div>
+                    <div class="summary-label">This Week</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value">${thisMonth}</div>
+                    <div class="summary-label">This Month</div>
+                </div>
+            </div>
+        `;
+
+        // List of workouts
+        listHTML = history.map(w => {
+            const date = new Date(w.date);
+            const dateStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            const exerciseCount = w.exercises ? w.exercises.length : 0;
+            const totalSets = w.totalSets || 0;
+            const volume = w.totalVolume || 0;
+
+            return `
+                <div class="stat-history-item" onclick="showWorkoutDetail('${w.id || w.date}')">
+                    <div class="history-item-main">
+                        <div class="history-item-name">${w.name || 'Workout'}</div>
+                        <div class="history-item-date">${dateStr}</div>
+                    </div>
+                    <div class="history-item-stats">
+                        <span>${exerciseCount} exercises</span>
+                        <span>${totalSets} sets</span>
+                        <span>${formatNumber(volume)} lbs</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+    } else if (type === 'sets') {
+        titleEl.textContent = 'SETS HISTORY';
+
+        // Calculate sets per workout
+        const setsPerWorkout = history.map(w => w.totalSets || 0);
+        const avgSets = setsPerWorkout.length > 0 ? Math.round(setsPerWorkout.reduce((a, b) => a + b, 0) / setsPerWorkout.length) : 0;
+        const maxSets = Math.max(...setsPerWorkout, 0);
+
+        summaryHTML = `
+            <div class="stat-summary-grid">
+                <div class="summary-item">
+                    <div class="summary-value">${gameState.totalSets || 0}</div>
+                    <div class="summary-label">Total Sets</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value">${avgSets}</div>
+                    <div class="summary-label">Avg/Workout</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value">${maxSets}</div>
+                    <div class="summary-label">Max in Workout</div>
+                </div>
+            </div>
+        `;
+
+        // List showing sets per workout
+        listHTML = history.map(w => {
+            const date = new Date(w.date);
+            const dateStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            const sets = w.totalSets || 0;
+
+            // Break down by exercise
+            const exerciseBreakdown = w.exercises ? w.exercises.map(ex =>
+                `${ex.name}: ${ex.sets ? ex.sets.length : 0}`
+            ).join(', ') : '';
+
+            return `
+                <div class="stat-history-item">
+                    <div class="history-item-main">
+                        <div class="history-item-name">${w.name || 'Workout'}</div>
+                        <div class="history-item-date">${dateStr}</div>
+                    </div>
+                    <div class="history-item-value">${sets} sets</div>
+                    ${exerciseBreakdown ? `<div class="history-item-breakdown">${exerciseBreakdown}</div>` : ''}
+                </div>
+            `;
+        }).join('');
+
+    } else if (type === 'volume') {
+        titleEl.textContent = 'VOLUME HISTORY';
+
+        // Calculate volume stats
+        const volumes = history.map(w => w.totalVolume || 0);
+        const avgVolume = volumes.length > 0 ? Math.round(volumes.reduce((a, b) => a + b, 0) / volumes.length) : 0;
+        const maxVolume = Math.max(...volumes, 0);
+
+        summaryHTML = `
+            <div class="stat-summary-grid">
+                <div class="summary-item">
+                    <div class="summary-value">${formatNumber(gameState.totalWeight || 0)}</div>
+                    <div class="summary-label">Total Volume</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value">${formatNumber(avgVolume)}</div>
+                    <div class="summary-label">Avg/Workout</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value">${formatNumber(maxVolume)}</div>
+                    <div class="summary-label">Best Workout</div>
+                </div>
+            </div>
+        `;
+
+        // List showing volume per workout
+        listHTML = history.map(w => {
+            const date = new Date(w.date);
+            const dateStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            const volume = w.totalVolume || 0;
+            const sets = w.totalSets || 0;
+
+            return `
+                <div class="stat-history-item">
+                    <div class="history-item-main">
+                        <div class="history-item-name">${w.name || 'Workout'}</div>
+                        <div class="history-item-date">${dateStr}</div>
+                    </div>
+                    <div class="history-item-value">${formatNumber(volume)} lbs</div>
+                    <div class="history-item-sub">${sets} sets</div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    summaryEl.innerHTML = summaryHTML;
+    listEl.innerHTML = listHTML || '<div class="empty-hint">No history yet</div>';
+
+    document.getElementById('statHistoryModal').classList.add('active');
+}
+
+function closeStatHistory() {
+    document.getElementById('statHistoryModal').classList.remove('active');
+}
+
+function isThisWeek(date) {
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+    return date >= startOfWeek;
+}
+
+function isThisMonth(date) {
+    const now = new Date();
+    return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
 }
 
 // ============================================
@@ -2566,17 +2772,39 @@ function deleteCustomExercise(id) {
 // CUSTOM WORKOUTS
 // ============================================
 
-function openCreateWorkoutModal() {
-    document.getElementById('newWorkoutName').value = '';
-    selectedWorkoutExercises = [];
+// Current filter state for workout builder
+let currentMuscleFilter = 'all';
+let currentSearchQuery = '';
 
-    // Reset icon selection
-    document.querySelectorAll('#workoutIconSelector .icon-option-sm').forEach((o, i) => {
-        o.classList.toggle('selected', i === 0);
+function openCreateWorkoutModal() {
+    const nameInput = document.getElementById('newWorkoutName');
+    const iconBtn = document.getElementById('workoutIconBtn');
+    const iconDropdown = document.getElementById('iconPickerDropdown');
+    const searchInput = document.getElementById('exerciseSearch');
+
+    if (nameInput) nameInput.value = '';
+    selectedWorkoutExercises = [];
+    currentMuscleFilter = 'all';
+    currentSearchQuery = '';
+
+    // Reset icon
+    if (iconBtn) {
+        iconBtn.textContent = '💪';
+        iconBtn.dataset.icon = '💪';
+    }
+    if (iconDropdown) iconDropdown.classList.remove('active');
+
+    // Reset search
+    if (searchInput) searchInput.value = '';
+
+    // Reset muscle tabs
+    document.querySelectorAll('.muscle-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.muscle === 'all');
     });
 
-    renderExerciseSelector();
+    renderExerciseBrowser();
     updateSelectedExercisesList();
+    updateCreateButton();
     document.getElementById('createWorkoutModal').classList.add('active');
 }
 
@@ -2585,115 +2813,142 @@ function closeCreateWorkoutModal() {
     selectedWorkoutExercises = [];
 }
 
-function renderExerciseSelector() {
-    const container = document.getElementById('exerciseSelector');
+function toggleIconPicker() {
+    document.getElementById('iconPickerDropdown').classList.toggle('active');
+}
 
-    // Group exercises by muscle
-    const muscleGroups = {
-        chest: { name: 'CHEST', icon: '🫁', exercises: [] },
-        back: { name: 'BACK', icon: '🔙', exercises: [] },
-        shoulders: { name: 'SHOULDERS', icon: '💪', exercises: [] },
-        biceps: { name: 'BICEPS', icon: '💪', exercises: [] },
-        triceps: { name: 'TRICEPS', icon: '💪', exercises: [] },
-        quads: { name: 'QUADRICEPS', icon: '🦵', exercises: [] },
-        hamstrings: { name: 'HAMSTRINGS', icon: '🦵', exercises: [] },
-        glutes: { name: 'GLUTES', icon: '🍑', exercises: [] },
-        calves: { name: 'CALVES', icon: '🦶', exercises: [] },
-        core: { name: 'CORE', icon: '🎯', exercises: [] },
-        custom: { name: 'CUSTOM', icon: '⭐', exercises: [] }
-    };
+function selectWorkoutIcon(icon) {
+    document.getElementById('workoutIconBtn').textContent = icon;
+    document.getElementById('workoutIconBtn').dataset.icon = icon;
+    document.getElementById('iconPickerDropdown').classList.remove('active');
+}
 
-    // Sort built-in exercises into groups
-    allExercises.forEach(ex => {
-        if (muscleGroups[ex.muscle]) {
-            muscleGroups[ex.muscle].exercises.push(ex);
+function filterByMuscle(muscle) {
+    currentMuscleFilter = muscle;
+    document.querySelectorAll('.muscle-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.muscle === muscle);
+    });
+    renderExerciseBrowser();
+}
+
+function filterExercises() {
+    currentSearchQuery = document.getElementById('exerciseSearch').value.toLowerCase();
+    renderExerciseBrowser();
+}
+
+function renderExerciseBrowser() {
+    const container = document.getElementById('exerciseBrowser');
+    if (!container) return;
+
+    // Combine all exercises
+    let exercises = [...allExercises, ...customExercises.map(ex => ({ ...ex, isCustom: true }))];
+
+    // Apply muscle filter
+    if (currentMuscleFilter !== 'all') {
+        if (currentMuscleFilter === 'arms') {
+            exercises = exercises.filter(ex => ['biceps', 'triceps', 'forearms'].includes(ex.muscle));
+        } else if (currentMuscleFilter === 'legs') {
+            exercises = exercises.filter(ex => ['quads', 'hamstrings', 'glutes', 'calves'].includes(ex.muscle));
+        } else {
+            exercises = exercises.filter(ex => ex.muscle === currentMuscleFilter);
         }
-    });
-
-    // Add custom exercises
-    customExercises.forEach(ex => {
-        muscleGroups.custom.exercises.push(ex);
-    });
-
-    // Render grouped exercises
-    let html = '';
-    Object.entries(muscleGroups).forEach(([key, group]) => {
-        if (group.exercises.length === 0) return;
-
-        html += `<div class="exercise-group">
-            <div class="exercise-group-header" onclick="toggleExerciseGroup('${key}')">
-                <span>${group.icon} ${group.name}</span>
-                <span class="group-count">${group.exercises.length}</span>
-            </div>
-            <div class="exercise-group-items" id="exerciseGroup_${key}">
-                ${group.exercises.map(ex => {
-                    const isSelected = selectedWorkoutExercises.some(s => s.id === ex.id);
-                    return `
-                        <div class="exercise-option ${isSelected ? 'selected' : ''}" onclick="toggleExerciseSelection('${ex.id}', '${ex.name.replace(/'/g, "\\'")}')">
-                            <span class="exercise-name">${ex.name}</span>
-                            <span class="exercise-equipment">${getEquipmentIcon(ex.equipment)}</span>
-                            <span class="exercise-check">${isSelected ? '✓' : '+'}</span>
-                        </div>
-                    `;
-                }).join('')}
-            </div>
-        </div>`;
-    });
-
-    container.innerHTML = html;
-}
-
-function toggleExerciseGroup(groupKey) {
-    const group = document.getElementById(`exerciseGroup_${groupKey}`);
-    group.classList.toggle('collapsed');
-}
-
-function getEquipmentIcon(equipment) {
-    const icons = {
-        barbell: '🏋️',
-        dumbbell: '🔩',
-        cable: '🔗',
-        machine: '⚙️',
-        bodyweight: '🧍',
-        other: '📦'
-    };
-    return icons[equipment] || '';
-}
-
-function toggleExerciseSelection(id, name) {
-    const index = selectedWorkoutExercises.findIndex(e => e.id === id);
-
-    if (index >= 0) {
-        selectedWorkoutExercises.splice(index, 1);
-    } else {
-        selectedWorkoutExercises.push({ id, name, targetSets: 3 });
     }
 
-    renderExerciseSelector();
+    // Apply search filter
+    if (currentSearchQuery) {
+        exercises = exercises.filter(ex =>
+            ex.name.toLowerCase().includes(currentSearchQuery) ||
+            ex.muscle.toLowerCase().includes(currentSearchQuery)
+        );
+    }
+
+    // Sort alphabetically
+    exercises.sort((a, b) => a.name.localeCompare(b.name));
+
+    if (exercises.length === 0) {
+        container.innerHTML = '<div class="no-results">No exercises found</div>';
+        return;
+    }
+
+    container.innerHTML = exercises.map(ex => {
+        const isSelected = selectedWorkoutExercises.some(s => s.id === ex.id);
+        const muscleLabel = ex.muscle.charAt(0).toUpperCase() + ex.muscle.slice(1);
+
+        return `
+            <div class="browser-exercise ${isSelected ? 'selected' : ''}" onclick="toggleExerciseSelection('${ex.id}')">
+                <div class="browser-exercise-info">
+                    <div class="browser-exercise-name">${ex.name}</div>
+                    <div class="browser-exercise-muscle">${muscleLabel}${ex.isCustom ? ' • Custom' : ''}</div>
+                </div>
+                <div class="browser-exercise-action">
+                    ${isSelected ? '<span class="check-icon">✓</span>' : '<span class="add-icon">+</span>'}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function toggleExerciseSelection(exerciseId) {
+    const existingIndex = selectedWorkoutExercises.findIndex(ex => ex.id === exerciseId);
+
+    if (existingIndex !== -1) {
+        // Remove from selection
+        selectedWorkoutExercises.splice(existingIndex, 1);
+    } else {
+        // Add to selection
+        const exercise = allExercises.find(ex => ex.id === exerciseId) ||
+                         customExercises.find(ex => ex.id === exerciseId);
+        if (exercise) {
+            selectedWorkoutExercises.push({
+                ...exercise,
+                targetSets: 3
+            });
+        }
+    }
+
+    renderExerciseBrowser();
     updateSelectedExercisesList();
+    updateCreateButton();
+}
+
+function updateCreateButton() {
+    const btn = document.getElementById('createWorkoutBtn');
+    if (btn) {
+        btn.disabled = selectedWorkoutExercises.length === 0;
+    }
 }
 
 function updateSelectedExercisesList() {
-    document.getElementById('selectedCount').textContent = `${selectedWorkoutExercises.length} selected`;
-
-    // The container may not exist in the streamlined UI
+    const countEl = document.getElementById('selectedCount');
     const container = document.getElementById('selectedExercisesList');
-    if (!container) return;
+    if (!countEl || !container) return;
+
+    countEl.textContent = `${selectedWorkoutExercises.length} exercise${selectedWorkoutExercises.length !== 1 ? 's' : ''}`;
 
     if (selectedWorkoutExercises.length === 0) {
-        container.innerHTML = '<div class="empty-hint">Select exercises above</div>';
+        container.innerHTML = `
+            <div class="empty-workout-hint">
+                <div class="hint-icon">👈</div>
+                <div class="hint-text">Tap exercises to add them</div>
+            </div>
+        `;
         return;
     }
 
     container.innerHTML = selectedWorkoutExercises.map((ex, i) => `
-        <div class="selected-exercise-item">
-            <span class="exercise-name">${ex.name}</span>
-            <div class="sets-control">
-                <button onclick="adjustSets(${i}, -1)">-</button>
-                <span>${ex.targetSets} sets</span>
-                <button onclick="adjustSets(${i}, 1)">+</button>
+        <div class="selected-exercise-card">
+            <div class="selected-exercise-header">
+                <span class="selected-exercise-name">${ex.name}</span>
+                <button class="remove-exercise-btn" onclick="removeExercise(${i})">✕</button>
             </div>
-            <button class="remove-btn" onclick="removeFromSelection(${i})">×</button>
+            <div class="selected-exercise-controls">
+                <div class="sets-adjuster">
+                    <button class="adj-btn" onclick="adjustSets(${i}, -1)" ${ex.targetSets <= 1 ? 'disabled' : ''}>−</button>
+                    <span class="sets-value">${ex.targetSets}</span>
+                    <button class="adj-btn" onclick="adjustSets(${i}, 1)">+</button>
+                </div>
+                <span class="sets-label">sets</span>
+            </div>
         </div>
     `).join('');
 }
@@ -2706,16 +2961,17 @@ function adjustSets(index, delta) {
     }
 }
 
-function removeFromSelection(index) {
+function removeExercise(index) {
     selectedWorkoutExercises.splice(index, 1);
-    renderExerciseSelector();
+    renderExerciseBrowser();
     updateSelectedExercisesList();
+    updateCreateButton();
 }
 
 function saveCustomWorkout() {
     const name = document.getElementById('newWorkoutName').value.trim();
-    const selectedIcon = document.querySelector('#workoutIconSelector .icon-option-sm.selected');
-    const icon = selectedIcon ? selectedIcon.dataset.icon : '💪';
+    const iconBtn = document.getElementById('workoutIconBtn');
+    const icon = iconBtn ? iconBtn.dataset.icon || '💪' : '💪';
 
     if (!name) {
         showToast('ENTER A NAME');

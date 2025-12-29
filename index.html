@@ -43,71 +43,131 @@
         <div class="loading-text">LOADING</div>
     </div>
 
-    <!-- Auth Screen (Login/Register) -->
+    <!-- Auth Screen with Cinematic Intro -->
     <div class="screen active" id="authScreen">
-        <div class="memory-card">
-            <div class="header">
-                <h1>IRON QUEST</h1>
-                <div class="subtitle">ENTER THE ARENA</div>
+        <!-- First-Person Intro Scene -->
+        <div class="intro-scene" id="introScene">
+            <!-- Sunset Sky Background -->
+            <div class="intro-sky"></div>
+
+            <!-- Sun -->
+            <div class="intro-sun"></div>
+
+            <!-- Distant Palm Trees (parallax layer - slow) -->
+            <div class="parallax-layer parallax-far">
+                <div class="palm-tree" style="left: 5%;"></div>
+                <div class="palm-tree" style="left: 25%;"></div>
+                <div class="palm-tree" style="left: 75%;"></div>
+                <div class="palm-tree" style="left: 95%;"></div>
             </div>
 
-            <!-- Login Form -->
-            <div id="loginForm">
-                <form onsubmit="handleLogin(event)">
-                    <div class="bevel-box">
-                        <div class="input-group">
-                            <label>EMAIL</label>
-                            <input type="email" id="loginEmail" class="dc-input" placeholder="warrior@email.com" required>
-                        </div>
-                        <div class="input-group">
-                            <label>PASSWORD</label>
-                            <input type="password" id="loginPassword" class="dc-input" placeholder="Enter password" required>
-                        </div>
-                        <div class="form-error" id="loginError"></div>
-                    </div>
-                    <button type="submit" class="dc-button">LOGIN</button>
-                </form>
-                <p class="form-switch-text">
-                    New warrior? <a href="#" onclick="showRegisterForm(); return false;">Create Account</a>
-                </p>
+            <!-- Beach/Boardwalk Ground with perspective -->
+            <div class="intro-ground">
+                <div class="ground-lines"></div>
             </div>
 
-            <!-- Register Form -->
-            <div id="registerForm" style="display: none;">
-                <form onsubmit="handleRegister(event)">
-                    <div class="bevel-box">
-                        <div class="input-group">
-                            <label>USERNAME</label>
-                            <input type="text" id="registerUsername" class="dc-input" placeholder="WARRIOR_01" maxlength="20" required>
-                        </div>
-                        <div class="input-group">
-                            <label>EMAIL</label>
-                            <input type="email" id="registerEmail" class="dc-input" placeholder="warrior@email.com" required>
-                        </div>
-                        <div class="input-group">
-                            <label>PASSWORD</label>
-                            <input type="password" id="registerPassword" class="dc-input" placeholder="Min 6 characters" minlength="6" required>
-                        </div>
-                        <div class="input-group">
-                            <label>CONFIRM PASSWORD</label>
-                            <input type="password" id="registerConfirmPassword" class="dc-input" placeholder="Repeat password" required>
-                        </div>
-                        <div class="form-error" id="registerError"></div>
-                    </div>
-                    <button type="submit" class="dc-button">CREATE ACCOUNT</button>
-                </form>
-                <p class="form-switch-text">
-                    Already a warrior? <a href="#" onclick="showLoginForm(); return false;">Login</a>
-                </p>
+            <!-- Mid-distance equipment (parallax - medium) -->
+            <div class="parallax-layer parallax-mid">
+                <div class="fp-equipment squat-rack-fp" style="left: 10%;"></div>
+                <div class="fp-equipment cable-machine-fp" style="left: 30%;"></div>
+                <div class="fp-equipment bench-fp" style="left: 70%;"></div>
+                <div class="fp-equipment dumbbell-rack-fp" style="left: 90%;"></div>
             </div>
 
-            <div class="auth-divider">
-                <span>OR</span>
+            <!-- Close equipment (parallax - fast) -->
+            <div class="parallax-layer parallax-near">
+                <div class="fp-equipment-close bench-close left"></div>
+                <div class="fp-equipment-close plates-close left" style="animation-delay: 1s;"></div>
+                <div class="fp-equipment-close squat-close right"></div>
+                <div class="fp-equipment-close machine-close right" style="animation-delay: 1.5s;"></div>
+                <div class="fp-equipment-close bench-close left" style="animation-delay: 2.5s;"></div>
+                <div class="fp-equipment-close kettlebells-close right" style="animation-delay: 3s;"></div>
             </div>
-            <button class="dc-button secondary" onclick="playOffline()">PLAY OFFLINE</button>
-            <p style="text-align: center; margin-top: 10px; font-size: 10px; color: var(--ps1-gray);">
-                Offline mode uses local storage only
-            </p>
+
+            <!-- Walking head bob effect overlay -->
+            <div class="head-bob-container">
+                <!-- Vignette effect for immersion -->
+                <div class="vignette"></div>
+            </div>
+
+            <!-- Title Overlay -->
+            <div class="intro-title" id="introTitle">
+                <h1 class="game-title">IRON QUEST</h1>
+                <div class="title-tagline">MUSCLE BEACH</div>
+            </div>
+
+            <!-- Begin Button (appears after animation) -->
+            <div class="begin-container" id="beginContainer">
+                <p class="begin-text">BEGIN YOUR JOURNEY</p>
+                <button class="dc-button begin-btn" onclick="showAuthOptions()">START</button>
+                <button class="dc-button secondary begin-btn" onclick="playOffline()">PLAY OFFLINE</button>
+            </div>
+        </div>
+
+        <!-- Auth Forms (hidden initially) -->
+        <div class="auth-forms-container" id="authFormsContainer">
+            <button class="back-button" onclick="hideAuthForms()">← BACK</button>
+            <div class="memory-card">
+                <div class="header">
+                    <h1>IRON QUEST</h1>
+                    <div class="subtitle">ENTER THE ARENA</div>
+                </div>
+
+                <!-- Login Form -->
+                <div id="loginForm">
+                    <form onsubmit="handleLogin(event)">
+                        <div class="bevel-box">
+                            <div class="input-group">
+                                <label>EMAIL</label>
+                                <input type="email" id="loginEmail" class="dc-input" placeholder="warrior@email.com" required>
+                            </div>
+                            <div class="input-group">
+                                <label>PASSWORD</label>
+                                <input type="password" id="loginPassword" class="dc-input" placeholder="Enter password" required>
+                            </div>
+                            <div class="form-error" id="loginError"></div>
+                        </div>
+                        <button type="submit" class="dc-button">LOGIN</button>
+                    </form>
+                    <p class="form-switch-text">
+                        New warrior? <a href="#" onclick="showRegisterForm(); return false;">Create Account</a>
+                    </p>
+                </div>
+
+                <!-- Register Form -->
+                <div id="registerForm" style="display: none;">
+                    <form onsubmit="handleRegister(event)">
+                        <div class="bevel-box">
+                            <div class="input-group">
+                                <label>USERNAME</label>
+                                <input type="text" id="registerUsername" class="dc-input" placeholder="WARRIOR_01" maxlength="20" required>
+                            </div>
+                            <div class="input-group">
+                                <label>EMAIL</label>
+                                <input type="email" id="registerEmail" class="dc-input" placeholder="warrior@email.com" required>
+                            </div>
+                            <div class="input-group">
+                                <label>PASSWORD</label>
+                                <input type="password" id="registerPassword" class="dc-input" placeholder="Min 6 characters" minlength="6" required>
+                            </div>
+                            <div class="input-group">
+                                <label>CONFIRM PASSWORD</label>
+                                <input type="password" id="registerConfirmPassword" class="dc-input" placeholder="Repeat password" required>
+                            </div>
+                            <div class="form-error" id="registerError"></div>
+                        </div>
+                        <button type="submit" class="dc-button">CREATE ACCOUNT</button>
+                    </form>
+                    <p class="form-switch-text">
+                        Already a warrior? <a href="#" onclick="showLoginForm(); return false;">Login</a>
+                    </p>
+                </div>
+
+                <div class="auth-divider">
+                    <span>OR</span>
+                </div>
+                <button class="dc-button secondary" onclick="playOffline()">PLAY OFFLINE</button>
+            </div>
         </div>
     </div>
 
@@ -276,15 +336,15 @@
             </div>
 
             <div class="stats-grid">
-                <div class="stat-box">
+                <div class="stat-box clickable" onclick="showStatHistory('workouts')">
                     <div class="stat-value" id="totalWorkouts">0</div>
                     <div class="stat-label">Workouts</div>
                 </div>
-                <div class="stat-box">
+                <div class="stat-box clickable" onclick="showStatHistory('sets')">
                     <div class="stat-value" id="totalSets">0</div>
                     <div class="stat-label">Sets</div>
                 </div>
-                <div class="stat-box">
+                <div class="stat-box clickable" onclick="showStatHistory('volume')">
                     <div class="stat-value" id="totalWeight">0</div>
                     <div class="stat-label">Total LBS</div>
                 </div>
@@ -931,6 +991,18 @@
         <div class="modal-content wide" id="workoutDetailContent"></div>
     </div>
 
+    <!-- Stat History Modal -->
+    <div class="modal-overlay" id="statHistoryModal">
+        <div class="modal-content wide">
+            <div class="modal-exercise-header">
+                <h2 id="statHistoryTitle">HISTORY</h2>
+                <button class="icon-button small" onclick="closeStatHistory()">✕</button>
+            </div>
+            <div class="stat-history-summary" id="statHistorySummary"></div>
+            <div class="stat-history-list" id="statHistoryList"></div>
+        </div>
+    </div>
+
     <!-- Coach Import Modal -->
     <div class="modal-overlay" id="coachImportModal">
         <div class="modal-content">
@@ -1013,30 +1085,67 @@
         </div>
     </div>
 
-    <!-- Create Workout Modal -->
+    <!-- Create Workout Modal (Redesigned) -->
     <div class="modal-overlay" id="createWorkoutModal">
-        <div class="modal-content compact">
-            <h2>CREATE WORKOUT</h2>
-            <div class="workout-header-row">
-                <input type="text" id="newWorkoutName" placeholder="Workout name..." maxlength="25" class="dc-input flex-grow">
-                <div class="icon-selector-inline" id="workoutIconSelector">
-                    <button class="icon-option-sm selected" data-icon="💪">💪</button>
-                    <button class="icon-option-sm" data-icon="🏋️">🏋️</button>
-                    <button class="icon-option-sm" data-icon="🦵">🦵</button>
-                    <button class="icon-option-sm" data-icon="🔥">🔥</button>
-                    <button class="icon-option-sm" data-icon="⚡">⚡</button>
+        <div class="modal-content workout-builder">
+            <!-- Header -->
+            <div class="builder-header">
+                <button class="builder-close" onclick="closeCreateWorkoutModal()">✕</button>
+                <div class="builder-title-row">
+                    <div class="builder-icon-btn" id="workoutIconBtn" onclick="toggleIconPicker()">💪</div>
+                    <input type="text" id="newWorkoutName" placeholder="Workout name" maxlength="25" class="builder-name-input">
+                </div>
+                <div class="icon-picker-dropdown" id="iconPickerDropdown">
+                    <button class="icon-pick" data-icon="💪">💪</button>
+                    <button class="icon-pick" data-icon="🏋️">🏋️</button>
+                    <button class="icon-pick" data-icon="🦵">🦵</button>
+                    <button class="icon-pick" data-icon="🔥">🔥</button>
+                    <button class="icon-pick" data-icon="⚡">⚡</button>
+                    <button class="icon-pick" data-icon="🎯">🎯</button>
+                    <button class="icon-pick" data-icon="💎">💎</button>
+                    <button class="icon-pick" data-icon="🏆">🏆</button>
                 </div>
             </div>
-            <div class="exercise-picker">
-                <div class="picker-header">
-                    <span>EXERCISES</span>
-                    <span class="selected-count" id="selectedCount">0 selected</span>
+
+            <!-- Two-panel layout -->
+            <div class="builder-body">
+                <!-- Left: Exercise Browser -->
+                <div class="builder-browse">
+                    <div class="browse-search">
+                        <input type="text" id="exerciseSearch" placeholder="Search exercises..." class="search-input" oninput="filterExercises()">
+                    </div>
+                    <div class="muscle-tabs" id="muscleTabs">
+                        <button class="muscle-tab active" data-muscle="all" onclick="filterByMuscle('all')">ALL</button>
+                        <button class="muscle-tab" data-muscle="chest" onclick="filterByMuscle('chest')">CHEST</button>
+                        <button class="muscle-tab" data-muscle="back" onclick="filterByMuscle('back')">BACK</button>
+                        <button class="muscle-tab" data-muscle="shoulders" onclick="filterByMuscle('shoulders')">SHOULDERS</button>
+                        <button class="muscle-tab" data-muscle="arms" onclick="filterByMuscle('arms')">ARMS</button>
+                        <button class="muscle-tab" data-muscle="legs" onclick="filterByMuscle('legs')">LEGS</button>
+                        <button class="muscle-tab" data-muscle="core" onclick="filterByMuscle('core')">CORE</button>
+                    </div>
+                    <div class="exercise-browser" id="exerciseBrowser"></div>
                 </div>
-                <div class="exercise-selector compact" id="exerciseSelector"></div>
+
+                <!-- Right: Selected Exercises -->
+                <div class="builder-selected">
+                    <div class="selected-header">
+                        <span>YOUR WORKOUT</span>
+                        <span class="exercise-count" id="selectedCount">0 exercises</span>
+                    </div>
+                    <div class="selected-exercises-list" id="selectedExercisesList">
+                        <div class="empty-workout-hint">
+                            <div class="hint-icon">👈</div>
+                            <div class="hint-text">Tap exercises to add them</div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="modal-buttons">
-                <button class="dc-button secondary" onclick="closeCreateWorkoutModal()">CANCEL</button>
-                <button class="dc-button" onclick="saveCustomWorkout()">CREATE</button>
+
+            <!-- Footer -->
+            <div class="builder-footer">
+                <button class="dc-button" onclick="saveCustomWorkout()" id="createWorkoutBtn" disabled>
+                    CREATE WORKOUT
+                </button>
             </div>
         </div>
     </div>

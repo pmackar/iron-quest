@@ -1471,6 +1471,7 @@ body {
 .loading-screen.hidden {
     opacity: 0;
     pointer-events: none;
+    visibility: hidden;
 }
 
 .loading-logo {
@@ -5125,4 +5126,1178 @@ body {
 
 .avatar-profile-link:hover .player-avatar-small::after {
     border-color: var(--highlight);
+}
+
+/* ============================================
+   STAT HISTORY MODAL
+   ============================================ */
+
+.stat-box.clickable {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.stat-box.clickable:hover {
+    background: rgba(0, 255, 204, 0.1);
+    border-color: var(--highlight);
+    transform: translateY(-2px);
+}
+
+.stat-box.clickable:active {
+    transform: translateY(0);
+}
+
+.stat-history-summary {
+    margin-bottom: 20px;
+}
+
+.stat-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.summary-item {
+    background: rgba(26, 26, 46, 0.7);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+}
+
+.summary-value {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 20px;
+    color: var(--highlight);
+    margin-bottom: 4px;
+}
+
+.summary-label {
+    font-size: 10px;
+    color: var(--ps1-gray);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-history-list {
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+.stat-history-item {
+    background: rgba(15, 15, 26, 0.6);
+    border: 1px solid rgba(58, 58, 90, 0.4);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+    transition: all 0.2s;
+}
+
+.stat-history-item:hover {
+    border-color: var(--dc-orange);
+    background: rgba(26, 26, 46, 0.8);
+}
+
+.history-item-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.history-item-name {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 13px;
+    font-weight: bold;
+    color: #fff;
+}
+
+.history-item-date {
+    font-size: 11px;
+    color: var(--ps1-gray);
+}
+
+.history-item-stats {
+    display: flex;
+    gap: 12px;
+    font-size: 11px;
+    color: var(--highlight);
+}
+
+.history-item-value {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 16px;
+    color: var(--xp-gold);
+    text-align: right;
+}
+
+.history-item-sub {
+    font-size: 11px;
+    color: var(--ps1-gray);
+    text-align: right;
+}
+
+.history-item-breakdown {
+    font-size: 10px;
+    color: var(--ps1-gray);
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(58, 58, 90, 0.3);
+    line-height: 1.5;
+}
+
+/* ============================================
+   WORKOUT BUILDER (Redesigned)
+   ============================================ */
+
+.modal-content.workout-builder {
+    width: 95%;
+    max-width: 600px;
+    height: 85vh;
+    max-height: 700px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.builder-header {
+    padding: 15px 20px;
+    background: linear-gradient(135deg, rgba(42, 42, 74, 0.95) 0%, rgba(26, 26, 46, 0.98) 100%);
+    border-bottom: 1px solid rgba(58, 58, 90, 0.5);
+    position: relative;
+}
+
+.builder-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: none;
+    border: none;
+    color: var(--ps1-gray);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 5px;
+    transition: color 0.2s;
+}
+
+.builder-close:hover {
+    color: var(--warning);
+}
+
+.builder-title-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.builder-icon-btn {
+    width: 48px;
+    height: 48px;
+    background: rgba(15, 15, 26, 0.8);
+    border: 2px solid rgba(58, 58, 90, 0.6);
+    border-radius: 10px;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.builder-icon-btn:hover {
+    border-color: var(--dc-orange);
+    background: rgba(255, 102, 0, 0.1);
+}
+
+.builder-name-input {
+    flex: 1;
+    background: rgba(15, 15, 26, 0.6);
+    border: 2px solid rgba(58, 58, 90, 0.5);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: #fff;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 16px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.builder-name-input::placeholder {
+    color: var(--ps1-gray);
+    font-family: 'Share Tech Mono', monospace;
+}
+
+.builder-name-input:focus {
+    border-color: var(--highlight);
+}
+
+.icon-picker-dropdown {
+    display: none;
+    position: absolute;
+    top: 70px;
+    left: 20px;
+    background: rgba(26, 26, 46, 0.98);
+    border: 2px solid rgba(58, 58, 90, 0.8);
+    border-radius: 10px;
+    padding: 10px;
+    gap: 8px;
+    flex-wrap: wrap;
+    width: 200px;
+    z-index: 10;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.icon-picker-dropdown.active {
+    display: flex;
+}
+
+.icon-pick {
+    width: 40px;
+    height: 40px;
+    background: rgba(15, 15, 26, 0.6);
+    border: 2px solid transparent;
+    border-radius: 8px;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.icon-pick:hover {
+    border-color: var(--dc-orange);
+    background: rgba(255, 102, 0, 0.2);
+    transform: scale(1.1);
+}
+
+.builder-body {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+.builder-browse {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid rgba(58, 58, 90, 0.4);
+    background: rgba(15, 15, 26, 0.3);
+}
+
+.browse-search {
+    padding: 12px;
+    background: rgba(26, 26, 46, 0.5);
+}
+
+.search-input {
+    width: 100%;
+    background: rgba(15, 15, 26, 0.8);
+    border: 1px solid rgba(58, 58, 90, 0.5);
+    border-radius: 6px;
+    padding: 10px 12px;
+    color: #fff;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    outline: none;
+}
+
+.search-input::placeholder {
+    color: var(--ps1-gray);
+}
+
+.search-input:focus {
+    border-color: var(--highlight);
+}
+
+.muscle-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 8px 12px;
+    background: rgba(26, 26, 46, 0.4);
+    overflow-x: auto;
+    flex-shrink: 0;
+}
+
+.muscle-tab {
+    background: transparent;
+    border: none;
+    color: var(--ps1-gray);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 9px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+.muscle-tab:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.muscle-tab.active {
+    color: var(--dc-orange);
+    background: rgba(255, 102, 0, 0.2);
+}
+
+.exercise-browser {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+.browser-exercise {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: rgba(26, 26, 46, 0.5);
+    border: 1px solid rgba(58, 58, 90, 0.3);
+    border-radius: 6px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.browser-exercise:hover {
+    border-color: var(--dc-orange);
+    background: rgba(255, 102, 0, 0.08);
+}
+
+.browser-exercise.selected {
+    border-color: var(--success);
+    background: rgba(57, 255, 20, 0.1);
+}
+
+.browser-exercise-info {
+    flex: 1;
+}
+
+.browser-exercise-name {
+    font-size: 13px;
+    font-weight: bold;
+    color: #fff;
+    margin-bottom: 2px;
+}
+
+.browser-exercise-muscle {
+    font-size: 10px;
+    color: var(--ps1-gray);
+}
+
+.browser-exercise-action {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 16px;
+}
+
+.add-icon {
+    color: var(--dc-orange);
+}
+
+.check-icon {
+    color: var(--success);
+    font-weight: bold;
+}
+
+.no-results {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--ps1-gray);
+    font-size: 13px;
+}
+
+.builder-selected {
+    width: 200px;
+    display: flex;
+    flex-direction: column;
+    background: rgba(26, 26, 46, 0.4);
+}
+
+.selected-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: rgba(15, 15, 26, 0.5);
+    border-bottom: 1px solid rgba(58, 58, 90, 0.3);
+}
+
+.selected-header span:first-child {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+    color: var(--dc-orange);
+    letter-spacing: 1px;
+}
+
+.exercise-count {
+    font-size: 10px;
+    color: var(--highlight);
+}
+
+.selected-exercises-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+.empty-workout-hint {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 20px;
+    text-align: center;
+}
+
+.hint-icon {
+    font-size: 32px;
+    margin-bottom: 10px;
+    opacity: 0.6;
+}
+
+.hint-text {
+    font-size: 12px;
+    color: var(--ps1-gray);
+}
+
+.selected-exercise-card {
+    background: rgba(15, 15, 26, 0.6);
+    border: 1px solid rgba(58, 58, 90, 0.4);
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 6px;
+}
+
+.selected-exercise-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.selected-exercise-name {
+    font-size: 11px;
+    font-weight: bold;
+    color: #fff;
+    line-height: 1.3;
+    flex: 1;
+    padding-right: 8px;
+}
+
+.remove-exercise-btn {
+    background: none;
+    border: none;
+    color: var(--ps1-gray);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.remove-exercise-btn:hover {
+    color: var(--warning);
+}
+
+.selected-exercise-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sets-adjuster {
+    display: flex;
+    align-items: center;
+    background: rgba(26, 26, 46, 0.8);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.adj-btn {
+    background: none;
+    border: none;
+    color: var(--dc-orange);
+    font-size: 16px;
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.adj-btn:hover:not(:disabled) {
+    background: rgba(255, 102, 0, 0.2);
+}
+
+.adj-btn:disabled {
+    color: var(--ps1-gray);
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.sets-value {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 14px;
+    color: var(--highlight);
+    min-width: 20px;
+    text-align: center;
+}
+
+.sets-label {
+    font-size: 10px;
+    color: var(--ps1-gray);
+}
+
+.builder-footer {
+    padding: 15px 20px;
+    background: rgba(26, 26, 46, 0.9);
+    border-top: 1px solid rgba(58, 58, 90, 0.5);
+}
+
+.builder-footer .dc-button {
+    width: 100%;
+    padding: 14px;
+    font-size: 14px;
+}
+
+.builder-footer .dc-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Mobile responsive for workout builder */
+@media (max-width: 500px) {
+    .builder-body {
+        flex-direction: column;
+    }
+
+    .builder-browse {
+        border-right: none;
+        border-bottom: 1px solid rgba(58, 58, 90, 0.4);
+        flex: 1;
+    }
+
+    .builder-selected {
+        width: 100%;
+        height: 180px;
+        flex-shrink: 0;
+    }
+
+    .muscle-tabs {
+        flex-wrap: nowrap;
+    }
+}
+
+/* ============================================
+   FIRST-PERSON INTRO SCENE - MUSCLE BEACH
+   ============================================ */
+
+.intro-scene {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: 1;
+    perspective: 1000px;
+    animation: headBob 0.6s ease-in-out infinite;
+}
+
+@keyframes headBob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+/* Sunset Sky */
+.intro-sky {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 55%;
+    background: linear-gradient(
+        to bottom,
+        #0d0221 0%,
+        #1a0533 15%,
+        #4a1a5e 30%,
+        #8b3a62 50%,
+        #d46a4a 70%,
+        #f4a460 85%,
+        #ffd700 100%
+    );
+}
+
+/* Sun */
+.intro-sun {
+    position: absolute;
+    top: 35%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 100px;
+    background: radial-gradient(circle, #fff 0%, #ffd700 40%, #ff6600 80%, transparent 100%);
+    border-radius: 50%;
+    box-shadow: 0 0 80px #ff6600, 0 0 150px #ffd700;
+    animation: sunPulse 4s ease-in-out infinite;
+}
+
+@keyframes sunPulse {
+    0%, 100% { transform: translateX(-50%) scale(1); box-shadow: 0 0 80px #ff6600, 0 0 150px #ffd700; }
+    50% { transform: translateX(-50%) scale(1.05); box-shadow: 0 0 100px #ff6600, 0 0 180px #ffd700; }
+}
+
+/* Parallax Layers */
+.parallax-layer {
+    position: absolute;
+    width: 200%;
+    left: -50%;
+}
+
+/* Far layer - Palm trees (slow scroll) */
+.parallax-far {
+    bottom: 35%;
+    height: 200px;
+    animation: parallaxScrollSlow 20s linear infinite;
+}
+
+.parallax-far .palm-tree {
+    position: absolute;
+    font-size: 80px;
+    filter: brightness(0.4) blur(1px);
+    opacity: 0.7;
+}
+
+.parallax-far .palm-tree::before {
+    content: '🌴';
+}
+
+@keyframes parallaxScrollSlow {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-25%); }
+}
+
+/* Beach/Boardwalk Ground with perspective */
+.intro-ground {
+    position: absolute;
+    bottom: 0;
+    left: -50%;
+    width: 200%;
+    height: 50%;
+    background: linear-gradient(
+        to bottom,
+        #d4a574 0%,
+        #c2956a 30%,
+        #a67c52 60%,
+        #8b6340 100%
+    );
+    transform: perspective(500px) rotateX(60deg);
+    transform-origin: center bottom;
+}
+
+.ground-lines {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(
+        90deg,
+        transparent 0px,
+        transparent 80px,
+        rgba(139, 105, 20, 0.4) 80px,
+        rgba(139, 105, 20, 0.4) 85px
+    );
+    animation: groundScroll 0.5s linear infinite;
+}
+
+@keyframes groundScroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-85px); }
+}
+
+/* Mid-distance equipment */
+.parallax-mid {
+    bottom: 40%;
+    height: 150px;
+    animation: parallaxScrollMid 12s linear infinite;
+}
+
+@keyframes parallaxScrollMid {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-25%); }
+}
+
+.fp-equipment {
+    position: absolute;
+    bottom: 0;
+    width: 80px;
+    height: 100px;
+    filter: brightness(0.6);
+}
+
+/* Mid-distance squat rack */
+.squat-rack-fp {
+    width: 60px;
+    height: 90px;
+    background: linear-gradient(to bottom, #555, #333);
+    border-radius: 4px 4px 0 0;
+    box-shadow: inset -5px 0 10px rgba(0,0,0,0.3);
+}
+
+.squat-rack-fp::before {
+    content: '';
+    position: absolute;
+    top: 15px;
+    left: -10px;
+    width: 80px;
+    height: 8px;
+    background: linear-gradient(to bottom, #777, #555);
+    border-radius: 4px;
+}
+
+.squat-rack-fp::after {
+    content: '';
+    position: absolute;
+    top: 10px;
+    left: -15px;
+    width: 15px;
+    height: 15px;
+    background: radial-gradient(circle, #444, #222);
+    border-radius: 50%;
+    box-shadow: 75px 0 0 #444;
+}
+
+/* Mid-distance cable machine */
+.cable-machine-fp {
+    width: 50px;
+    height: 110px;
+    background: linear-gradient(to right, #444, #333, #444);
+    border-radius: 4px;
+}
+
+.cable-machine-fp::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 3px;
+    height: 70px;
+    background: #666;
+}
+
+.cable-machine-fp::after {
+    content: '⚙️';
+    position: absolute;
+    top: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 20px;
+}
+
+/* Mid-distance bench */
+.bench-fp {
+    width: 70px;
+    height: 50px;
+    background: linear-gradient(to bottom, #333, #222);
+    border-radius: 4px;
+}
+
+.bench-fp::before {
+    content: '';
+    position: absolute;
+    top: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90px;
+    height: 8px;
+    background: linear-gradient(to bottom, #666, #444);
+    border-radius: 4px;
+}
+
+.bench-fp::after {
+    content: '';
+    position: absolute;
+    top: -30px;
+    left: -5px;
+    width: 12px;
+    height: 12px;
+    background: radial-gradient(circle, #333, #111);
+    border-radius: 50%;
+    box-shadow: 68px 0 0 #333;
+}
+
+/* Mid-distance dumbbell rack */
+.dumbbell-rack-fp {
+    width: 50px;
+    height: 70px;
+    background: linear-gradient(to bottom, #444, #333);
+    border-radius: 4px;
+}
+
+.dumbbell-rack-fp::before {
+    content: '🏋️';
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 28px;
+}
+
+/* Close/passing equipment - scrolls faster */
+.parallax-near {
+    bottom: 0;
+    height: 100%;
+    width: 100%;
+    left: 0;
+    pointer-events: none;
+}
+
+.fp-equipment-close {
+    position: absolute;
+    bottom: 20%;
+    opacity: 0;
+}
+
+.fp-equipment-close.left {
+    animation: equipmentPassLeft 4s ease-in-out forwards;
+}
+
+.fp-equipment-close.right {
+    animation: equipmentPassRight 4s ease-in-out forwards;
+}
+
+@keyframes equipmentPassLeft {
+    0% {
+        left: 50%;
+        bottom: 45%;
+        transform: scale(0.3) translateX(-50%);
+        opacity: 0;
+    }
+    20% {
+        opacity: 1;
+    }
+    100% {
+        left: -30%;
+        bottom: 10%;
+        transform: scale(2) translateX(-50%);
+        opacity: 0;
+    }
+}
+
+@keyframes equipmentPassRight {
+    0% {
+        right: 50%;
+        bottom: 45%;
+        transform: scale(0.3) translateX(50%);
+        opacity: 0;
+    }
+    20% {
+        opacity: 1;
+    }
+    100% {
+        right: -30%;
+        bottom: 10%;
+        transform: scale(2) translateX(50%);
+        opacity: 0;
+    }
+}
+
+/* Close equipment styles */
+.bench-close {
+    width: 120px;
+    height: 60px;
+    background: linear-gradient(to bottom, #444, #2a2a2a);
+    border-radius: 6px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.bench-close::before {
+    content: '';
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 150px;
+    height: 10px;
+    background: linear-gradient(to bottom, #888, #666);
+    border-radius: 5px;
+}
+
+.bench-close::after {
+    content: '';
+    position: absolute;
+    top: -40px;
+    left: 0;
+    width: 20px;
+    height: 20px;
+    background: radial-gradient(circle, #555, #222);
+    border-radius: 50%;
+    box-shadow: 100px 0 0 #555;
+}
+
+.squat-close {
+    width: 80px;
+    height: 150px;
+    background: linear-gradient(to right, #555, #444, #555);
+    border-radius: 6px 6px 0 0;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.squat-close::before {
+    content: '';
+    position: absolute;
+    top: 25px;
+    left: -20px;
+    width: 120px;
+    height: 12px;
+    background: linear-gradient(to bottom, #999, #666);
+    border-radius: 6px;
+}
+
+.squat-close::after {
+    content: '';
+    position: absolute;
+    top: 18px;
+    left: -30px;
+    width: 25px;
+    height: 25px;
+    background: radial-gradient(circle, #666, #333);
+    border-radius: 50%;
+    box-shadow: 115px 0 0 #666;
+}
+
+.machine-close {
+    width: 70px;
+    height: 160px;
+    background: linear-gradient(to right, #3a3a3a, #2a2a2a, #3a3a3a);
+    border-radius: 6px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.machine-close::before {
+    content: '⚙️';
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 30px;
+}
+
+.machine-close::after {
+    content: '';
+    position: absolute;
+    top: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 80px;
+    background: #777;
+}
+
+.plates-close {
+    width: 100px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.plates-close::before {
+    content: '';
+    position: absolute;
+    width: 35px;
+    height: 35px;
+    background: radial-gradient(circle, #444, #222);
+    border-radius: 50%;
+    border: 3px solid #555;
+    box-shadow: 30px 0 0 #333, 60px 0 0 #444;
+}
+
+.kettlebells-close {
+    width: 80px;
+    height: 50px;
+}
+
+.kettlebells-close::before {
+    content: '🔔';
+    font-size: 40px;
+    position: absolute;
+    filter: grayscale(50%) brightness(0.8);
+}
+
+.kettlebells-close::after {
+    content: '🔔';
+    font-size: 35px;
+    position: absolute;
+    left: 40px;
+    top: 5px;
+    filter: grayscale(50%) brightness(0.7);
+}
+
+/* Vignette effect */
+.vignette {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background: radial-gradient(
+        ellipse at center,
+        transparent 0%,
+        transparent 50%,
+        rgba(0, 0, 0, 0.4) 100%
+    );
+    z-index: 15;
+}
+
+.head-bob-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 15;
+}
+
+/* Title Overlay */
+.intro-title {
+    position: absolute;
+    top: 10%;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    z-index: 20;
+    opacity: 0;
+    animation: titleFadeIn 1s ease-out 4s forwards;
+}
+
+.game-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 48px;
+    font-weight: 900;
+    color: #fff;
+    text-shadow:
+        0 0 10px #ff6600,
+        0 0 20px #ff6600,
+        0 0 40px #ff3366,
+        4px 4px 0 #000;
+    letter-spacing: 4px;
+    margin: 0;
+}
+
+.title-tagline {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 18px;
+    color: #ffd700;
+    text-shadow: 2px 2px 0 #000;
+    margin-top: 10px;
+    letter-spacing: 8px;
+}
+
+@keyframes titleFadeIn {
+    0% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+    100% { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* Begin Container */
+.begin-container {
+    position: absolute;
+    bottom: 15%;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    z-index: 20;
+    opacity: 0;
+    animation: beginFadeIn 1s ease-out 6s forwards;
+}
+
+.begin-text {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 20px;
+    color: #fff;
+    text-shadow: 0 0 10px #00ffcc, 2px 2px 0 #000;
+    margin-bottom: 20px;
+    letter-spacing: 3px;
+    animation: textPulse 2s ease-in-out infinite;
+}
+
+@keyframes textPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.begin-btn {
+    display: block;
+    width: 200px;
+    margin: 10px auto;
+}
+
+@keyframes beginFadeIn {
+    0% { opacity: 0; transform: translateX(-50%) translateY(20px); }
+    100% { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* Auth Forms Container - Hidden by default */
+.auth-forms-container {
+    display: none;
+    position: relative;
+    z-index: 30;
+    padding: 20px;
+    min-height: 100vh;
+    animation: slideInFromRight 0.3s ease-out;
+}
+
+.auth-forms-container.active {
+    display: block;
+}
+
+@keyframes slideInFromRight {
+    0% { opacity: 0; transform: translateX(50px); }
+    100% { opacity: 1; transform: translateX(0); }
+}
+
+/* Hide intro scene when forms are shown */
+.intro-scene.hidden {
+    display: none;
+}
+
+/* Mobile Responsive */
+@media (max-width: 480px) {
+    .game-title {
+        font-size: 32px;
+    }
+
+    .title-tagline {
+        font-size: 14px;
+        letter-spacing: 4px;
+    }
+
+    .begin-text {
+        font-size: 16px;
+    }
+
+    .intro-sun {
+        width: 80px;
+        height: 80px;
+    }
+
+    .palm-tree::after {
+        font-size: 40px;
+    }
+
+    .palm-3::after {
+        font-size: 30px;
+    }
+
+    .equipment {
+        transform: scale(0.7);
+    }
 }
