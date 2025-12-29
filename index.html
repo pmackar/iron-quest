@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IRON QUEST - Workout Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- RPG World Background -->
+    <div class="rpg-bg">
+        <div class="stars"></div>
+        <div class="moon"></div>
+        <div class="mountain mountain-1"></div>
+        <div class="mountain mountain-2"></div>
+        <div class="mountain mountain-3"></div>
+        <div class="ground-glow"></div>
+        <div class="floating-particles">
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+        </div>
+    </div>
+
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+        <svg class="loading-logo" viewBox="0 0 100 100">
+            <defs>
+                <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#ff6600"/>
+                    <stop offset="100%" style="stop-color:#ff3366"/>
+                </linearGradient>
+            </defs>
+            <polygon points="50,10 90,30 90,70 50,90 10,70 10,30" fill="url(#logoGrad)" stroke="#fff" stroke-width="2"/>
+            <text x="50" y="58" text-anchor="middle" fill="#fff" font-family="Orbitron" font-size="24" font-weight="bold">IQ</text>
+        </svg>
+        <div class="loading-text">LOADING</div>
+    </div>
+
+    <!-- Auth Screen (Login/Register) -->
+    <div class="screen active" id="authScreen">
+        <div class="memory-card">
+            <div class="header">
+                <h1>IRON QUEST</h1>
+                <div class="subtitle">ENTER THE ARENA</div>
+            </div>
+
+            <!-- Login Form -->
+            <div id="loginForm">
+                <form onsubmit="handleLogin(event)">
+                    <div class="bevel-box">
+                        <div class="input-group">
+                            <label>EMAIL</label>
+                            <input type="email" id="loginEmail" class="dc-input" placeholder="warrior@email.com" required>
+                        </div>
+                        <div class="input-group">
+                            <label>PASSWORD</label>
+                            <input type="password" id="loginPassword" class="dc-input" placeholder="Enter password" required>
+                        </div>
+                        <div class="form-error" id="loginError"></div>
+                    </div>
+                    <button type="submit" class="dc-button">LOGIN</button>
+                </form>
+                <p class="form-switch-text">
+                    New warrior? <a href="#" onclick="showRegisterForm(); return false;">Create Account</a>
+                </p>
+            </div>
+
+            <!-- Register Form -->
+            <div id="registerForm" style="display: none;">
+                <form onsubmit="handleRegister(event)">
+                    <div class="bevel-box">
+                        <div class="input-group">
+                            <label>USERNAME</label>
+                            <input type="text" id="registerUsername" class="dc-input" placeholder="WARRIOR_01" maxlength="20" required>
+                        </div>
+                        <div class="input-group">
+                            <label>EMAIL</label>
+                            <input type="email" id="registerEmail" class="dc-input" placeholder="warrior@email.com" required>
+                        </div>
+                        <div class="input-group">
+                            <label>PASSWORD</label>
+                            <input type="password" id="registerPassword" class="dc-input" placeholder="Min 6 characters" minlength="6" required>
+                        </div>
+                        <div class="input-group">
+                            <label>CONFIRM PASSWORD</label>
+                            <input type="password" id="registerConfirmPassword" class="dc-input" placeholder="Repeat password" required>
+                        </div>
+                        <div class="form-error" id="registerError"></div>
+                    </div>
+                    <button type="submit" class="dc-button">CREATE ACCOUNT</button>
+                </form>
+                <p class="form-switch-text">
+                    Already a warrior? <a href="#" onclick="showLoginForm(); return false;">Login</a>
+                </p>
+            </div>
+
+            <div class="auth-divider">
+                <span>OR</span>
+            </div>
+            <button class="dc-button secondary" onclick="playOffline()">PLAY OFFLINE</button>
+            <p style="text-align: center; margin-top: 10px; font-size: 10px; color: var(--ps1-gray);">
+                Offline mode uses local storage only
+            </p>
+        </div>
+    </div>
+
+    <!-- Character Selection Screen (Offline Mode) -->
+    <div class="screen" id="selectScreen">
+        <div class="memory-card">
+            <div class="header">
+                <h1>IRON QUEST</h1>
+                <div class="subtitle">SELECT WARRIOR</div>
+            </div>
+            <div class="character-slots" id="characterSlots"></div>
+            <div class="button-row" style="margin-top: 20px;">
+                <button class="dc-button secondary small" onclick="openCoachImport()">VIEW AS COACH</button>
+                <button class="dc-button secondary small" onclick="goToAuth()">GO ONLINE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Character Creation Screen -->
+    <div class="screen" id="createScreen">
+        <button class="back-button" onclick="showScreen('selectScreen')">← BACK</button>
+        <div class="memory-card">
+            <div class="header">
+                <h1>IRON QUEST</h1>
+                <div class="subtitle">CREATE WARRIOR</div>
+            </div>
+
+            <div class="bevel-box">
+                <label class="label">ENTER YOUR NAME</label>
+                <input type="text" class="dc-input" id="playerName" placeholder="PLAYER_01" maxlength="12">
+            </div>
+
+            <div class="bevel-box">
+                <label class="label">YOUR STATS <span class="optional-label">(optional)</span></label>
+                <div class="stats-form">
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label>HEIGHT</label>
+                            <div class="inline-inputs">
+                                <div class="input-with-unit">
+                                    <input type="number" id="heightFeet" placeholder="5" min="3" max="8" class="dc-input numeric" inputmode="numeric">
+                                    <span class="unit-label">ft</span>
+                                </div>
+                                <div class="input-with-unit">
+                                    <input type="number" id="heightInches" placeholder="10" min="0" max="11" class="dc-input numeric" inputmode="numeric">
+                                    <span class="unit-label">in</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-field">
+                            <label>WEIGHT</label>
+                            <div class="input-with-unit">
+                                <input type="number" id="playerWeight" placeholder="175" min="50" max="500" class="dc-input numeric" inputmode="numeric">
+                                <span class="unit-label">lbs</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row single">
+                        <div class="form-field">
+                            <label>GENDER</label>
+                            <select id="playerGender" class="dc-input select-input">
+                                <option value="">Select...</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bevel-box">
+                <label class="label">SELECT AVATAR</label>
+                <div class="avatar-grid">
+                    <!-- Flame Warrior -->
+                    <div class="avatar-option selected" data-avatar="1">
+                        <svg viewBox="0 0 60 60">
+                            <defs>
+                                <linearGradient id="flameH1" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#ffcc00"/><stop offset="50%" style="stop-color:#ff6600"/><stop offset="100%" style="stop-color:#cc3300"/></linearGradient>
+                                <linearGradient id="skinH1" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#ffdbac"/><stop offset="100%" style="stop-color:#e8b88a"/></linearGradient>
+                                <linearGradient id="armorH1" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#8b0000"/><stop offset="50%" style="stop-color:#660000"/><stop offset="100%" style="stop-color:#440000"/></linearGradient>
+                            </defs>
+                            <ellipse cx="30" cy="8" rx="12" ry="6" fill="url(#flameH1)"/><ellipse cx="25" cy="6" rx="5" ry="4" fill="#ffcc00"/><ellipse cx="35" cy="7" rx="4" ry="5" fill="#ff9900"/>
+                            <ellipse cx="30" cy="18" rx="11" ry="12" fill="url(#skinH1)"/>
+                            <ellipse cx="25" cy="17" rx="3" ry="2.5" fill="#fff"/><ellipse cx="35" cy="17" rx="3" ry="2.5" fill="#fff"/><circle cx="25" cy="17" r="1.5" fill="#cc3300"/><circle cx="35" cy="17" r="1.5" fill="#cc3300"/>
+                            <path d="M18 30 Q30 28 42 30 L44 48 Q30 52 16 48 Z" fill="url(#armorH1)"/><circle cx="30" cy="36" r="4" fill="#ff6600" stroke="#ffcc00" stroke-width="1"/>
+                            <ellipse cx="14" cy="36" rx="5" ry="8" fill="url(#armorH1)"/><ellipse cx="46" cy="36" rx="5" ry="8" fill="url(#armorH1)"/>
+                            <rect x="20" y="48" width="8" height="12" rx="2" fill="#440000"/><rect x="32" y="48" width="8" height="12" rx="2" fill="#440000"/>
+                        </svg>
+                    </div>
+                    <!-- Mystic Mage -->
+                    <div class="avatar-option" data-avatar="2">
+                        <svg viewBox="0 0 60 60">
+                            <defs>
+                                <linearGradient id="magicH2" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#cc99ff"/><stop offset="100%" style="stop-color:#6633cc"/></linearGradient>
+                                <linearGradient id="skinH2" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#c4a882"/><stop offset="100%" style="stop-color:#a68b6a"/></linearGradient>
+                                <linearGradient id="robeH2" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#9966ff"/><stop offset="50%" style="stop-color:#6633cc"/><stop offset="100%" style="stop-color:#4d2699"/></linearGradient>
+                            </defs>
+                            <polygon points="30,0 42,24 18,24" fill="url(#magicH2)"/><ellipse cx="30" cy="24" rx="14" ry="4" fill="#6633cc"/><circle cx="30" cy="8" r="3" fill="#00ffcc"/>
+                            <ellipse cx="30" cy="28" rx="10" ry="9" fill="url(#skinH2)"/>
+                            <path d="M22 32 Q30 42 38 32" fill="#888"/><path d="M24 34 Q30 48 36 34" fill="#aaa"/>
+                            <ellipse cx="26" cy="27" rx="2.5" ry="2" fill="#fff"/><ellipse cx="34" cy="27" rx="2.5" ry="2" fill="#fff"/><circle cx="26" cy="27" r="1.2" fill="#00ffcc"/><circle cx="34" cy="27" r="1.2" fill="#00ffcc"/>
+                            <path d="M16 36 Q30 32 44 36 L48 58 Q30 62 12 58 Z" fill="url(#robeH2)"/><circle cx="30" cy="42" r="3" fill="#00ffcc"/>
+                            <circle cx="50" cy="48" r="6" fill="#cc99ff" opacity="0.7"/><circle cx="50" cy="48" r="4" fill="#00ffcc"/>
+                        </svg>
+                    </div>
+                    <!-- Tech Knight -->
+                    <div class="avatar-option" data-avatar="3">
+                        <svg viewBox="0 0 60 60">
+                            <defs>
+                                <linearGradient id="armorH3" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#4488cc"/><stop offset="50%" style="stop-color:#336699"/><stop offset="100%" style="stop-color:#224466"/></linearGradient>
+                                <linearGradient id="visorH3" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#00ffcc"/><stop offset="50%" style="stop-color:#00ccff"/><stop offset="100%" style="stop-color:#0099ff"/></linearGradient>
+                            </defs>
+                            <ellipse cx="30" cy="16" rx="14" ry="14" fill="url(#armorH3)"/><path d="M16 16 Q30 8 44 16" fill="#224466"/>
+                            <rect x="18" y="14" width="24" height="8" rx="4" fill="url(#visorH3)"/>
+                            <rect x="28" y="6" width="4" height="6" fill="#00ccff"/><circle cx="30" cy="8" r="2" fill="#00ffcc"/>
+                            <path d="M20 24 Q30 30 40 24" fill="#336699"/>
+                            <path d="M14 28 L46 28 L50 55 L10 55 Z" fill="url(#armorH3)"/>
+                            <path d="M22 32 L30 38 L38 32" stroke="#00ccff" stroke-width="2" fill="none"/><circle cx="30" cy="46" r="4" fill="#224466" stroke="#00ccff" stroke-width="1.5"/>
+                            <ellipse cx="10" cy="34" rx="8" ry="6" fill="url(#armorH3)"/><ellipse cx="50" cy="34" rx="8" ry="6" fill="url(#armorH3)"/><circle cx="10" cy="34" r="3" fill="#00ccff"/><circle cx="50" cy="34" r="3" fill="#00ccff"/>
+                            <rect x="18" y="52" width="10" height="8" rx="2" fill="#224466"/><rect x="32" y="52" width="10" height="8" rx="2" fill="#224466"/>
+                        </svg>
+                    </div>
+                    <!-- Shadow Assassin -->
+                    <div class="avatar-option" data-avatar="4">
+                        <svg viewBox="0 0 60 60">
+                            <defs>
+                                <linearGradient id="skinH4" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#e8d4c4"/><stop offset="100%" style="stop-color:#d4baa8"/></linearGradient>
+                                <linearGradient id="cloakH4" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#3a3a4a"/><stop offset="50%" style="stop-color:#2a2a3a"/><stop offset="100%" style="stop-color:#1a1a2a"/></linearGradient>
+                            </defs>
+                            <path d="M12 20 Q30 4 48 20 Q48 32 30 36 Q12 32 12 20" fill="url(#cloakH4)"/><path d="M16 22 Q30 10 44 22" fill="#1a1a2a"/>
+                            <ellipse cx="30" cy="24" rx="9" ry="10" fill="url(#skinH4)"/>
+                            <rect x="18" y="26" width="24" height="8" fill="#1a1a2a"/><path d="M42 28 L52 26 L50 32 L42 30" fill="#1a1a2a"/>
+                            <ellipse cx="25" cy="22" rx="3" ry="2" fill="#1a1a2a"/><ellipse cx="35" cy="22" rx="3" ry="2" fill="#1a1a2a"/>
+                            <ellipse cx="25" cy="22" rx="2" ry="1.5" fill="#ff3366"/><ellipse cx="35" cy="22" rx="2" ry="1.5" fill="#ff3366"/>
+                            <path d="M8 34 Q30 30 52 34 L56 60 L4 60 Z" fill="url(#cloakH4)"/>
+                            <path d="M20 40 L20 55" stroke="#ff3366" stroke-width="1.5"/><path d="M40 40 L40 55" stroke="#ff3366" stroke-width="1.5"/>
+                            <rect x="16" y="44" width="28" height="4" fill="#1a1a2a"/><rect x="28" y="43" width="4" height="6" fill="#ff3366"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <button class="dc-button" onclick="startGame()">START QUEST</button>
+        </div>
+    </div>
+
+    <!-- Main Menu Screen -->
+    <div class="screen" id="menuScreen">
+        <div class="memory-card wide">
+            <div class="player-bar">
+                <div class="player-avatar-small clickable" id="menuAvatar" onclick="openCharacterProfile()" title="View Profile"></div>
+                <div class="player-info">
+                    <div class="player-name" id="menuPlayerName">PLAYER_01</div>
+                    <div class="xp-bar">
+                        <div class="xp-fill" id="menuXpFill" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-family: Orbitron; color: var(--xp-gold);" id="menuLevel">LVL 1</div>
+                    <div style="font-size: 10px; color: var(--ps1-gray);" id="menuXpText">0/100 XP</div>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-value" id="totalWorkouts">0</div>
+                    <div class="stat-label">Workouts</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="totalSets">0</div>
+                    <div class="stat-label">Sets</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="totalWeight">0</div>
+                    <div class="stat-label">Total LBS</div>
+                </div>
+            </div>
+
+            <!-- Menu Navigation -->
+            <div class="menu-nav" id="menuNav">
+                <button class="menu-nav-btn active" data-tab="workout" onclick="switchMenuTab('workout')">
+                    <span class="nav-icon">💪</span>
+                    Workout
+                </button>
+                <button class="menu-nav-btn" data-tab="history" onclick="switchMenuTab('history')">
+                    <span class="nav-icon">📅</span>
+                    History
+                </button>
+                <button class="menu-nav-btn" data-tab="stats" onclick="switchMenuTab('stats')">
+                    <span class="nav-icon">📊</span>
+                    Stats
+                </button>
+                <button class="menu-nav-btn" data-tab="teams" onclick="switchMenuTab('teams')" id="teamsTabBtn" style="display: none;">
+                    <span class="nav-icon">👥</span>
+                    Teams
+                </button>
+                <button class="menu-nav-btn" data-tab="share" onclick="switchMenuTab('share')">
+                    <span class="nav-icon">📤</span>
+                    Share
+                </button>
+            </div>
+
+            <!-- Workout Tab -->
+            <div class="menu-tab-content active" id="tab-workout">
+                <h2 class="workout-title">SELECT WORKOUT</h2>
+                <div class="workout-grid">
+                    <div class="workout-card push" onclick="startWorkout('push')">
+                        <div class="icon">💪</div>
+                        <div>
+                            <h3>PUSH</h3>
+                            <p>Chest, Shoulders, Triceps</p>
+                        </div>
+                    </div>
+                    <div class="workout-card pull" onclick="startWorkout('pull')">
+                        <div class="icon">🏋️</div>
+                        <div>
+                            <h3>PULL</h3>
+                            <p>Back, Biceps, Rear Delts</p>
+                        </div>
+                    </div>
+                    <div class="workout-card legs" onclick="startWorkout('legs')">
+                        <div class="icon">🦵</div>
+                        <div>
+                            <h3>LEGS</h3>
+                            <p>Quads, Hamstrings, Calves</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Custom Programs Section -->
+                <div class="custom-section collapsible">
+                    <div class="section-header" onclick="toggleSection('programsSection')">
+                        <div class="section-title">
+                            <span class="collapse-icon" id="programsSection-icon">▼</span>
+                            <h3>MY PROGRAMS</h3>
+                        </div>
+                        <button class="icon-button" onclick="event.stopPropagation(); openCreateProgramModal()" title="Create Program">+</button>
+                    </div>
+                    <div class="section-content" id="programsSection">
+                        <div class="custom-program-list" id="customProgramList"></div>
+                    </div>
+                </div>
+
+                <!-- Custom Workouts Section -->
+                <div class="custom-section collapsible">
+                    <div class="section-header" onclick="toggleSection('workoutsSection')">
+                        <div class="section-title">
+                            <span class="collapse-icon" id="workoutsSection-icon">▼</span>
+                            <h3>CUSTOM WORKOUTS</h3>
+                        </div>
+                        <button class="icon-button" onclick="event.stopPropagation(); openCreateWorkoutModal()" title="Create Workout">+</button>
+                    </div>
+                    <div class="section-content" id="workoutsSection">
+                        <div class="custom-workout-list" id="customWorkoutList"></div>
+                    </div>
+                </div>
+
+                <!-- Custom Exercises Section -->
+                <div class="custom-section collapsible">
+                    <div class="section-header" onclick="toggleSection('exercisesSection')">
+                        <div class="section-title">
+                            <span class="collapse-icon" id="exercisesSection-icon">▼</span>
+                            <h3>EXERCISE LIBRARY</h3>
+                        </div>
+                        <button class="icon-button" onclick="event.stopPropagation(); openCreateExerciseModal()" title="Add Exercise">+</button>
+                    </div>
+                    <div class="section-content collapsed" id="exercisesSection">
+                        <div class="custom-exercise-list" id="customExerciseList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Tab -->
+            <div class="menu-tab-content" id="tab-history">
+                <div class="calendar-container">
+                    <div class="calendar-header">
+                        <h3 id="calendarMonth">December 2024</h3>
+                        <div class="calendar-nav">
+                            <button onclick="prevMonth()">◀</button>
+                            <button onclick="nextMonth()">▶</button>
+                        </div>
+                    </div>
+                    <div class="calendar-grid" id="calendarGrid"></div>
+                </div>
+                <h3 style="font-family: Orbitron; font-size: 14px; color: var(--dc-orange); margin: 20px 0 10px;">RECENT WORKOUTS</h3>
+                <div class="history-list" id="historyList"></div>
+            </div>
+
+            <!-- Stats Tab -->
+            <div class="menu-tab-content" id="tab-stats">
+                <div class="chart-container">
+                    <div class="chart-title">PERSONAL RECORDS</div>
+                    <div class="pr-list" id="prList"></div>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">EXERCISE PROGRESS</div>
+                    <select class="exercise-select" id="exerciseSelect" onchange="updateExerciseChart()"></select>
+                    <div class="chart-area" id="exerciseChart"></div>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">WEEKLY VOLUME</div>
+                    <div class="chart-area" id="volumeChart"></div>
+                </div>
+            </div>
+
+            <!-- Share Tab -->
+            <div class="menu-tab-content" id="tab-share">
+                <div class="bevel-box">
+                    <h3 style="font-family: Orbitron; font-size: 14px; color: var(--dc-orange); margin-bottom: 15px;">SHARE WITH COACH</h3>
+                    <p style="font-size: 12px; color: var(--ps1-gray); margin-bottom: 15px;">Generate a code to share your progress with your coach or trainer.</p>
+                    <button class="dc-button" onclick="generateShareCode()">GENERATE CODE</button>
+                    <div class="share-code-display" id="shareCodeDisplay" style="display: none;">
+                        <p style="font-size: 10px; color: var(--ps1-gray); margin-bottom: 10px;">SHARE THIS CODE:</p>
+                        <div class="share-code" id="shareCode"></div>
+                    </div>
+                    <div class="share-actions">
+                        <button class="dc-button secondary small" onclick="copyShareCode()">COPY CODE</button>
+                        <button class="dc-button secondary small" onclick="exportCSV()">EXPORT CSV</button>
+                    </div>
+                    <button class="dc-button secondary small" onclick="exportJSON()" style="margin-top: 10px;">EXPORT JSON</button>
+                </div>
+            </div>
+
+            <!-- Teams Tab (Online Only) -->
+            <div class="menu-tab-content" id="tab-teams">
+                <div class="teams-header">
+                    <h3>MY TEAMS</h3>
+                    <div class="teams-actions">
+                        <button class="dc-button small" onclick="openCreateTeamModal()">CREATE TEAM</button>
+                        <button class="dc-button secondary small" onclick="openJoinTeamModal()">JOIN TEAM</button>
+                    </div>
+                </div>
+                <div class="teams-list" id="teamsList">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">👥</div>
+                        <p>No teams yet. Create or join a team!</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="menu-footer">
+                <button class="dc-button secondary small" onclick="backToCharacterSelect()" id="switchCharBtn">SWITCH CHARACTER</button>
+                <button class="dc-button secondary small" onclick="handleLogout()" id="logoutBtn" style="display: none;">LOGOUT</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Workout Screen -->
+    <div class="screen" id="workoutScreen">
+        <button class="back-button" onclick="showScreen('menuScreen')">← BACK</button>
+        <div class="memory-card" style="margin-top: 60px;">
+            <div class="header" style="padding: 20px 0;">
+                <h1 id="workoutTitle" style="font-size: 32px;">PUSH DAY</h1>
+            </div>
+
+            <div class="xp-container">
+                <div class="xp-header">
+                    <span class="level" id="workoutLevel">LEVEL 1</span>
+                    <span class="xp-text" id="workoutXpText">0 / 100 XP</span>
+                </div>
+                <div class="xp-bar">
+                    <div class="xp-fill" id="workoutXpFill" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div id="exerciseList"></div>
+
+            <!-- Workout Notes -->
+            <div class="workout-notes-section">
+                <label onclick="toggleWorkoutNotes()">
+                    <span class="notes-icon">📝</span> NOTES
+                    <span class="notes-toggle" id="notesToggle">▼</span>
+                </label>
+                <textarea id="workoutNotes" class="workout-notes-input" placeholder="Add workout notes..." style="display: none;"></textarea>
+            </div>
+
+            <button class="dc-button" onclick="finishWorkout()" style="margin-top: 20px;">FINISH WORKOUT</button>
+        </div>
+    </div>
+
+    <!-- Workout Summary Modal -->
+    <div class="modal-overlay" id="workoutSummaryModal">
+        <div class="modal-content wide">
+            <h2>WORKOUT COMPLETE!</h2>
+
+            <!-- Summary Stats -->
+            <div class="summary-stats">
+                <div class="summary-stat">
+                    <div class="summary-stat-value" id="summaryDuration">0:00</div>
+                    <div class="summary-stat-label">Duration</div>
+                </div>
+                <div class="summary-stat">
+                    <div class="summary-stat-value" id="summarySets">0</div>
+                    <div class="summary-stat-label">Sets</div>
+                </div>
+                <div class="summary-stat">
+                    <div class="summary-stat-value" id="summaryVolume">0</div>
+                    <div class="summary-stat-label">Volume (lbs)</div>
+                </div>
+                <div class="summary-stat highlight">
+                    <div class="summary-stat-value" id="summaryXP">+0</div>
+                    <div class="summary-stat-label">XP Earned</div>
+                </div>
+            </div>
+
+            <!-- Muscle Heatmap -->
+            <div class="muscle-heatmap-section">
+                <h3>MUSCLES WORKED</h3>
+                <div class="muscle-heatmap" id="muscleHeatmap"></div>
+            </div>
+
+            <!-- PRs Hit This Workout -->
+            <div class="workout-prs" id="workoutPRs" style="display: none;">
+                <h3>🏆 NEW PERSONAL RECORDS</h3>
+                <div class="pr-list" id="summaryPrList"></div>
+            </div>
+
+            <div class="modal-buttons">
+                <button class="dc-button" onclick="closeWorkoutSummary()">CONTINUE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Character Profile Screen -->
+    <div class="screen" id="characterScreen">
+        <button class="back-button" onclick="showScreen('menuScreen')">← BACK</button>
+        <div class="memory-card wide" style="margin-top: 60px;">
+            <!-- Profile Header -->
+            <div class="profile-header">
+                <div class="profile-avatar" id="profileAvatar"></div>
+                <div class="profile-info">
+                    <h1 class="profile-name" id="profileName">PLAYER_01</h1>
+                    <div class="profile-meta">
+                        <span class="profile-level" id="profileLevel">LEVEL 1</span>
+                        <span class="profile-joined" id="profileJoined">Joined Jan 2024</span>
+                    </div>
+                    <div class="profile-xp-bar">
+                        <div class="xp-fill" id="profileXpFill" style="width: 0%"></div>
+                    </div>
+                    <div class="profile-xp-text" id="profileXpText">0 / 100 XP to next level</div>
+                </div>
+            </div>
+
+            <!-- Profile Stats Summary -->
+            <div class="profile-stats-row">
+                <div class="profile-stat">
+                    <div class="profile-stat-value" id="profileWorkouts">0</div>
+                    <div class="profile-stat-label">Workouts</div>
+                </div>
+                <div class="profile-stat">
+                    <div class="profile-stat-value" id="profileSets">0</div>
+                    <div class="profile-stat-label">Total Sets</div>
+                </div>
+                <div class="profile-stat">
+                    <div class="profile-stat-value" id="profileVolume">0</div>
+                    <div class="profile-stat-label">Total Volume</div>
+                </div>
+                <div class="profile-stat">
+                    <div class="profile-stat-value" id="profileAchievementCount">0</div>
+                    <div class="profile-stat-label">Achievements</div>
+                </div>
+            </div>
+
+            <!-- Body Stats (if set) -->
+            <div class="profile-section" id="profileBodyStats" style="display: none;">
+                <h3 class="profile-section-title">WARRIOR STATS</h3>
+                <div class="body-stats-grid">
+                    <div class="body-stat" id="profileHeight">
+                        <span class="body-stat-label">Height</span>
+                        <span class="body-stat-value">--</span>
+                    </div>
+                    <div class="body-stat" id="profileWeight">
+                        <span class="body-stat-label">Weight</span>
+                        <span class="body-stat-value">--</span>
+                    </div>
+                    <div class="body-stat" id="profileGender">
+                        <span class="body-stat-label">Gender</span>
+                        <span class="body-stat-value">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Personal Records -->
+            <div class="profile-section">
+                <h3 class="profile-section-title">PERSONAL RECORDS</h3>
+                <div class="profile-pr-grid" id="profilePRGrid">
+                    <div class="empty-hint">No personal records yet</div>
+                </div>
+            </div>
+
+            <!-- Top Lifts Progress -->
+            <div class="profile-section">
+                <h3 class="profile-section-title">LIFT PROGRESSION</h3>
+                <div class="lift-progress-container" id="liftProgressContainer">
+                    <div class="empty-hint">Complete more workouts to see progress</div>
+                </div>
+            </div>
+
+            <!-- Achievements -->
+            <div class="profile-section">
+                <h3 class="profile-section-title">ACHIEVEMENTS</h3>
+                <div class="achievements-grid" id="achievementsGrid">
+                    <div class="empty-hint">No achievements unlocked yet</div>
+                </div>
+            </div>
+
+            <!-- Milestones Preview -->
+            <div class="profile-section">
+                <h3 class="profile-section-title">NEXT MILESTONES</h3>
+                <div class="milestones-list" id="milestonesList">
+                    <div class="empty-hint">Keep lifting to unlock milestones</div>
+                </div>
+            </div>
+
+            <!-- Account Actions -->
+            <div class="profile-section profile-actions">
+                <h3 class="profile-section-title">ACCOUNT</h3>
+                <div class="profile-action-buttons">
+                    <button class="dc-button secondary" onclick="switchCharacter()">
+                        <span class="btn-icon">👤</span> SWITCH CHARACTER
+                    </button>
+                    <button class="dc-button warning" onclick="confirmLogout()">
+                        <span class="btn-icon">🚪</span> LOG OUT
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Coach View Screen -->
+    <div class="screen" id="coachViewScreen">
+        <div class="coach-banner">COACH VIEW MODE - READ ONLY</div>
+        <div class="memory-card wide" style="margin-top: 20px;">
+            <div class="player-bar">
+                <div class="player-avatar-small" id="coachAvatar"></div>
+                <div class="player-info">
+                    <div class="player-name" id="coachPlayerName">PLAYER</div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-family: Orbitron; color: var(--xp-gold);" id="coachLevel">LVL 1</div>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-value" id="coachWorkouts">0</div>
+                    <div class="stat-label">Workouts</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="coachSets">0</div>
+                    <div class="stat-label">Sets</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="coachWeight">0</div>
+                    <div class="stat-label">Total LBS</div>
+                </div>
+            </div>
+
+            <div class="bevel-box">
+                <h3 style="font-family: Orbitron; font-size: 14px; color: var(--dc-orange); margin-bottom: 15px;">PERSONAL RECORDS</h3>
+                <div class="pr-list" id="coachPRs"></div>
+            </div>
+
+            <div class="bevel-box">
+                <h3 style="font-family: Orbitron; font-size: 14px; color: var(--dc-orange); margin-bottom: 15px;">RECENT WORKOUTS</h3>
+                <div class="history-list" id="coachHistory"></div>
+            </div>
+
+            <button class="dc-button" onclick="exitCoachView()" style="margin-top: 20px;">EXIT COACH VIEW</button>
+        </div>
+    </div>
+
+    <!-- Team Detail Screen -->
+    <div class="screen" id="teamScreen">
+        <button class="back-button" onclick="showScreen('menuScreen')">← BACK</button>
+        <div class="memory-card wide" style="margin-top: 60px;">
+            <div class="team-header-bar">
+                <div class="team-avatar" id="teamDetailAvatar">🛡️</div>
+                <div class="team-info">
+                    <h2 id="teamDetailName">TEAM NAME</h2>
+                    <div class="team-level" id="teamDetailLevel">LEVEL 1</div>
+                </div>
+                <div class="team-xp">
+                    <div id="teamDetailXP">0 XP</div>
+                    <div class="team-xp-label">This Week</div>
+                </div>
+            </div>
+
+            <!-- Team Navigation -->
+            <div class="team-nav">
+                <button class="team-nav-btn active" data-tab="members" onclick="switchTeamTab('members')">Members</button>
+                <button class="team-nav-btn" data-tab="activity" onclick="switchTeamTab('activity')">Activity</button>
+                <button class="team-nav-btn" data-tab="challenges" onclick="switchTeamTab('challenges')">Challenges</button>
+                <button class="team-nav-btn" data-tab="chat" onclick="switchTeamTab('chat')">Chat</button>
+            </div>
+
+            <!-- Members Tab -->
+            <div class="team-tab-content active" id="team-tab-members">
+                <div class="leaderboard-filters">
+                    <button class="filter-btn active" onclick="changeLeaderboardType('xp')">XP</button>
+                    <button class="filter-btn" onclick="changeLeaderboardType('workouts')">Workouts</button>
+                    <button class="filter-btn" onclick="changeLeaderboardType('volume')">Volume</button>
+                </div>
+                <div class="leaderboard-list" id="teamLeaderboard"></div>
+            </div>
+
+            <!-- Activity Tab -->
+            <div class="team-tab-content" id="team-tab-activity">
+                <div class="activity-feed" id="teamActivityFeed"></div>
+            </div>
+
+            <!-- Challenges Tab -->
+            <div class="team-tab-content" id="team-tab-challenges">
+                <div class="challenges-list" id="teamChallenges"></div>
+                <button class="dc-button secondary small" onclick="openCreateChallengeModal()" id="createChallengeBtn" style="margin-top: 15px; display: none;">CREATE CHALLENGE</button>
+            </div>
+
+            <!-- Chat Tab -->
+            <div class="team-tab-content" id="team-tab-chat">
+                <div class="chat-messages" id="teamChatMessages"></div>
+                <div class="chat-input-container">
+                    <input type="text" id="chatMessageInput" class="dc-input" placeholder="Type a message..." maxlength="500">
+                    <button class="dc-button" onclick="sendChatMessage()">SEND</button>
+                </div>
+            </div>
+
+            <div class="team-actions" style="margin-top: 20px;">
+                <button class="dc-button secondary small" onclick="copyInviteCode()" id="copyInviteBtn">COPY INVITE CODE</button>
+                <button class="dc-button secondary small" onclick="leaveCurrentTeam()" style="background: var(--warning);">LEAVE TEAM</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Team Modal -->
+    <div class="modal-overlay" id="createTeamModal">
+        <div class="modal-content">
+            <h2>CREATE TEAM</h2>
+            <div class="input-group">
+                <label>TEAM NAME</label>
+                <input type="text" id="newTeamName" class="dc-input" placeholder="IRON WARRIORS" maxlength="30">
+            </div>
+            <div class="input-group">
+                <label>DESCRIPTION</label>
+                <textarea id="newTeamDesc" class="dc-input" placeholder="A team for dedicated lifters..." maxlength="200" style="height: 80px;"></textarea>
+            </div>
+            <div class="modal-buttons">
+                <button class="dc-button secondary" onclick="closeCreateTeamModal()">CANCEL</button>
+                <button class="dc-button" onclick="createTeam()">CREATE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Join Team Modal -->
+    <div class="modal-overlay" id="joinTeamModal">
+        <div class="modal-content">
+            <h2>JOIN TEAM</h2>
+            <p style="font-size: 12px; color: var(--ps1-gray); margin-bottom: 15px; text-align: center;">
+                Enter the invite code from a team captain
+            </p>
+            <div class="input-group">
+                <label>INVITE CODE</label>
+                <input type="text" id="joinTeamCode" class="dc-input" placeholder="ABCD1234" maxlength="8" style="text-transform: uppercase;">
+            </div>
+            <div class="modal-buttons">
+                <button class="dc-button secondary" onclick="closeJoinTeamModal()">CANCEL</button>
+                <button class="dc-button" onclick="joinTeam()">JOIN</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Challenge Modal -->
+    <div class="modal-overlay" id="createChallengeModal">
+        <div class="modal-content">
+            <h2>CREATE CHALLENGE</h2>
+            <div class="input-group">
+                <label>CHALLENGE TITLE</label>
+                <input type="text" id="challengeTitle" class="dc-input" placeholder="Weekly Grind" maxlength="50">
+            </div>
+            <div class="input-group">
+                <label>TYPE</label>
+                <select id="challengeType" class="dc-input">
+                    <option value="xp">Total XP</option>
+                    <option value="workouts">Workouts Completed</option>
+                    <option value="volume">Volume (lbs)</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>TARGET</label>
+                <input type="number" id="challengeTarget" class="dc-input" placeholder="10000" min="1">
+            </div>
+            <div class="input-group">
+                <label>END DATE</label>
+                <input type="date" id="challengeEndDate" class="dc-input">
+            </div>
+            <div class="modal-buttons">
+                <button class="dc-button secondary" onclick="closeCreateChallengeModal()">CANCEL</button>
+                <button class="dc-button" onclick="createChallenge()">CREATE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Set Logging Modal -->
+    <div class="modal-overlay" id="setModal">
+        <div class="modal-content wide">
+            <!-- Exercise Header with History Button -->
+            <div class="modal-exercise-header">
+                <h2 id="modalExerciseName">BENCH PRESS</h2>
+                <button class="icon-button small" onclick="showExerciseHistory()" title="View History">📊</button>
+            </div>
+
+            <!-- Previous Workout Data -->
+            <div class="previous-workout-data" id="previousWorkoutData">
+                <div class="prev-label">LAST WORKOUT:</div>
+                <div class="prev-sets" id="prevSets">--</div>
+            </div>
+
+            <!-- Rest Timer -->
+            <div class="rest-timer" id="restTimer">
+                <div class="timer-display" id="timerDisplay">0:00</div>
+                <div class="timer-controls">
+                    <button class="timer-btn" onclick="adjustTimer(-15)">-15s</button>
+                    <button class="timer-btn" onclick="toggleTimer()" id="timerToggleBtn">START</button>
+                    <button class="timer-btn" onclick="adjustTimer(15)">+15s</button>
+                </div>
+                <div class="timer-presets">
+                    <button class="preset-btn" onclick="setTimer(60)">1:00</button>
+                    <button class="preset-btn" onclick="setTimer(90)">1:30</button>
+                    <button class="preset-btn" onclick="setTimer(120)">2:00</button>
+                    <button class="preset-btn" onclick="setTimer(180)">3:00</button>
+                </div>
+            </div>
+
+            <!-- Logged Sets -->
+            <div class="logged-sets" id="loggedSets"></div>
+
+            <!-- Set Input Section -->
+            <div class="set-input-section">
+                <div class="set-inputs">
+                    <div class="input-group">
+                        <label>WEIGHT (LBS)</label>
+                        <input type="number" id="weightInput" value="135" step="5" inputmode="numeric">
+                        <button class="plate-calc-btn" onclick="togglePlateCalculator()" title="Plate Calculator">🔢</button>
+                    </div>
+                    <div class="input-group">
+                        <label>REPS</label>
+                        <input type="number" id="repsInput" value="10" inputmode="numeric">
+                    </div>
+                    <div class="input-group small">
+                        <label>RPE</label>
+                        <select id="rpeInput" class="dc-input">
+                            <option value="">--</option>
+                            <option value="6">6</option>
+                            <option value="6.5">6.5</option>
+                            <option value="7">7</option>
+                            <option value="7.5">7.5</option>
+                            <option value="8">8</option>
+                            <option value="8.5">8.5</option>
+                            <option value="9">9</option>
+                            <option value="9.5">9.5</option>
+                            <option value="10">10</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Set Type Selector -->
+                <div class="set-type-selector">
+                    <label>SET TYPE:</label>
+                    <div class="set-type-options">
+                        <button class="set-type-btn active" data-type="normal" onclick="selectSetType('normal')">NORMAL</button>
+                        <button class="set-type-btn" data-type="warmup" onclick="selectSetType('warmup')">WARMUP</button>
+                        <button class="set-type-btn" data-type="drop" onclick="selectSetType('drop')">DROP</button>
+                        <button class="set-type-btn" data-type="failure" onclick="selectSetType('failure')">FAILURE</button>
+                    </div>
+                </div>
+
+                <!-- Plate Calculator (hidden by default) -->
+                <div class="plate-calculator" id="plateCalculator" style="display: none;">
+                    <div class="plate-calc-header">
+                        <span>PLATE CALCULATOR</span>
+                        <span class="bar-weight">Bar: 45 lbs</span>
+                    </div>
+                    <div class="plate-visual" id="plateVisual"></div>
+                    <div class="plate-list" id="plateList"></div>
+                </div>
+
+                <!-- 1RM Estimate -->
+                <div class="orm-estimate" id="ormEstimate">
+                    <span class="orm-label">EST. 1RM:</span>
+                    <span class="orm-value" id="ormValue">--</span>
+                </div>
+            </div>
+
+            <div class="modal-buttons">
+                <button class="dc-button secondary" onclick="closeSetModal()">DONE</button>
+                <button class="dc-button" onclick="logSet()">LOG SET</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Exercise History Modal -->
+    <div class="modal-overlay" id="exerciseHistoryModal">
+        <div class="modal-content wide">
+            <div class="modal-exercise-header">
+                <h2 id="historyExerciseName">EXERCISE HISTORY</h2>
+                <button class="icon-button small" onclick="closeExerciseHistory()">✕</button>
+            </div>
+            <div class="exercise-history-stats" id="exerciseHistoryStats"></div>
+            <div class="exercise-history-chart" id="exerciseHistoryChart"></div>
+            <div class="exercise-history-list" id="exerciseHistoryList"></div>
+        </div>
+    </div>
+
+    <!-- Workout Detail Modal -->
+    <div class="modal-overlay" id="workoutDetailModal">
+        <div class="modal-content wide" id="workoutDetailContent"></div>
+    </div>
+
+    <!-- Coach Import Modal -->
+    <div class="modal-overlay" id="coachImportModal">
+        <div class="modal-content">
+            <h2>COACH VIEW</h2>
+            <p style="font-size: 12px; color: var(--ps1-gray); margin-bottom: 20px; text-align: center;">
+                Enter a share code from an athlete to view their progress.
+            </p>
+            <div class="input-group">
+                <label>SHARE CODE</label>
+                <textarea id="importCodeInput" placeholder="Paste code here..." style="height: 100px;"></textarea>
+            </div>
+            <div class="modal-buttons">
+                <button class="dc-button secondary" onclick="closeCoachImport()">CANCEL</button>
+                <button class="dc-button" onclick="importCoachCode()">VIEW</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Achievement Popup -->
+    <div class="achievement-overlay" id="achievementOverlay" onclick="closeAchievement()">
+        <div class="achievement-content">
+            <div class="achievement-title">★ ACHIEVEMENT UNLOCKED ★</div>
+            <div class="achievement-badge">
+                <svg viewBox="0 0 200 200">
+                    <defs>
+                        <linearGradient id="badgeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#ffcc00"/>
+                            <stop offset="50%" style="stop-color:#ff6600"/>
+                            <stop offset="100%" style="stop-color:#ffcc00"/>
+                        </linearGradient>
+                    </defs>
+                    <polygon points="100,10 120,80 195,80 135,120 155,190 100,150 45,190 65,120 5,80 80,80" fill="url(#badgeGrad)" stroke="#fff" stroke-width="3"/>
+                    <circle cx="100" cy="105" r="35" fill="#1a1a2e" stroke="#fff" stroke-width="2"/>
+                    <text x="100" y="115" text-anchor="middle" fill="#ffcc00" font-family="Orbitron" font-size="20" font-weight="bold" id="achievementIcon">🏆</text>
+                </svg>
+            </div>
+            <div class="achievement-name" id="achievementName">FIRST PLATE</div>
+            <div class="achievement-desc" id="achievementDesc">Bench Press 135 lbs</div>
+            <div class="achievement-xp" id="achievementXp">+500 XP</div>
+        </div>
+    </div>
+
+    <!-- Create Exercise Modal -->
+    <div class="modal-overlay" id="createExerciseModal">
+        <div class="modal-content">
+            <h2>ADD EXERCISE</h2>
+            <div class="input-group">
+                <label>EXERCISE NAME</label>
+                <input type="text" id="newExerciseName" placeholder="e.g., Skull Crushers" maxlength="30" class="dc-input">
+            </div>
+            <div class="input-group">
+                <label>MUSCLE GROUP</label>
+                <select id="newExerciseMuscle" class="dc-input">
+                    <option value="chest">Chest</option>
+                    <option value="back">Back</option>
+                    <option value="shoulders">Shoulders</option>
+                    <option value="biceps">Biceps</option>
+                    <option value="triceps">Triceps</option>
+                    <option value="legs">Legs</option>
+                    <option value="core">Core</option>
+                    <option value="full-body">Full Body</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>EQUIPMENT</label>
+                <select id="newExerciseEquipment" class="dc-input">
+                    <option value="barbell">Barbell</option>
+                    <option value="dumbbell">Dumbbell</option>
+                    <option value="cable">Cable</option>
+                    <option value="machine">Machine</option>
+                    <option value="bodyweight">Bodyweight</option>
+                    <option value="kettlebell">Kettlebell</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            <div class="modal-buttons">
+                <button class="dc-button secondary" onclick="closeCreateExerciseModal()">CANCEL</button>
+                <button class="dc-button" onclick="saveCustomExercise()">ADD</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Workout Modal -->
+    <div class="modal-overlay" id="createWorkoutModal">
+        <div class="modal-content wide">
+            <h2>CREATE WORKOUT</h2>
+            <div class="input-group">
+                <label>WORKOUT NAME</label>
+                <input type="text" id="newWorkoutName" placeholder="e.g., Upper Body Power" maxlength="25" class="dc-input">
+            </div>
+            <div class="input-group">
+                <label>ICON</label>
+                <div class="icon-selector" id="workoutIconSelector">
+                    <button class="icon-option selected" data-icon="💪">💪</button>
+                    <button class="icon-option" data-icon="🏋️">🏋️</button>
+                    <button class="icon-option" data-icon="🦵">🦵</button>
+                    <button class="icon-option" data-icon="🔥">🔥</button>
+                    <button class="icon-option" data-icon="⚡">⚡</button>
+                    <button class="icon-option" data-icon="🎯">🎯</button>
+                    <button class="icon-option" data-icon="💎">💎</button>
+                    <button class="icon-option" data-icon="🏆">🏆</button>
+                </div>
+            </div>
+            <div class="input-group">
+                <label>SELECT EXERCISES</label>
+                <div class="exercise-selector" id="exerciseSelector"></div>
+            </div>
+            <div class="selected-exercises">
+                <label>SELECTED (<span id="selectedCount">0</span>)</label>
+                <div class="selected-list" id="selectedExercisesList"></div>
+            </div>
+            <div class="modal-buttons">
+                <button class="dc-button secondary" onclick="closeCreateWorkoutModal()">CANCEL</button>
+                <button class="dc-button" onclick="saveCustomWorkout()">CREATE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Program Modal -->
+    <div class="modal-overlay" id="createProgramModal">
+        <div class="modal-content wide">
+            <h2>CREATE PROGRAM</h2>
+            <div class="input-group">
+                <label>PROGRAM NAME</label>
+                <input type="text" id="newProgramName" placeholder="e.g., 12-Week Strength" maxlength="30" class="dc-input">
+            </div>
+            <div class="input-group">
+                <label>ICON</label>
+                <div class="icon-selector" id="programIconSelector">
+                    <button class="icon-option selected" data-icon="📋">📋</button>
+                    <button class="icon-option" data-icon="🗓️">🗓️</button>
+                    <button class="icon-option" data-icon="🎯">🎯</button>
+                    <button class="icon-option" data-icon="💪">💪</button>
+                    <button class="icon-option" data-icon="🔥">🔥</button>
+                    <button class="icon-option" data-icon="⚡">⚡</button>
+                    <button class="icon-option" data-icon="🏆">🏆</button>
+                    <button class="icon-option" data-icon="🦁">🦁</button>
+                </div>
+            </div>
+            <div class="program-schedule">
+                <label>SCHEDULE</label>
+                <div class="schedule-inputs">
+                    <div class="schedule-field">
+                        <input type="number" id="programWorkoutsPerPeriod" value="4" min="1" max="14" class="dc-input numeric" inputmode="numeric">
+                        <span class="schedule-label">workouts per</span>
+                    </div>
+                    <div class="schedule-field">
+                        <select id="programPeriod" class="dc-input select-input">
+                            <option value="week">Week</option>
+                            <option value="2weeks">2 Weeks</option>
+                            <option value="month">Month</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="input-group">
+                <label>DESCRIPTION (optional)</label>
+                <textarea id="newProgramDescription" placeholder="Program goals, notes..." maxlength="200" class="dc-input" rows="2"></textarea>
+            </div>
+            <div class="modal-buttons">
+                <button class="dc-button secondary" onclick="closeCreateProgramModal()">CANCEL</button>
+                <button class="dc-button" onclick="saveCustomProgram()">CREATE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Program Detail Modal -->
+    <div class="modal-overlay" id="programDetailModal">
+        <div class="modal-content wide">
+            <div class="program-detail-header">
+                <div class="program-detail-icon" id="programDetailIcon">📋</div>
+                <div class="program-detail-info">
+                    <h2 id="programDetailName">Program Name</h2>
+                    <div class="program-detail-schedule" id="programDetailSchedule">4 workouts / week</div>
+                </div>
+            </div>
+            <div class="program-detail-desc" id="programDetailDesc"></div>
+
+            <div class="program-workouts-header">
+                <label>PROGRAM WORKOUTS (<span id="programWorkoutCount">0</span>/<span id="programWorkoutTarget">4</span>)</label>
+                <button class="icon-button" onclick="addWorkoutToProgram()" title="Add Workout">+</button>
+            </div>
+            <div class="program-workouts-list" id="programWorkoutsList"></div>
+
+            <div class="modal-buttons">
+                <button class="dc-button secondary" onclick="closeProgramDetailModal()">CLOSE</button>
+                <button class="dc-button warning" onclick="deleteCurrentProgram()">DELETE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Workout to Program Modal -->
+    <div class="modal-overlay" id="addWorkoutToProgramModal">
+        <div class="modal-content">
+            <h2>ADD WORKOUT TO PROGRAM</h2>
+            <div class="workout-source-tabs">
+                <button class="source-tab active" onclick="switchWorkoutSource('existing')">EXISTING</button>
+                <button class="source-tab" onclick="switchWorkoutSource('new')">CREATE NEW</button>
+            </div>
+
+            <div class="workout-source-content" id="existingWorkoutSource">
+                <label>SELECT WORKOUT</label>
+                <div class="available-workouts-list" id="availableWorkoutsList"></div>
+            </div>
+
+            <div class="workout-source-content hidden" id="newWorkoutSource">
+                <div class="input-group">
+                    <label>WORKOUT NAME</label>
+                    <input type="text" id="programWorkoutName" placeholder="e.g., Day 1 - Push" maxlength="25" class="dc-input">
+                </div>
+                <div class="input-group">
+                    <label>SELECT EXERCISES</label>
+                    <div class="exercise-selector" id="programExerciseSelector"></div>
+                </div>
+                <div class="selected-exercises">
+                    <label>SELECTED (<span id="programSelectedCount">0</span>)</label>
+                    <div class="selected-list" id="programSelectedExercisesList"></div>
+                </div>
+            </div>
+
+            <div class="modal-buttons">
+                <button class="dc-button secondary" onclick="closeAddWorkoutToProgramModal()">CANCEL</button>
+                <button class="dc-button" onclick="confirmAddWorkoutToProgram()">ADD</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">SAVED!</div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
