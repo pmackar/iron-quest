@@ -43,64 +43,17 @@
         <div class="loading-text">LOADING</div>
     </div>
 
-    <!-- Auth Screen with Cinematic Intro -->
+    <!-- Title Screen -->
     <div class="screen active" id="authScreen">
-        <!-- First-Person Intro Scene -->
-        <div class="intro-scene" id="introScene">
-            <!-- Sunset Sky Background -->
-            <div class="intro-sky"></div>
-
-            <!-- Sun -->
-            <div class="intro-sun"></div>
-
-            <!-- Distant Palm Trees (parallax layer - slow) -->
-            <div class="parallax-layer parallax-far">
-                <div class="palm-tree" style="left: 5%;"></div>
-                <div class="palm-tree" style="left: 25%;"></div>
-                <div class="palm-tree" style="left: 75%;"></div>
-                <div class="palm-tree" style="left: 95%;"></div>
+        <div class="title-screen">
+            <div class="title-logo">
+                <h1>IRON QUEST</h1>
+                <div class="title-subtitle">TRACK YOUR GAINS</div>
             </div>
 
-            <!-- Beach/Boardwalk Ground with perspective -->
-            <div class="intro-ground">
-                <div class="ground-lines"></div>
-            </div>
-
-            <!-- Mid-distance equipment (parallax - medium) -->
-            <div class="parallax-layer parallax-mid">
-                <div class="fp-equipment squat-rack-fp" style="left: 10%;"></div>
-                <div class="fp-equipment cable-machine-fp" style="left: 30%;"></div>
-                <div class="fp-equipment bench-fp" style="left: 70%;"></div>
-                <div class="fp-equipment dumbbell-rack-fp" style="left: 90%;"></div>
-            </div>
-
-            <!-- Close equipment (parallax - fast) -->
-            <div class="parallax-layer parallax-near">
-                <div class="fp-equipment-close bench-close left"></div>
-                <div class="fp-equipment-close plates-close left" style="animation-delay: 1s;"></div>
-                <div class="fp-equipment-close squat-close right"></div>
-                <div class="fp-equipment-close machine-close right" style="animation-delay: 1.5s;"></div>
-                <div class="fp-equipment-close bench-close left" style="animation-delay: 2.5s;"></div>
-                <div class="fp-equipment-close kettlebells-close right" style="animation-delay: 3s;"></div>
-            </div>
-
-            <!-- Walking head bob effect overlay -->
-            <div class="head-bob-container">
-                <!-- Vignette effect for immersion -->
-                <div class="vignette"></div>
-            </div>
-
-            <!-- Title Overlay -->
-            <div class="intro-title" id="introTitle">
-                <h1 class="game-title">IRON QUEST</h1>
-                <div class="title-tagline">MUSCLE BEACH</div>
-            </div>
-
-            <!-- Begin Button (appears after animation) -->
-            <div class="begin-container" id="beginContainer">
-                <p class="begin-text">BEGIN YOUR JOURNEY</p>
-                <button class="dc-button begin-btn" onclick="showAuthOptions()">START</button>
-                <button class="dc-button secondary begin-btn" onclick="playOffline()">PLAY OFFLINE</button>
+            <div class="title-buttons">
+                <button class="dc-button" onclick="playOffline()">START</button>
+                <button class="dc-button secondary" onclick="showAuthOptions()">GO ONLINE</button>
             </div>
         </div>
 
@@ -312,6 +265,30 @@
             </div>
 
             <button class="dc-button" onclick="startGame()">START QUEST</button>
+        </div>
+    </div>
+
+    <!-- Strength Test Screen -->
+    <div class="screen" id="testScreen">
+        <button class="back-button" onclick="showScreen('createScreen')">← BACK</button>
+        <div class="memory-card wide">
+            <div class="header">
+                <h1>STRENGTH TEST</h1>
+                <div class="subtitle">ENTER YOUR CURRENT BESTS</div>
+            </div>
+
+            <div class="test-intro">
+                <p>Enter your current 1-rep max (or best recent lift) for each exercise.</p>
+                <p class="test-skip-note">Skip any exercises you don't perform - they'll be tracked as new lifts.</p>
+            </div>
+
+            <div class="test-exercises" id="testExercisesList"></div>
+
+            <div class="test-progress">
+                <span id="testProgress">0/8 entered</span>
+            </div>
+
+            <button class="dc-button" onclick="completeStrengthTest()">COMPLETE TEST</button>
         </div>
     </div>
 

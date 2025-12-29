@@ -8,6 +8,35 @@
 // DATA STRUCTURES
 // ============================================
 
+// Exercise Tier System - Higher tiers = more XP
+const EXERCISE_TIERS = {
+    // Tier 1 - Major Compounds (3x XP multiplier)
+    tier1: ['bench', 'squat', 'deadlift', 'ohp'],
+    // Tier 2 - Secondary Compounds (2x XP multiplier)
+    tier2: ['barbell_row', 'rows', 'pullups', 'pullup', 'dip', 'legpress', 'rdl', 'romanian_deadlift'],
+    // Tier 3 - All other exercises (1x XP multiplier) - default
+};
+
+// Exercises included in the Strength Test
+const BASELINE_TEST_EXERCISES = [
+    { id: 'bench', name: 'Bench Press', tier: 1, icon: '🏋️' },
+    { id: 'squat', name: 'Squat', tier: 1, icon: '🦵' },
+    { id: 'deadlift', name: 'Deadlift', tier: 1, icon: '💀' },
+    { id: 'ohp', name: 'Overhead Press', tier: 1, icon: '🎯' },
+    { id: 'rows', name: 'Barbell Row', tier: 2, icon: '🚣' },
+    { id: 'pullups', name: 'Pull-up', tier: 2, icon: '🧗' },
+    { id: 'dip', name: 'Dip', tier: 2, icon: '⬇️' },
+    { id: 'curls', name: 'Barbell Curl', tier: 3, icon: '💪' }
+];
+
+// Milestone bonuses for exceeding baseline
+const MILESTONE_BONUSES = {
+    100: { label: 'MATCHED PR', xp: 50, color: '#00ccff' },
+    110: { label: '+10% PR!', xp: 150, color: '#ffcc00' },
+    120: { label: '+20% PR!', xp: 300, color: '#ff6600' },
+    130: { label: '+30% PR!', xp: 500, color: '#ff3366' }
+};
+
 // All character save slots
 let saveSlots = [null, null, null, null];
 let currentSlotIndex = null;
@@ -617,15 +646,15 @@ function showRegisterForm() {
     document.getElementById('registerForm').style.display = 'block';
 }
 
-// Intro Scene Functions
+// Title Screen Functions
 function showAuthOptions() {
-    document.getElementById('introScene').classList.add('hidden');
+    document.getElementById('authScreen').classList.add('showing-forms');
     document.getElementById('authFormsContainer').classList.add('active');
 }
 
 function hideAuthForms() {
     document.getElementById('authFormsContainer').classList.remove('active');
-    document.getElementById('introScene').classList.remove('hidden');
+    document.getElementById('authScreen').classList.remove('showing-forms');
 }
 
 async function handleLogin(event) {
@@ -842,6 +871,14 @@ function selectCharacter(index) {
     gameState = { ...saveSlots[index] };
     updateMenuStats();
     renderCustomLists();
+
+    // Check if strength test needs to be completed
+    if (!gameState.testCompletedAt) {
+        renderStrengthTest();
+        showScreen('testScreen');
+        return;
+    }
+
     showScreen('menuScreen');
 }
 
@@ -901,7 +938,157 @@ function startGame() {
     saveSaveSlots();
     updateMenuStats();
     renderCustomLists();
+
+    // Go to strength test for new characters
+    renderStrengthTest();
+    showScreen('testScreen');
+}
+
+// ============================================
+// STRENGTH TEST
+// ============================================
+
+function renderStrengthTest() {
+    const container = document.getElementById('testExercisesList');
+    if (!container) return;
+
+    container.innerHTML = BASELINE_TEST_EXERCISES.map(ex => {
+        const multiplierText = ex.tier === 1 ? '3x' : ex.tier === 2 ? '2x' : '1x';
+        return `
+            <div class="test-exercise-row tier-${ex.tier}" data-exercise="${ex.id}">
+                <div class="test-exercise-icon">${ex.icon}</div>
+                <div class="test-exercise-info">
+                    <div class="test-exercise-name">${ex.name}</div>
+                    <div class="test-exercise-tier">TIER ${ex.tier} <span class="multiplier">(${multiplierText} XP)</span></div>
+                </div>
+                <div class="test-exercise-input">
+                    <input type="number" id="test_${ex.id}" placeholder="---" min="0" max="2000"
+                           class="dc-input numeric" inputmode="numeric"
+                           onchange="updateTestProgress()" oninput="updateTestRowStyle('${ex.id}')">
+                    <span class="unit-label">lbs</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    updateTestProgress();
+}
+
+function updateTestRowStyle(exerciseId) {
+    const input = document.getElementById(`test_${exerciseId}`);
+    const row = input?.closest('.test-exercise-row');
+    if (row) {
+        if (input.value && parseInt(input.value) > 0) {
+            row.classList.add('has-value');
+        } else {
+            row.classList.remove('has-value');
+        }
+    }
+}
+
+function updateTestProgress() {
+    const filled = BASELINE_TEST_EXERCISES.filter(ex => {
+        const input = document.getElementById(`test_${ex.id}`);
+        return input && input.value && parseInt(input.value) > 0;
+    }).length;
+
+    const progressEl = document.getElementById('testProgress');
+    if (progressEl) {
+        progressEl.textContent = `${filled}/${BASELINE_TEST_EXERCISES.length} entered`;
+    }
+}
+
+function completeStrengthTest() {
+    // Collect baseline values
+    const baselines = {};
+    BASELINE_TEST_EXERCISES.forEach(ex => {
+        const input = document.getElementById(`test_${ex.id}`);
+        const val = parseInt(input?.value) || 0;
+        if (val > 0) {
+            baselines[ex.id] = val;
+        }
+    });
+
+    // Store in gameState
+    gameState.baselines = baselines;
+    gameState.testCompletedAt = new Date().toISOString();
+    gameState.achievedMilestones = {};
+
+    saveCurrentCharacter();
     showScreen('menuScreen');
+
+    const enteredCount = Object.keys(baselines).length;
+    if (enteredCount > 0) {
+        showToast(`TEST COMPLETE! ${enteredCount} BASELINES SET`);
+    } else {
+        showToast('TEST SKIPPED - USING DEFAULT XP');
+    }
+}
+
+// Get exercise tier multiplier
+function getExerciseTierMultiplier(exerciseId) {
+    if (EXERCISE_TIERS.tier1.includes(exerciseId)) return 3;
+    if (EXERCISE_TIERS.tier2.includes(exerciseId)) return 2;
+    return 1;
+}
+
+// Check and award milestone bonuses
+function checkMilestoneBonus(exerciseId, weight) {
+    if (!gameState.baselines || !gameState.baselines[exerciseId]) return 0;
+
+    const baseline = gameState.baselines[exerciseId];
+    const percentage = Math.floor((weight / baseline) * 100);
+
+    let bonusXP = 0;
+    let milestone = null;
+
+    // Check milestones (only award once per threshold)
+    const milestoneKey = `milestone_${exerciseId}`;
+    const achieved = gameState.achievedMilestones?.[milestoneKey] || 0;
+
+    // Sort thresholds to check in order
+    const thresholds = Object.keys(MILESTONE_BONUSES).map(Number).sort((a, b) => a - b);
+
+    for (const thresh of thresholds) {
+        if (percentage >= thresh && achieved < thresh) {
+            bonusXP = MILESTONE_BONUSES[thresh].xp;
+            milestone = { ...MILESTONE_BONUSES[thresh], threshold: thresh };
+        }
+    }
+
+    if (milestone) {
+        // Record milestone achieved
+        if (!gameState.achievedMilestones) gameState.achievedMilestones = {};
+        gameState.achievedMilestones[milestoneKey] = milestone.threshold;
+
+        // Show milestone popup
+        showMilestonePopup(exerciseId, milestone);
+    }
+
+    return bonusXP;
+}
+
+function showMilestonePopup(exerciseId, milestone) {
+    // Find exercise name
+    const exercise = BASELINE_TEST_EXERCISES.find(e => e.id === exerciseId) ||
+                     allExercises.find(e => e.id === exerciseId);
+    const exerciseName = exercise?.name || exerciseId;
+
+    const popup = document.createElement('div');
+    popup.className = 'milestone-popup';
+    popup.innerHTML = `
+        <div class="milestone-label" style="color: ${milestone.color}">${milestone.label}</div>
+        <div class="milestone-exercise">${exerciseName}</div>
+        <div class="milestone-xp">+${milestone.xp} XP</div>
+    `;
+
+    document.body.appendChild(popup);
+
+    // Auto-remove after animation
+    setTimeout(() => {
+        popup.classList.add('fade-out');
+        setTimeout(() => popup.remove(), 300);
+    }, 2000);
 }
 
 function backToCharacterSelect() {
@@ -1422,15 +1609,22 @@ function logSet() {
         startRestTimer();
     }
 
-    // Calculate XP
-    const xpGain = Math.floor((weight * reps) / 10);
-    addXP(xpGain);
+    // Calculate XP with tier multiplier
+    const tierMultiplier = getExerciseTierMultiplier(currentExercise.id);
+    const baseXP = Math.floor((weight * reps) / 10);
+    const xpGain = baseXP * tierMultiplier;
+
+    // Check for milestone bonus (percentage of baseline)
+    const milestoneBonus = checkMilestoneBonus(currentExercise.id, weight);
+
+    // Add total XP
+    addXP(xpGain + milestoneBonus);
 
     // Update stats
     gameState.totalSets++;
     gameState.totalWeight += weight * reps;
 
-    // Check for milestone achievements
+    // Check for weight milestone achievements (legacy system)
     checkMilestones(currentExercise.id, weight);
 
     // Update personal records (max single rep weight and max tonnage)
