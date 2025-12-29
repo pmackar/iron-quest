@@ -4990,3 +4990,139 @@ body {
 .modal-content.wide {
     position: relative;
 }
+
+/* ============================================
+   STREAMLINED CREATE WORKOUT MODAL
+   ============================================ */
+
+.modal-content.compact {
+    padding: 20px;
+    max-width: 380px;
+}
+
+.modal-content.compact h2 {
+    font-size: 16px;
+    margin-bottom: 15px;
+}
+
+.workout-header-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.workout-header-row .dc-input {
+    flex: 1;
+    padding: 10px 12px;
+    font-size: 13px;
+}
+
+.icon-selector-inline {
+    display: flex;
+    gap: 4px;
+}
+
+.icon-option-sm {
+    width: 32px;
+    height: 32px;
+    background: rgba(26, 26, 46, 0.8);
+    border: 2px solid rgba(58, 58, 90, 0.6);
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-option-sm:hover {
+    border-color: var(--dc-orange);
+    background: rgba(255, 102, 0, 0.1);
+}
+
+.icon-option-sm.selected {
+    border-color: var(--dc-orange);
+    background: rgba(255, 102, 0, 0.2);
+    box-shadow: 0 0 8px rgba(255, 102, 0, 0.3);
+}
+
+.exercise-picker {
+    background: rgba(15, 15, 26, 0.5);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.picker-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: rgba(26, 26, 46, 0.6);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--ps1-gray);
+}
+
+.selected-count {
+    color: var(--highlight);
+    font-family: 'Orbitron', sans-serif;
+}
+
+.exercise-selector.compact {
+    max-height: 250px;
+    border: none;
+    margin: 0;
+    border-radius: 0;
+}
+
+.exercise-selector.compact .exercise-option {
+    padding: 8px 12px;
+    font-size: 12px;
+}
+
+.exercise-selector.compact .exercise-option .muscle-tag {
+    font-size: 9px;
+    padding: 2px 6px;
+}
+
+.modal-content.compact .modal-buttons {
+    margin-top: 15px;
+    padding-top: 15px;
+}
+
+.modal-content.compact .dc-button {
+    padding: 10px 20px;
+    font-size: 12px;
+}
+
+/* Avatar Profile Link */
+.avatar-profile-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+}
+
+.profile-link-text {
+    font-size: 8px;
+    font-family: 'Orbitron', sans-serif;
+    color: var(--ps1-gray);
+    letter-spacing: 1px;
+    transition: color 0.2s;
+}
+
+.avatar-profile-link:hover .profile-link-text {
+    color: var(--highlight);
+}
+
+.avatar-profile-link:hover .player-avatar-small {
+    transform: scale(1.08);
+}
+
+.avatar-profile-link:hover .player-avatar-small::after {
+    border-color: var(--highlight);
+}

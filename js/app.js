@@ -499,9 +499,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Icon selection for workout creation
-    document.querySelectorAll('#workoutIconSelector .icon-option').forEach(option => {
+    document.querySelectorAll('#workoutIconSelector .icon-option-sm').forEach(option => {
         option.addEventListener('click', () => {
-            document.querySelectorAll('#workoutIconSelector .icon-option').forEach(o => o.classList.remove('selected'));
+            document.querySelectorAll('#workoutIconSelector .icon-option-sm').forEach(o => o.classList.remove('selected'));
             option.classList.add('selected');
         });
     });
@@ -2178,10 +2178,17 @@ function populateExerciseSelect() {
 function renderPRList() {
     const container = document.getElementById('prList');
 
-    const prs = Object.entries(gameState.personalRecords || {}).map(([id, weight]) => {
+    const prs = Object.entries(gameState.personalRecords || {}).map(([id, pr]) => {
         const exercise = allExercises.find(e => e.id === id);
-        return { name: exercise ? exercise.name : id, weight };
-    }).sort((a, b) => b.weight - a.weight);
+        // Handle both old format (number) and new format (object)
+        const maxWeight = typeof pr === 'number' ? pr : (pr.maxWeight || 0);
+        const maxTonnage = typeof pr === 'object' ? pr.maxTonnage : null;
+        return {
+            name: exercise ? exercise.name : id,
+            maxWeight,
+            maxTonnage
+        };
+    }).sort((a, b) => b.maxWeight - a.maxWeight);
 
     if (prs.length === 0) {
         container.innerHTML = `
@@ -2196,7 +2203,7 @@ function renderPRList() {
     container.innerHTML = prs.map(pr => `
         <div class="pr-item">
             <span class="pr-exercise">${pr.name}</span>
-            <span class="pr-weight">${pr.weight} lbs</span>
+            <span class="pr-weight">${pr.maxWeight} lbs</span>
         </div>
     `).join('');
 }
@@ -2564,7 +2571,7 @@ function openCreateWorkoutModal() {
     selectedWorkoutExercises = [];
 
     // Reset icon selection
-    document.querySelectorAll('#workoutIconSelector .icon-option').forEach((o, i) => {
+    document.querySelectorAll('#workoutIconSelector .icon-option-sm').forEach((o, i) => {
         o.classList.toggle('selected', i === 0);
     });
 
@@ -2667,9 +2674,11 @@ function toggleExerciseSelection(id, name) {
 }
 
 function updateSelectedExercisesList() {
-    document.getElementById('selectedCount').textContent = selectedWorkoutExercises.length;
+    document.getElementById('selectedCount').textContent = `${selectedWorkoutExercises.length} selected`;
 
+    // The container may not exist in the streamlined UI
     const container = document.getElementById('selectedExercisesList');
+    if (!container) return;
 
     if (selectedWorkoutExercises.length === 0) {
         container.innerHTML = '<div class="empty-hint">Select exercises above</div>';
@@ -2705,7 +2714,7 @@ function removeFromSelection(index) {
 
 function saveCustomWorkout() {
     const name = document.getElementById('newWorkoutName').value.trim();
-    const selectedIcon = document.querySelector('#workoutIconSelector .icon-option.selected');
+    const selectedIcon = document.querySelector('#workoutIconSelector .icon-option-sm.selected');
     const icon = selectedIcon ? selectedIcon.dataset.icon : '💪';
 
     if (!name) {
@@ -3841,6 +3850,12 @@ const ACHIEVEMENTS = [
 ];
 
 function openCharacterProfile() {
+    console.log('openCharacterProfile called, gameState:', gameState);
+    if (!gameState) {
+        console.warn('No gameState - cannot open profile');
+        showToast('Create a character first!');
+        return;
+    }
     renderCharacterProfile();
     showScreen('characterScreen');
 }

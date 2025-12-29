@@ -259,7 +259,10 @@
     <div class="screen" id="menuScreen">
         <div class="memory-card wide">
             <div class="player-bar">
-                <div class="player-avatar-small clickable" id="menuAvatar" onclick="openCharacterProfile()" title="View Profile"></div>
+                <div class="avatar-profile-link" onclick="openCharacterProfile()">
+                    <div class="player-avatar-small clickable" id="menuAvatar" title="View Profile"></div>
+                    <span class="profile-link-text">PROFILE</span>
+                </div>
                 <div class="player-info">
                     <div class="player-name" id="menuPlayerName">PLAYER_01</div>
                     <div class="xp-bar">
@@ -1012,32 +1015,24 @@
 
     <!-- Create Workout Modal -->
     <div class="modal-overlay" id="createWorkoutModal">
-        <div class="modal-content wide">
+        <div class="modal-content compact">
             <h2>CREATE WORKOUT</h2>
-            <div class="input-group">
-                <label>WORKOUT NAME</label>
-                <input type="text" id="newWorkoutName" placeholder="e.g., Upper Body Power" maxlength="25" class="dc-input">
-            </div>
-            <div class="input-group">
-                <label>ICON</label>
-                <div class="icon-selector" id="workoutIconSelector">
-                    <button class="icon-option selected" data-icon="💪">💪</button>
-                    <button class="icon-option" data-icon="🏋️">🏋️</button>
-                    <button class="icon-option" data-icon="🦵">🦵</button>
-                    <button class="icon-option" data-icon="🔥">🔥</button>
-                    <button class="icon-option" data-icon="⚡">⚡</button>
-                    <button class="icon-option" data-icon="🎯">🎯</button>
-                    <button class="icon-option" data-icon="💎">💎</button>
-                    <button class="icon-option" data-icon="🏆">🏆</button>
+            <div class="workout-header-row">
+                <input type="text" id="newWorkoutName" placeholder="Workout name..." maxlength="25" class="dc-input flex-grow">
+                <div class="icon-selector-inline" id="workoutIconSelector">
+                    <button class="icon-option-sm selected" data-icon="💪">💪</button>
+                    <button class="icon-option-sm" data-icon="🏋️">🏋️</button>
+                    <button class="icon-option-sm" data-icon="🦵">🦵</button>
+                    <button class="icon-option-sm" data-icon="🔥">🔥</button>
+                    <button class="icon-option-sm" data-icon="⚡">⚡</button>
                 </div>
             </div>
-            <div class="input-group">
-                <label>SELECT EXERCISES</label>
-                <div class="exercise-selector" id="exerciseSelector"></div>
-            </div>
-            <div class="selected-exercises">
-                <label>SELECTED (<span id="selectedCount">0</span>)</label>
-                <div class="selected-list" id="selectedExercisesList"></div>
+            <div class="exercise-picker">
+                <div class="picker-header">
+                    <span>EXERCISES</span>
+                    <span class="selected-count" id="selectedCount">0 selected</span>
+                </div>
+                <div class="exercise-selector compact" id="exerciseSelector"></div>
             </div>
             <div class="modal-buttons">
                 <button class="dc-button secondary" onclick="closeCreateWorkoutModal()">CANCEL</button>
