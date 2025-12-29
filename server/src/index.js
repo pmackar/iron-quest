@@ -129,7 +129,7 @@ app.get('/api', (req, res) => {
 app.use(express.static(path.join(__dirname, '../../')));
 
 // Serve index.html for all non-API routes (SPA fallback)
-app.get('*', (req, res) => {
+app.get('/{*splat}', (req, res) => {
     // Only serve index.html for non-API routes
     if (!req.path.startsWith('/api')) {
         res.sendFile(path.join(__dirname, '../../index.html'));
