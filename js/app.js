@@ -17,17 +17,84 @@ const EXERCISE_TIERS = {
     // Tier 3 - All other exercises (1x XP multiplier) - default
 };
 
-// Exercises included in the Strength Test
+// Exercises included in the Strength Test (with swappable alternatives)
 const BASELINE_TEST_EXERCISES = [
-    { id: 'bench', name: 'Bench Press', tier: 1, icon: '🏋️' },
-    { id: 'squat', name: 'Squat', tier: 1, icon: '🦵' },
-    { id: 'deadlift', name: 'Deadlift', tier: 1, icon: '💀' },
-    { id: 'ohp', name: 'Overhead Press', tier: 1, icon: '🎯' },
-    { id: 'rows', name: 'Barbell Row', tier: 2, icon: '🚣' },
-    { id: 'pullups', name: 'Pull-up', tier: 2, icon: '🧗' },
-    { id: 'dip', name: 'Dip', tier: 2, icon: '⬇️' },
-    { id: 'curls', name: 'Barbell Curl', tier: 3, icon: '💪' }
+    {
+        id: 'bench', name: 'Bench Press', tier: 1, icon: '🏋️', category: 'chest',
+        alternatives: [
+            { id: 'incline_bench', name: 'Incline Bench Press' },
+            { id: 'db_bench', name: 'Dumbbell Bench Press' },
+            { id: 'decline_bench', name: 'Decline Bench Press' },
+            { id: 'machine_chest_press', name: 'Machine Chest Press' }
+        ]
+    },
+    {
+        id: 'squat', name: 'Squat', tier: 1, icon: '🦵', category: 'legs',
+        alternatives: [
+            { id: 'front_squat', name: 'Front Squat' },
+            { id: 'hack_squat', name: 'Hack Squat' },
+            { id: 'legpress', name: 'Leg Press' },
+            { id: 'goblet_squat', name: 'Goblet Squat' }
+        ]
+    },
+    {
+        id: 'deadlift', name: 'Deadlift', tier: 1, icon: '💀', category: 'back',
+        alternatives: [
+            { id: 'sumo_deadlift', name: 'Sumo Deadlift' },
+            { id: 'trap_bar_deadlift', name: 'Trap Bar Deadlift' },
+            { id: 'rdl', name: 'Romanian Deadlift' },
+            { id: 'rack_pull', name: 'Rack Pull' }
+        ]
+    },
+    {
+        id: 'ohp', name: 'Overhead Press', tier: 1, icon: '🎯', category: 'shoulders',
+        alternatives: [
+            { id: 'db_shoulder_press', name: 'Dumbbell Shoulder Press' },
+            { id: 'arnold_press', name: 'Arnold Press' },
+            { id: 'machine_shoulder_press', name: 'Machine Shoulder Press' },
+            { id: 'push_press', name: 'Push Press' }
+        ]
+    },
+    {
+        id: 'rows', name: 'Barbell Row', tier: 2, icon: '🚣', category: 'back',
+        alternatives: [
+            { id: 'db_row', name: 'Dumbbell Row' },
+            { id: 'cable_row', name: 'Cable Row' },
+            { id: 't_bar_row', name: 'T-Bar Row' },
+            { id: 'machine_row', name: 'Machine Row' }
+        ]
+    },
+    {
+        id: 'pullups', name: 'Pull-up', tier: 2, icon: '🧗', category: 'back',
+        alternatives: [
+            { id: 'chinup', name: 'Chin-up' },
+            { id: 'lat_pulldown', name: 'Lat Pulldown' },
+            { id: 'assisted_pullup', name: 'Assisted Pull-up' },
+            { id: 'neutral_grip_pullup', name: 'Neutral Grip Pull-up' }
+        ]
+    },
+    {
+        id: 'dip', name: 'Dip', tier: 2, icon: '⬇️', category: 'chest',
+        alternatives: [
+            { id: 'machine_dip', name: 'Machine Dip' },
+            { id: 'bench_dip', name: 'Bench Dip' },
+            { id: 'close_grip_bench', name: 'Close Grip Bench Press' },
+            { id: 'tricep_pushdown', name: 'Tricep Pushdown' }
+        ]
+    },
+    {
+        id: 'curls', name: 'Barbell Curl', tier: 3, icon: '💪', category: 'arms',
+        alternatives: [
+            { id: 'db_curl', name: 'Dumbbell Curl' },
+            { id: 'hammer_curl', name: 'Hammer Curl' },
+            { id: 'preacher_curl', name: 'Preacher Curl' },
+            { id: 'cable_curl', name: 'Cable Curl' }
+        ]
+    }
 ];
+
+// Track swapped exercises during test
+let testExerciseSwaps = {};
 
 // Milestone bonuses for exceeding baseline
 const MILESTONE_BONUSES = {
@@ -952,19 +1019,26 @@ function renderStrengthTest() {
     const container = document.getElementById('testExercisesList');
     if (!container) return;
 
-    container.innerHTML = BASELINE_TEST_EXERCISES.map(ex => {
+    // Reset swaps for new test
+    testExerciseSwaps = {};
+
+    container.innerHTML = BASELINE_TEST_EXERCISES.map((ex, index) => {
         const multiplierText = ex.tier === 1 ? '3x' : ex.tier === 2 ? '2x' : '1x';
+        const hasAlternatives = ex.alternatives && ex.alternatives.length > 0;
         return `
-            <div class="test-exercise-row tier-${ex.tier}" data-exercise="${ex.id}">
+            <div class="test-exercise-row tier-${ex.tier}" data-exercise="${ex.id}" data-index="${index}">
                 <div class="test-exercise-icon">${ex.icon}</div>
                 <div class="test-exercise-info">
-                    <div class="test-exercise-name">${ex.name}</div>
-                    <div class="test-exercise-tier">TIER ${ex.tier} <span class="multiplier">(${multiplierText} XP)</span></div>
+                    <div class="test-exercise-name-row">
+                        <span class="test-exercise-name" id="testName_${index}">${ex.name}</span>
+                        ${hasAlternatives ? `<button class="swap-btn" onclick="openSwapModal(${index})" title="Change exercise">⇄</button>` : ''}
+                    </div>
+                    <div class="test-exercise-tier" id="testTier_${index}">TIER ${ex.tier} <span class="multiplier">(${multiplierText} XP)</span></div>
                 </div>
                 <div class="test-exercise-input">
-                    <input type="number" id="test_${ex.id}" placeholder="---" min="0" max="2000"
+                    <input type="number" id="test_${index}" placeholder="---" min="0" max="2000"
                            class="dc-input numeric" inputmode="numeric"
-                           onchange="updateTestProgress()" oninput="updateTestRowStyle('${ex.id}')">
+                           onchange="updateTestProgress()" oninput="updateTestRowStyle(${index})">
                     <span class="unit-label">lbs</span>
                 </div>
             </div>
@@ -974,8 +1048,113 @@ function renderStrengthTest() {
     updateTestProgress();
 }
 
-function updateTestRowStyle(exerciseId) {
-    const input = document.getElementById(`test_${exerciseId}`);
+function openSwapModal(exerciseIndex) {
+    const exercise = BASELINE_TEST_EXERCISES[exerciseIndex];
+    if (!exercise || !exercise.alternatives) return;
+
+    const modal = document.getElementById('swapExerciseModal');
+    const listContainer = document.getElementById('swapExerciseList');
+
+    // Build the list of alternatives (including the original)
+    const allOptions = [
+        { id: exercise.id, name: exercise.name, isOriginal: true },
+        ...exercise.alternatives
+    ];
+
+    listContainer.innerHTML = allOptions.map(alt => `
+        <div class="swap-option ${alt.isOriginal ? 'original' : ''}" onclick="selectSwapExercise(${exerciseIndex}, '${alt.id}', '${alt.name.replace(/'/g, "\\'")}', ${alt.isOriginal || false})">
+            <span class="swap-option-name">${alt.name}</span>
+            ${alt.isOriginal ? '<span class="swap-option-tag">DEFAULT</span>' : ''}
+        </div>
+    `).join('');
+
+    // Store the current exercise index
+    modal.dataset.exerciseIndex = exerciseIndex;
+
+    // Show modal
+    modal.classList.add('active');
+}
+
+function selectSwapExercise(exerciseIndex, newId, newName, isOriginal) {
+    const exercise = BASELINE_TEST_EXERCISES[exerciseIndex];
+
+    if (isOriginal) {
+        // Revert to original - just close modal and reset
+        delete testExerciseSwaps[exerciseIndex];
+        updateTestExerciseDisplay(exerciseIndex, exercise.name, exercise.tier);
+        closeSwapModal();
+        return;
+    }
+
+    // Show tier selection
+    showTierSelection(exerciseIndex, newId, newName, exercise.tier);
+}
+
+function showTierSelection(exerciseIndex, newId, newName, originalTier) {
+    const listContainer = document.getElementById('swapExerciseList');
+    const originalMultiplier = originalTier === 1 ? '3x' : originalTier === 2 ? '2x' : '1x';
+
+    listContainer.innerHTML = `
+        <div class="tier-selection">
+            <div class="tier-selection-title">Is <strong>${newName}</strong> your primary lift for this movement?</div>
+            <div class="tier-selection-options">
+                <button class="tier-option primary" onclick="confirmSwap(${exerciseIndex}, '${newId}', '${newName.replace(/'/g, "\\'")}', ${originalTier})">
+                    <div class="tier-option-label">PRIMARY</div>
+                    <div class="tier-option-desc">Main compound lift (${originalMultiplier} XP)</div>
+                </button>
+                <button class="tier-option accessory" onclick="confirmSwap(${exerciseIndex}, '${newId}', '${newName.replace(/'/g, "\\'")}', 3)">
+                    <div class="tier-option-label">ACCESSORY</div>
+                    <div class="tier-option-desc">Supporting exercise (1x XP)</div>
+                </button>
+            </div>
+            <button class="swap-back-btn" onclick="openSwapModal(${exerciseIndex})">← Back to exercises</button>
+        </div>
+    `;
+}
+
+function confirmSwap(exerciseIndex, newId, newName, newTier) {
+    // Store the swap
+    testExerciseSwaps[exerciseIndex] = {
+        id: newId,
+        name: newName,
+        tier: newTier
+    };
+
+    // Update display
+    updateTestExerciseDisplay(exerciseIndex, newName, newTier);
+
+    closeSwapModal();
+    showToast(`SWAPPED TO ${newName.toUpperCase()}`);
+}
+
+function updateTestExerciseDisplay(exerciseIndex, name, tier) {
+    const nameEl = document.getElementById(`testName_${exerciseIndex}`);
+    const tierEl = document.getElementById(`testTier_${exerciseIndex}`);
+    const row = document.querySelector(`.test-exercise-row[data-index="${exerciseIndex}"]`);
+
+    if (nameEl) nameEl.textContent = name;
+    if (tierEl) {
+        const multiplierText = tier === 1 ? '3x' : tier === 2 ? '2x' : '1x';
+        tierEl.innerHTML = `TIER ${tier} <span class="multiplier">(${multiplierText} XP)</span>`;
+    }
+    if (row) {
+        row.className = `test-exercise-row tier-${tier}`;
+        row.dataset.index = exerciseIndex;
+        // Preserve has-value class if present
+        const input = document.getElementById(`test_${exerciseIndex}`);
+        if (input && input.value && parseInt(input.value) > 0) {
+            row.classList.add('has-value');
+        }
+    }
+}
+
+function closeSwapModal() {
+    const modal = document.getElementById('swapExerciseModal');
+    modal.classList.remove('active');
+}
+
+function updateTestRowStyle(index) {
+    const input = document.getElementById(`test_${index}`);
     const row = input?.closest('.test-exercise-row');
     if (row) {
         if (input.value && parseInt(input.value) > 0) {
@@ -987,10 +1166,13 @@ function updateTestRowStyle(exerciseId) {
 }
 
 function updateTestProgress() {
-    const filled = BASELINE_TEST_EXERCISES.filter(ex => {
-        const input = document.getElementById(`test_${ex.id}`);
-        return input && input.value && parseInt(input.value) > 0;
-    }).length;
+    let filled = 0;
+    for (let i = 0; i < BASELINE_TEST_EXERCISES.length; i++) {
+        const input = document.getElementById(`test_${i}`);
+        if (input && input.value && parseInt(input.value) > 0) {
+            filled++;
+        }
+    }
 
     const progressEl = document.getElementById('testProgress');
     if (progressEl) {
@@ -999,18 +1181,32 @@ function updateTestProgress() {
 }
 
 function completeStrengthTest() {
-    // Collect baseline values
+    // Collect baseline values (handling swapped exercises)
     const baselines = {};
-    BASELINE_TEST_EXERCISES.forEach(ex => {
-        const input = document.getElementById(`test_${ex.id}`);
+    const customTiers = {};
+
+    BASELINE_TEST_EXERCISES.forEach((ex, index) => {
+        const input = document.getElementById(`test_${index}`);
         const val = parseInt(input?.value) || 0;
+
         if (val > 0) {
-            baselines[ex.id] = val;
+            // Check if this exercise was swapped
+            const swap = testExerciseSwaps[index];
+            if (swap) {
+                baselines[swap.id] = val;
+                // Store custom tier if different from default
+                if (swap.tier !== ex.tier) {
+                    customTiers[swap.id] = swap.tier;
+                }
+            } else {
+                baselines[ex.id] = val;
+            }
         }
     });
 
     // Store in gameState
     gameState.baselines = baselines;
+    gameState.customTiers = customTiers; // Store any custom tier assignments
     gameState.testCompletedAt = new Date().toISOString();
     gameState.achievedMilestones = {};
 
@@ -1027,6 +1223,12 @@ function completeStrengthTest() {
 
 // Get exercise tier multiplier
 function getExerciseTierMultiplier(exerciseId) {
+    // Check for custom tier assignment first (from strength test swaps)
+    if (gameState?.customTiers && gameState.customTiers[exerciseId]) {
+        const tier = gameState.customTiers[exerciseId];
+        return tier === 1 ? 3 : tier === 2 ? 2 : 1;
+    }
+    // Fall back to default tiers
     if (EXERCISE_TIERS.tier1.includes(exerciseId)) return 3;
     if (EXERCISE_TIERS.tier2.includes(exerciseId)) return 2;
     return 1;
