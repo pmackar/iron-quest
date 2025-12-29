@@ -4,43 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IRON QUEST - Workout Tracker</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <!-- RPG World Background -->
-    <div class="rpg-bg">
-        <div class="stars"></div>
-        <div class="moon"></div>
-        <div class="mountain mountain-1"></div>
-        <div class="mountain mountain-2"></div>
-        <div class="mountain mountain-3"></div>
-        <div class="ground-glow"></div>
-        <div class="floating-particles">
-            <div class="particle"></div>
-            <div class="particle"></div>
-            <div class="particle"></div>
-            <div class="particle"></div>
-            <div class="particle"></div>
-            <div class="particle"></div>
-            <div class="particle"></div>
-            <div class="particle"></div>
-        </div>
-    </div>
+    <!-- App Background -->
+    <div class="app-bg"></div>
 
     <!-- Loading Screen -->
     <div class="loading-screen" id="loadingScreen">
-        <svg class="loading-logo" viewBox="0 0 100 100">
-            <defs>
-                <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style="stop-color:#ff6600"/>
-                    <stop offset="100%" style="stop-color:#ff3366"/>
-                </linearGradient>
-            </defs>
-            <polygon points="50,10 90,30 90,70 50,90 10,70 10,30" fill="url(#logoGrad)" stroke="#fff" stroke-width="2"/>
-            <text x="50" y="58" text-anchor="middle" fill="#fff" font-family="Orbitron" font-size="24" font-weight="bold">IQ</text>
-        </svg>
-        <div class="loading-text">LOADING</div>
+        <div class="loading-logo">IQ</div>
+        <div class="loading-spinner"></div>
     </div>
 
     <!-- Title Screen -->
@@ -261,6 +235,14 @@
                             <rect x="16" y="44" width="28" height="4" fill="#1a1a2a"/><rect x="28" y="43" width="4" height="6" fill="#ff3366"/>
                         </svg>
                     </div>
+                    <!-- Custom Upload -->
+                    <div class="avatar-option avatar-upload" data-avatar="custom" onclick="triggerAvatarUpload()">
+                        <div class="avatar-upload-content" id="avatarUploadPreview">
+                            <span class="upload-icon">+</span>
+                            <span class="upload-label">Upload</span>
+                        </div>
+                        <input type="file" id="avatarFileInput" accept="image/*" style="display: none;" onchange="handleAvatarUpload(event)">
+                    </div>
                 </div>
             </div>
 
@@ -296,19 +278,19 @@
     <div class="screen" id="menuScreen">
         <div class="memory-card wide">
             <div class="player-bar">
-                <div class="avatar-profile-link" onclick="openCharacterProfile()">
-                    <div class="player-avatar-small clickable" id="menuAvatar" title="View Profile"></div>
+                <button type="button" class="avatar-profile-link" onclick="openCharacterProfile()">
+                    <div class="player-avatar-small" id="menuAvatar" title="View Profile"></div>
                     <span class="profile-link-text">PROFILE</span>
-                </div>
+                </button>
                 <div class="player-info">
                     <div class="player-name" id="menuPlayerName">PLAYER_01</div>
                     <div class="xp-bar">
                         <div class="xp-fill" id="menuXpFill" style="width: 0%"></div>
                     </div>
                 </div>
-                <div style="text-align: right;">
-                    <div style="font-family: Orbitron; color: var(--xp-gold);" id="menuLevel">LVL 1</div>
-                    <div style="font-size: 10px; color: var(--ps1-gray);" id="menuXpText">0/100 XP</div>
+                <div class="text-right">
+                    <div class="text-gold" id="menuLevel">LVL 1</div>
+                    <div class="text-xs text-muted" id="menuXpText">0/100 XP</div>
                 </div>
             </div>
 
@@ -388,7 +370,14 @@
                         <button class="icon-button" onclick="event.stopPropagation(); openCreateProgramModal()" title="Create Program">+</button>
                     </div>
                     <div class="section-content" id="programsSection">
-                        <div class="custom-program-list" id="customProgramList"></div>
+                        <div class="program-table-container">
+                            <div class="program-table-header">
+                                <div class="prog-col-name">Program</div>
+                                <div class="prog-col-progress">Progress</div>
+                                <div class="prog-col-next">Next Up</div>
+                            </div>
+                            <div class="program-table-body" id="customProgramList"></div>
+                        </div>
                     </div>
                 </div>
 
@@ -402,7 +391,15 @@
                         <button class="icon-button" onclick="event.stopPropagation(); openCreateWorkoutModal()" title="Create Workout">+</button>
                     </div>
                     <div class="section-content" id="workoutsSection">
-                        <div class="custom-workout-list" id="customWorkoutList"></div>
+                        <div class="workout-table-container">
+                            <div class="workout-table-header">
+                                <div class="wkt-col-name">Workout</div>
+                                <div class="wkt-col-exercises">Exercises</div>
+                                <div class="wkt-col-last">Last Done</div>
+                                <div class="wkt-col-volume">Volume</div>
+                            </div>
+                            <div class="workout-table-body" id="customWorkoutList"></div>
+                        </div>
                     </div>
                 </div>
 
@@ -433,8 +430,17 @@
                     </div>
                     <div class="calendar-grid" id="calendarGrid"></div>
                 </div>
-                <h3 style="font-family: Orbitron; font-size: 14px; color: var(--dc-orange); margin: 20px 0 10px;">RECENT WORKOUTS</h3>
-                <div class="history-list" id="historyList"></div>
+                <h3 class="section-title-inline mt-lg">RECENT WORKOUTS</h3>
+                <div class="history-table-container">
+                    <div class="history-table-header">
+                        <div class="hist-col-workout">Workout</div>
+                        <div class="hist-col-date">Date</div>
+                        <div class="hist-col-sets">Sets</div>
+                        <div class="hist-col-volume">Volume</div>
+                        <div class="hist-col-vs">vs Last</div>
+                    </div>
+                    <div class="history-table-body" id="historyList"></div>
+                </div>
             </div>
 
             <!-- Stats Tab -->
@@ -459,18 +465,18 @@
             <!-- Share Tab -->
             <div class="menu-tab-content" id="tab-share">
                 <div class="bevel-box">
-                    <h3 style="font-family: Orbitron; font-size: 14px; color: var(--dc-orange); margin-bottom: 15px;">SHARE WITH COACH</h3>
-                    <p style="font-size: 12px; color: var(--ps1-gray); margin-bottom: 15px;">Generate a code to share your progress with your coach or trainer.</p>
+                    <h3 class="section-title-inline">SHARE WITH COACH</h3>
+                    <p class="text-small text-muted" style="margin-bottom: 15px;">Generate a code to share your progress with your coach or trainer.</p>
                     <button class="dc-button" onclick="generateShareCode()">GENERATE CODE</button>
-                    <div class="share-code-display" id="shareCodeDisplay" style="display: none;">
-                        <p style="font-size: 10px; color: var(--ps1-gray); margin-bottom: 10px;">SHARE THIS CODE:</p>
+                    <div class="share-code-display hidden" id="shareCodeDisplay">
+                        <p class="text-xs text-muted" style="margin-bottom: 10px;">SHARE THIS CODE:</p>
                         <div class="share-code" id="shareCode"></div>
                     </div>
                     <div class="share-actions">
                         <button class="dc-button secondary small" onclick="copyShareCode()">COPY CODE</button>
                         <button class="dc-button secondary small" onclick="exportCSV()">EXPORT CSV</button>
                     </div>
-                    <button class="dc-button secondary small" onclick="exportJSON()" style="margin-top: 10px;">EXPORT JSON</button>
+                    <button class="dc-button secondary small mt-lg" onclick="exportJSON()">EXPORT JSON</button>
                 </div>
             </div>
 
@@ -500,10 +506,13 @@
 
     <!-- Workout Screen -->
     <div class="screen" id="workoutScreen">
-        <button class="back-button" onclick="showScreen('menuScreen')">← BACK</button>
-        <div class="memory-card" style="margin-top: 60px;">
-            <div class="header" style="padding: 20px 0;">
-                <h1 id="workoutTitle" style="font-size: 32px;">PUSH DAY</h1>
+        <div class="workout-top-bar">
+            <button class="back-button" onclick="showScreen('menuScreen')">← BACK</button>
+            <button class="minimize-workout-btn" onclick="minimizeWorkout()" title="Minimize Workout">↓</button>
+        </div>
+        <div class="memory-card mt-header">
+            <div class="header">
+                <h1 id="workoutTitle">PUSH DAY</h1>
             </div>
 
             <div class="xp-container">
@@ -516,7 +525,14 @@
                 </div>
             </div>
 
-            <div id="exerciseList"></div>
+            <div class="exercise-table">
+                <div class="exercise-table-header">
+                    <div class="ex-col-name">Exercise</div>
+                    <div class="ex-col-sets">Sets</div>
+                    <div class="ex-col-status">Status</div>
+                </div>
+                <div class="exercise-table-body" id="exerciseList"></div>
+            </div>
 
             <!-- Workout Notes -->
             <div class="workout-notes-section">
@@ -524,10 +540,10 @@
                     <span class="notes-icon">📝</span> NOTES
                     <span class="notes-toggle" id="notesToggle">▼</span>
                 </label>
-                <textarea id="workoutNotes" class="workout-notes-input" placeholder="Add workout notes..." style="display: none;"></textarea>
+                <textarea id="workoutNotes" class="workout-notes-input hidden" placeholder="Add workout notes..."></textarea>
             </div>
 
-            <button class="dc-button" onclick="finishWorkout()" style="margin-top: 20px;">FINISH WORKOUT</button>
+            <button class="dc-button mt-lg" onclick="finishWorkout()">FINISH WORKOUT</button>
         </div>
     </div>
 
@@ -577,7 +593,7 @@
     <!-- Character Profile Screen -->
     <div class="screen" id="characterScreen">
         <button class="back-button" onclick="showScreen('menuScreen')">← BACK</button>
-        <div class="memory-card wide" style="margin-top: 60px;">
+        <div class="memory-card wide mt-header">
             <!-- Profile Header -->
             <div class="profile-header">
                 <div class="profile-avatar" id="profileAvatar"></div>
@@ -601,8 +617,8 @@
                     <div class="profile-stat-label">Workouts</div>
                 </div>
                 <div class="profile-stat">
-                    <div class="profile-stat-value" id="profileSets">0</div>
-                    <div class="profile-stat-label">Total Sets</div>
+                    <div class="profile-stat-value" id="profileStreak">0</div>
+                    <div class="profile-stat-label">Week Streak</div>
                 </div>
                 <div class="profile-stat">
                     <div class="profile-stat-value" id="profileVolume">0</div>
@@ -614,6 +630,27 @@
                 </div>
             </div>
 
+            <!-- Weekly Goal Setting -->
+            <div class="profile-section weekly-goal-section">
+                <div class="weekly-goal-row">
+                    <span class="weekly-goal-label">Weekly Goal</span>
+                    <select id="streakGoalSelect" class="dc-input weekly-goal-select" onchange="updateStreakGoal(this.value)">
+                        <option value="1">1 day/week</option>
+                        <option value="2">2 days/week</option>
+                        <option value="3">3 days/week</option>
+                        <option value="4">4 days/week</option>
+                        <option value="5">5 days/week</option>
+                        <option value="6">6 days/week</option>
+                    </select>
+                </div>
+                <div class="weekly-progress" id="weeklyProgress">
+                    <span class="weekly-progress-text">This week: <strong id="thisWeekWorkouts">0</strong> / <span id="weeklyGoalDisplay">3</span> days</span>
+                    <div class="weekly-progress-bar">
+                        <div class="weekly-progress-fill" id="weeklyProgressFill"></div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Body Stats (if set) -->
             <div class="profile-section" id="profileBodyStats" style="display: none;">
                 <h3 class="profile-section-title">WARRIOR STATS</h3>
@@ -622,9 +659,11 @@
                         <span class="body-stat-label">Height</span>
                         <span class="body-stat-value">--</span>
                     </div>
-                    <div class="body-stat" id="profileWeight">
+                    <div class="body-stat editable" id="profileWeight" onclick="openWeightEditModal()">
                         <span class="body-stat-label">Weight</span>
                         <span class="body-stat-value">--</span>
+                        <span class="body-stat-change" id="weightChange"></span>
+                        <span class="edit-indicator">✎</span>
                     </div>
                     <div class="body-stat" id="profileGender">
                         <span class="body-stat-label">Gender</span>
@@ -636,8 +675,24 @@
             <!-- Personal Records -->
             <div class="profile-section">
                 <h3 class="profile-section-title">PERSONAL RECORDS</h3>
-                <div class="profile-pr-grid" id="profilePRGrid">
-                    <div class="empty-hint">No personal records yet</div>
+                <div class="pr-table-container">
+                    <div class="pr-table-header">
+                        <div class="pr-col-exercise">Exercise</div>
+                        <div class="pr-col-max">Max Weight</div>
+                        <div class="pr-col-best">Best Set</div>
+                        <div class="pr-col-progress">Progress</div>
+                    </div>
+                    <div class="pr-table-body" id="profilePRGrid">
+                        <div class="empty-hint">No personal records yet</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Best Sets -->
+            <div class="profile-section">
+                <h3 class="profile-section-title">BEST SETS</h3>
+                <div class="best-sets-list" id="profileBestSets">
+                    <div class="empty-hint">Complete workouts to see your best sets</div>
                 </div>
             </div>
 
@@ -683,14 +738,14 @@
     <!-- Coach View Screen -->
     <div class="screen" id="coachViewScreen">
         <div class="coach-banner">COACH VIEW MODE - READ ONLY</div>
-        <div class="memory-card wide" style="margin-top: 20px;">
+        <div class="memory-card wide mt-lg">
             <div class="player-bar">
                 <div class="player-avatar-small" id="coachAvatar"></div>
                 <div class="player-info">
                     <div class="player-name" id="coachPlayerName">PLAYER</div>
                 </div>
-                <div style="text-align: right;">
-                    <div style="font-family: Orbitron; color: var(--xp-gold);" id="coachLevel">LVL 1</div>
+                <div class="text-right">
+                    <div class="text-gold" id="coachLevel">LVL 1</div>
                 </div>
             </div>
 
@@ -710,23 +765,23 @@
             </div>
 
             <div class="bevel-box">
-                <h3 style="font-family: Orbitron; font-size: 14px; color: var(--dc-orange); margin-bottom: 15px;">PERSONAL RECORDS</h3>
+                <h3 class="section-title-inline">PERSONAL RECORDS</h3>
                 <div class="pr-list" id="coachPRs"></div>
             </div>
 
             <div class="bevel-box">
-                <h3 style="font-family: Orbitron; font-size: 14px; color: var(--dc-orange); margin-bottom: 15px;">RECENT WORKOUTS</h3>
+                <h3 class="section-title-inline">RECENT WORKOUTS</h3>
                 <div class="history-list" id="coachHistory"></div>
             </div>
 
-            <button class="dc-button" onclick="exitCoachView()" style="margin-top: 20px;">EXIT COACH VIEW</button>
+            <button class="dc-button mt-lg" onclick="exitCoachView()">EXIT COACH VIEW</button>
         </div>
     </div>
 
     <!-- Team Detail Screen -->
     <div class="screen" id="teamScreen">
         <button class="back-button" onclick="showScreen('menuScreen')">← BACK</button>
-        <div class="memory-card wide" style="margin-top: 60px;">
+        <div class="memory-card wide mt-header">
             <div class="team-header-bar">
                 <div class="team-avatar" id="teamDetailAvatar">🛡️</div>
                 <div class="team-info">
@@ -777,9 +832,9 @@
                 </div>
             </div>
 
-            <div class="team-actions" style="margin-top: 20px;">
+            <div class="team-actions mt-lg">
                 <button class="dc-button secondary small" onclick="copyInviteCode()" id="copyInviteBtn">COPY INVITE CODE</button>
-                <button class="dc-button secondary small" onclick="leaveCurrentTeam()" style="background: var(--warning);">LEAVE TEAM</button>
+                <button class="dc-button warning small" onclick="leaveCurrentTeam()">LEAVE TEAM</button>
             </div>
         </div>
     </div>
@@ -794,7 +849,7 @@
             </div>
             <div class="input-group">
                 <label>DESCRIPTION</label>
-                <textarea id="newTeamDesc" class="dc-input" placeholder="A team for dedicated lifters..." maxlength="200" style="height: 80px;"></textarea>
+                <textarea id="newTeamDesc" class="dc-input textarea-md" placeholder="A team for dedicated lifters..." maxlength="200"></textarea>
             </div>
             <div class="modal-buttons">
                 <button class="dc-button secondary" onclick="closeCreateTeamModal()">CANCEL</button>
@@ -807,12 +862,12 @@
     <div class="modal-overlay" id="joinTeamModal">
         <div class="modal-content">
             <h2>JOIN TEAM</h2>
-            <p style="font-size: 12px; color: var(--ps1-gray); margin-bottom: 15px; text-align: center;">
+            <p class="text-small text-muted text-center" style="margin-bottom: 15px;">
                 Enter the invite code from a team captain
             </p>
             <div class="input-group">
                 <label>INVITE CODE</label>
-                <input type="text" id="joinTeamCode" class="dc-input" placeholder="ABCD1234" maxlength="8" style="text-transform: uppercase;">
+                <input type="text" id="joinTeamCode" class="dc-input uppercase" placeholder="ABCD1234" maxlength="8">
             </div>
             <div class="modal-buttons">
                 <button class="dc-button secondary" onclick="closeJoinTeamModal()">CANCEL</button>
@@ -861,46 +916,25 @@
                 <button class="icon-button small" onclick="showExerciseHistory()" title="View History">📊</button>
             </div>
 
-            <!-- Previous Workout Data -->
-            <div class="previous-workout-data" id="previousWorkoutData">
-                <div class="prev-label">LAST WORKOUT:</div>
-                <div class="prev-sets" id="prevSets">--</div>
-            </div>
-
-            <!-- Rest Timer -->
-            <div class="rest-timer" id="restTimer">
-                <div class="timer-display" id="timerDisplay">0:00</div>
-                <div class="timer-controls">
-                    <button class="timer-btn" onclick="adjustTimer(-15)">-15s</button>
-                    <button class="timer-btn" onclick="toggleTimer()" id="timerToggleBtn">START</button>
-                    <button class="timer-btn" onclick="adjustTimer(15)">+15s</button>
-                </div>
-                <div class="timer-presets">
-                    <button class="preset-btn" onclick="setTimer(60)">1:00</button>
-                    <button class="preset-btn" onclick="setTimer(90)">1:30</button>
-                    <button class="preset-btn" onclick="setTimer(120)">2:00</button>
-                    <button class="preset-btn" onclick="setTimer(180)">3:00</button>
-                </div>
-            </div>
-
-            <!-- Logged Sets -->
-            <div class="logged-sets" id="loggedSets"></div>
-
-            <!-- Set Input Section -->
-            <div class="set-input-section">
-                <div class="set-inputs">
-                    <div class="input-group">
-                        <label>WEIGHT (LBS)</label>
-                        <input type="number" id="weightInput" value="135" step="5" inputmode="numeric">
-                        <button class="plate-calc-btn" onclick="togglePlateCalculator()" title="Plate Calculator">🔢</button>
+            <!-- PRIMARY: Weight x Reps x RPE Input -->
+            <div class="primary-input-section">
+                <div class="primary-inputs">
+                    <div class="primary-input-group">
+                        <label>WEIGHT</label>
+                        <div class="primary-input-wrapper">
+                            <input type="number" id="weightInput" value="135" step="5" inputmode="numeric" class="primary-input">
+                            <span class="input-unit">lbs</span>
+                        </div>
                     </div>
-                    <div class="input-group">
+                    <div class="primary-input-divider">×</div>
+                    <div class="primary-input-group">
                         <label>REPS</label>
-                        <input type="number" id="repsInput" value="10" inputmode="numeric">
+                        <input type="number" id="repsInput" value="10" inputmode="numeric" class="primary-input">
                     </div>
-                    <div class="input-group small">
+                    <div class="primary-input-divider">@</div>
+                    <div class="primary-input-group rpe">
                         <label>RPE</label>
-                        <select id="rpeInput" class="dc-input">
+                        <select id="rpeInput" class="primary-select">
                             <option value="">--</option>
                             <option value="6">6</option>
                             <option value="6.5">6.5</option>
@@ -915,37 +949,76 @@
                     </div>
                 </div>
 
-                <!-- Set Type Selector -->
-                <div class="set-type-selector">
-                    <label>SET TYPE:</label>
-                    <div class="set-type-options">
-                        <button class="set-type-btn active" data-type="normal" onclick="selectSetType('normal')">NORMAL</button>
-                        <button class="set-type-btn" data-type="warmup" onclick="selectSetType('warmup')">WARMUP</button>
-                        <button class="set-type-btn" data-type="drop" onclick="selectSetType('drop')">DROP</button>
-                        <button class="set-type-btn" data-type="failure" onclick="selectSetType('failure')">FAILURE</button>
-                    </div>
-                </div>
+                <!-- Log Button (prominent) -->
+                <button class="log-set-btn" onclick="logSet()">LOG SET</button>
 
-                <!-- Plate Calculator (hidden by default) -->
-                <div class="plate-calculator" id="plateCalculator" style="display: none;">
-                    <div class="plate-calc-header">
-                        <span>PLATE CALCULATOR</span>
-                        <span class="bar-weight">Bar: 45 lbs</span>
-                    </div>
-                    <div class="plate-visual" id="plateVisual"></div>
-                    <div class="plate-list" id="plateList"></div>
+                <!-- Set Type Pills -->
+                <div class="set-type-pills">
+                    <button class="set-pill active" data-type="normal" onclick="selectSetType('normal')">Working</button>
+                    <button class="set-pill" data-type="warmup" onclick="selectSetType('warmup')">Warmup</button>
+                    <button class="set-pill" data-type="drop" onclick="selectSetType('drop')">Drop</button>
+                    <button class="set-pill" data-type="failure" onclick="selectSetType('failure')">Failure</button>
                 </div>
+            </div>
 
-                <!-- 1RM Estimate -->
-                <div class="orm-estimate" id="ormEstimate">
-                    <span class="orm-label">EST. 1RM:</span>
+            <!-- Tools Row: Plate Calc + 1RM Estimate -->
+            <div class="tools-row">
+                <button class="tool-btn" onclick="togglePlateCalculator()">Plates</button>
+                <div class="orm-compact">
+                    <span class="orm-label">1RM:</span>
                     <span class="orm-value" id="ormValue">--</span>
                 </div>
             </div>
 
+            <!-- Plate Calculator (hidden by default) -->
+            <div class="plate-calculator" id="plateCalculator" style="display: none;">
+                <div class="plate-calc-header">
+                    <div class="plate-calc-title">
+                        <span>PLATES PER SIDE</span>
+                        <button class="plate-calc-close" onclick="togglePlateCalculator()">×</button>
+                    </div>
+                    <div class="plate-unit-toggle">
+                        <button class="plate-unit-btn active" data-unit="lbs" onclick="setPlateUnit('lbs')">LBS</button>
+                        <button class="plate-unit-btn" data-unit="kg" onclick="setPlateUnit('kg')">KG</button>
+                    </div>
+                </div>
+                <div class="plate-bar-info">
+                    <span>Bar: <span id="barWeightDisplay">45 lbs</span></span>
+                </div>
+                <div class="plate-visual" id="plateVisual"></div>
+                <div class="plate-list" id="plateList"></div>
+            </div>
+
+            <!-- Compact Timer -->
+            <div class="compact-timer" id="restTimer">
+                <div class="timer-row">
+                    <span class="timer-label">REST</span>
+                    <span class="timer-value" id="timerDisplay">0:00</span>
+                    <div class="timer-btns">
+                        <button class="timer-sm-btn" onclick="adjustTimer(-15)">-15</button>
+                        <button class="timer-sm-btn primary" onclick="toggleTimer()" id="timerToggleBtn">START</button>
+                        <button class="timer-sm-btn" onclick="adjustTimer(15)">+15</button>
+                    </div>
+                </div>
+                <div class="timer-presets-row">
+                    <button class="preset-pill" onclick="setTimer(60)">1:00</button>
+                    <button class="preset-pill" onclick="setTimer(90)">1:30</button>
+                    <button class="preset-pill" onclick="setTimer(120)">2:00</button>
+                    <button class="preset-pill" onclick="setTimer(180)">3:00</button>
+                </div>
+            </div>
+
+            <!-- Previous Workout Reference -->
+            <div class="prev-workout-ref" id="previousWorkoutData">
+                <span class="prev-label">Last:</span>
+                <span class="prev-sets" id="prevSets">--</span>
+            </div>
+
+            <!-- Logged Sets -->
+            <div class="logged-sets" id="loggedSets"></div>
+
             <div class="modal-buttons">
                 <button class="dc-button secondary" onclick="closeSetModal()">DONE</button>
-                <button class="dc-button" onclick="logSet()">LOG SET</button>
             </div>
         </div>
     </div>
@@ -984,12 +1057,12 @@
     <div class="modal-overlay" id="coachImportModal">
         <div class="modal-content">
             <h2>COACH VIEW</h2>
-            <p style="font-size: 12px; color: var(--ps1-gray); margin-bottom: 20px; text-align: center;">
+            <p class="text-small text-muted text-center mb-md">
                 Enter a share code from an athlete to view their progress.
             </p>
             <div class="input-group">
                 <label>SHARE CODE</label>
-                <textarea id="importCodeInput" placeholder="Paste code here..." style="height: 100px;"></textarea>
+                <textarea id="importCodeInput" class="textarea-lg" placeholder="Paste code here..."></textarea>
             </div>
             <div class="modal-buttons">
                 <button class="dc-button secondary" onclick="closeCoachImport()">CANCEL</button>
@@ -1084,9 +1157,9 @@
                 </div>
             </div>
 
-            <!-- Two-panel layout -->
-            <div class="builder-body">
-                <!-- Left: Exercise Browser -->
+            <!-- Top/Bottom Split Layout for Mobile -->
+            <div class="builder-body stacked">
+                <!-- Top: Exercise Browser Table -->
                 <div class="builder-browse">
                     <div class="browse-search">
                         <input type="text" id="exerciseSearch" placeholder="Search exercises..." class="search-input" oninput="filterExercises()">
@@ -1095,24 +1168,36 @@
                         <button class="muscle-tab active" data-muscle="all" onclick="filterByMuscle('all')">ALL</button>
                         <button class="muscle-tab" data-muscle="chest" onclick="filterByMuscle('chest')">CHEST</button>
                         <button class="muscle-tab" data-muscle="back" onclick="filterByMuscle('back')">BACK</button>
-                        <button class="muscle-tab" data-muscle="shoulders" onclick="filterByMuscle('shoulders')">SHOULDERS</button>
+                        <button class="muscle-tab" data-muscle="shoulders" onclick="filterByMuscle('shoulders')">SHLD</button>
                         <button class="muscle-tab" data-muscle="arms" onclick="filterByMuscle('arms')">ARMS</button>
                         <button class="muscle-tab" data-muscle="legs" onclick="filterByMuscle('legs')">LEGS</button>
                         <button class="muscle-tab" data-muscle="core" onclick="filterByMuscle('core')">CORE</button>
+                        <button class="muscle-tab" data-muscle="bodyweight" onclick="filterByMuscle('bodyweight')">BW</button>
                     </div>
-                    <div class="exercise-browser" id="exerciseBrowser"></div>
+                    <div class="exercise-browser-table">
+                        <div class="exercise-browser-header">
+                            <div class="ex-browse-col-name">Exercise</div>
+                            <div class="ex-browse-col-pr">Best</div>
+                            <div class="ex-browse-col-last">Last</div>
+                            <div class="ex-browse-col-action"></div>
+                        </div>
+                        <div class="exercise-browser" id="exerciseBrowser"></div>
+                    </div>
                 </div>
 
-                <!-- Right: Selected Exercises -->
-                <div class="builder-selected">
-                    <div class="selected-header">
-                        <span>YOUR WORKOUT</span>
+                <!-- Bottom: Your Workout (Collapsible) -->
+                <div class="builder-selected collapsible">
+                    <div class="selected-header" onclick="toggleWorkoutSelection()">
+                        <div class="selected-header-left">
+                            <span class="collapse-icon" id="workoutCollapseIcon">▼</span>
+                            <span>YOUR WORKOUT</span>
+                        </div>
                         <span class="exercise-count" id="selectedCount">0 exercises</span>
                     </div>
                     <div class="selected-exercises-list" id="selectedExercisesList">
                         <div class="empty-workout-hint">
-                            <div class="hint-icon">👈</div>
-                            <div class="hint-text">Tap exercises to add them</div>
+                            <div class="hint-icon">👆</div>
+                            <div class="hint-text">Tap exercises above to add</div>
                         </div>
                     </div>
                 </div>
@@ -1191,11 +1276,115 @@
                 <label>PROGRAM WORKOUTS (<span id="programWorkoutCount">0</span>/<span id="programWorkoutTarget">4</span>)</label>
                 <button class="icon-button" onclick="addWorkoutToProgram()" title="Add Workout">+</button>
             </div>
-            <div class="program-workouts-list" id="programWorkoutsList"></div>
+            <div class="program-workouts-table">
+                <div class="prog-wkt-table-header">
+                    <div class="prog-wkt-col-order">#</div>
+                    <div class="prog-wkt-col-name">Workout</div>
+                    <div class="prog-wkt-col-exercises">Exercises</div>
+                    <div class="prog-wkt-col-actions"></div>
+                </div>
+                <div class="prog-wkt-table-body" id="programWorkoutsList"></div>
+            </div>
 
             <div class="modal-buttons">
                 <button class="dc-button secondary" onclick="closeProgramDetailModal()">CLOSE</button>
                 <button class="dc-button warning" onclick="deleteCurrentProgram()">DELETE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Exercise PR Detail Modal -->
+    <div class="modal-overlay" id="prDetailModal">
+        <div class="modal-content wide pr-detail-modal">
+            <button class="modal-close-btn" onclick="closePRDetailModal()">×</button>
+
+            <div class="pr-detail-header">
+                <h2 id="prDetailExerciseName">Exercise Name</h2>
+                <div class="pr-detail-subtitle">
+                    <span id="prDetailLastPerformed">Last performed: --</span>
+                    <span class="pr-detail-separator">•</span>
+                    <span id="prDetailTotalSessions">0 sessions total</span>
+                </div>
+            </div>
+
+            <!-- Current Stats -->
+            <div class="pr-detail-stats">
+                <div class="pr-stat-card">
+                    <div class="pr-stat-value" id="prDetailMax">--</div>
+                    <div class="pr-stat-label">Max Weight</div>
+                </div>
+                <div class="pr-stat-card">
+                    <div class="pr-stat-value" id="prDetailBestSet">--</div>
+                    <div class="pr-stat-label">Best Set</div>
+                </div>
+                <div class="pr-stat-card">
+                    <div class="pr-stat-value" id="prDetailEst1RM">--</div>
+                    <div class="pr-stat-label">Est. 1RM</div>
+                </div>
+                <div class="pr-stat-card">
+                    <div class="pr-stat-value" id="prDetailProgress">--</div>
+                    <div class="pr-stat-label">vs Baseline</div>
+                </div>
+            </div>
+
+            <!-- Frequency Section -->
+            <div class="pr-detail-section">
+                <div class="pr-section-header">
+                    <h3>Frequency</h3>
+                    <span class="pr-frequency-badge" id="prDetailFrequency">0× per week avg</span>
+                </div>
+                <div class="pr-frequency-calendar" id="prDetailCalendar"></div>
+            </div>
+
+            <!-- Progress Chart -->
+            <div class="pr-detail-section">
+                <h3>Progress Over Time</h3>
+                <div class="pr-progress-chart" id="prDetailChart"></div>
+            </div>
+
+            <!-- History Section -->
+            <div class="pr-detail-section">
+                <div class="pr-section-header collapsible" onclick="togglePRHistory()">
+                    <h3>Session History</h3>
+                    <span class="collapse-icon" id="prHistoryCollapseIcon">▼</span>
+                </div>
+                <div class="pr-history-table collapsed" id="prDetailHistory">
+                    <div class="pr-history-header">
+                        <div class="pr-hist-col-date">Date</div>
+                        <div class="pr-hist-col-sets">Sets</div>
+                        <div class="pr-hist-col-best">Best Set</div>
+                        <div class="pr-hist-col-volume">Volume</div>
+                    </div>
+                    <div class="pr-history-body" id="prDetailHistoryBody"></div>
+                </div>
+            </div>
+
+            <div class="modal-buttons">
+                <button class="dc-button secondary" onclick="closePRDetailModal()">CLOSE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Weight Edit Modal -->
+    <div class="modal-overlay" id="weightEditModal">
+        <div class="modal-content compact">
+            <h2>UPDATE WEIGHT</h2>
+            <div class="weight-edit-current">
+                <span class="weight-edit-label">Current</span>
+                <span class="weight-edit-value" id="weightEditCurrent">-- lbs</span>
+            </div>
+            <div class="input-group">
+                <label>NEW WEIGHT (lbs)</label>
+                <input type="number" id="newWeightInput" class="dc-input" placeholder="Enter weight" min="50" max="500" step="0.1">
+            </div>
+            <div class="weight-history-section">
+                <label>WEIGHT HISTORY</label>
+                <div class="weight-history-chart" id="weightHistoryChart"></div>
+                <div class="weight-history-list" id="weightHistoryList"></div>
+            </div>
+            <div class="modal-buttons">
+                <button class="dc-button secondary" onclick="closeWeightEditModal()">CANCEL</button>
+                <button class="dc-button" onclick="saveNewWeight()">SAVE</button>
             </div>
         </div>
     </div>
@@ -1251,6 +1440,20 @@
     <div class="toast" id="toast">SAVED!</div>
 
     <!-- Scripts -->
+    <!-- Minimized Workout Bar (appears at bottom when workout is minimized) -->
+    <div class="minimized-workout-bar" id="minimizedWorkoutBar" style="display: none;">
+        <div class="minimized-workout-content" onclick="expandWorkout()">
+            <div class="minimized-workout-info">
+                <span class="minimized-workout-name" id="minimizedWorkoutName">PUSH DAY</span>
+                <span class="minimized-workout-progress" id="minimizedWorkoutProgress">0/6 exercises</span>
+            </div>
+            <div class="minimized-workout-actions">
+                <span class="minimized-workout-timer" id="minimizedTimerDisplay">0:00</span>
+                <button class="minimized-expand-btn">↑</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="js/api.js"></script>
     <script src="js/app.js"></script>

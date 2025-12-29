@@ -96,6 +96,134 @@ const BASELINE_TEST_EXERCISES = [
 // Track swapped exercises during test
 let testExerciseSwaps = {};
 
+// Weight suggestion formulas: maps exercise IDs to baseline references with ratios
+// Ratio is the suggested working weight as a percentage of the baseline 1RM
+const WEIGHT_SUGGESTION_MAP = {
+    // Chest exercises - based on bench press
+    'bench': { baseline: 'bench', ratio: 0.70 },  // 70% of 1RM for working sets
+    'incline_bench': { baseline: 'bench', ratio: 0.60 },
+    'decline_bench': { baseline: 'bench', ratio: 0.65 },
+    'db_bench': { baseline: 'bench', ratio: 0.35 },  // Each dumbbell
+    'db_incline_bench': { baseline: 'bench', ratio: 0.30 },
+    'machine_chest_press': { baseline: 'bench', ratio: 0.65 },
+    'cable_crossover': { baseline: 'bench', ratio: 0.15 },
+    'pec_deck': { baseline: 'bench', ratio: 0.30 },
+    'chest_fly': { baseline: 'bench', ratio: 0.15 },
+
+    // Back exercises - based on deadlift and rows
+    'deadlift': { baseline: 'deadlift', ratio: 0.70 },
+    'sumo_deadlift': { baseline: 'deadlift', ratio: 0.70 },
+    'trap_bar_deadlift': { baseline: 'deadlift', ratio: 0.75 },
+    'rdl': { baseline: 'deadlift', ratio: 0.55 },
+    'rack_pull': { baseline: 'deadlift', ratio: 0.80 },
+    'rows': { baseline: 'rows', ratio: 0.70, fallback: { baseline: 'deadlift', ratio: 0.45 } },
+    'db_row': { baseline: 'rows', ratio: 0.40, fallback: { baseline: 'deadlift', ratio: 0.25 } },
+    'cable_row': { baseline: 'rows', ratio: 0.55, fallback: { baseline: 'deadlift', ratio: 0.35 } },
+    't_bar_row': { baseline: 'rows', ratio: 0.65, fallback: { baseline: 'deadlift', ratio: 0.40 } },
+    'machine_row': { baseline: 'rows', ratio: 0.60, fallback: { baseline: 'deadlift', ratio: 0.35 } },
+    'lat_pulldown': { baseline: 'pullups', ratio: 0.70, fallback: { baseline: 'deadlift', ratio: 0.30 } },
+
+    // Shoulder exercises - based on OHP
+    'ohp': { baseline: 'ohp', ratio: 0.70 },
+    'db_shoulder_press': { baseline: 'ohp', ratio: 0.35 },  // Each dumbbell
+    'arnold_press': { baseline: 'ohp', ratio: 0.30 },
+    'machine_shoulder_press': { baseline: 'ohp', ratio: 0.60 },
+    'push_press': { baseline: 'ohp', ratio: 0.80 },
+    'lateral_raise': { baseline: 'ohp', ratio: 0.10 },
+    'front_raise': { baseline: 'ohp', ratio: 0.10 },
+    'rear_delt_fly': { baseline: 'ohp', ratio: 0.08 },
+    'face_pull': { baseline: 'ohp', ratio: 0.25 },
+
+    // Leg exercises - based on squat
+    'squat': { baseline: 'squat', ratio: 0.70 },
+    'front_squat': { baseline: 'squat', ratio: 0.60 },
+    'hack_squat': { baseline: 'squat', ratio: 0.70 },
+    'legpress': { baseline: 'squat', ratio: 1.20 },  // Leg press is typically higher
+    'goblet_squat': { baseline: 'squat', ratio: 0.25 },
+    'leg_extension': { baseline: 'squat', ratio: 0.25 },
+    'leg_curl': { baseline: 'squat', ratio: 0.20 },
+    'calf_raise': { baseline: 'squat', ratio: 0.35 },
+    'lunges': { baseline: 'squat', ratio: 0.30 },
+    'bulgarian_split_squat': { baseline: 'squat', ratio: 0.25 },
+    'hip_thrust': { baseline: 'squat', ratio: 0.60 },
+
+    // Arm exercises - based on curls and bench (for triceps)
+    'curls': { baseline: 'curls', ratio: 0.70 },
+    'db_curl': { baseline: 'curls', ratio: 0.35 },
+    'hammer_curl': { baseline: 'curls', ratio: 0.35 },
+    'preacher_curl': { baseline: 'curls', ratio: 0.55 },
+    'cable_curl': { baseline: 'curls', ratio: 0.40 },
+    'concentration_curl': { baseline: 'curls', ratio: 0.30 },
+    'tricep_pushdown': { baseline: 'bench', ratio: 0.25 },
+    'overhead_tricep': { baseline: 'bench', ratio: 0.20 },
+    'skull_crushers': { baseline: 'bench', ratio: 0.30 },
+    'close_grip_bench': { baseline: 'bench', ratio: 0.55 },
+
+    // Dip variations - based on bench
+    'dip': { baseline: 'dip', ratio: 0.70, fallback: { baseline: 'bench', ratio: 0.10 } },  // Additional weight
+    'machine_dip': { baseline: 'bench', ratio: 0.55 },
+    'bench_dip': { baseline: 'bench', ratio: 0.15 }  // Additional weight
+};
+
+// Get suggested starting weight for an exercise
+function getSuggestedWeight(exerciseId) {
+    if (!gameState?.baselines) return null;
+
+    // First check if user has a baseline for this exact exercise
+    if (gameState.baselines[exerciseId]) {
+        // Use best set data if available, otherwise calculate from 1RM
+        if (gameState.bestSets && gameState.bestSets[exerciseId]) {
+            return gameState.bestSets[exerciseId].weight;
+        }
+        // Suggest 70% of 1RM for working sets
+        return Math.round(gameState.baselines[exerciseId] * 0.7 / 5) * 5;  // Round to nearest 5
+    }
+
+    // Look up suggestion map
+    const suggestion = WEIGHT_SUGGESTION_MAP[exerciseId];
+    if (!suggestion) return null;
+
+    // Try primary baseline
+    let baseline = gameState.baselines[suggestion.baseline];
+    let ratio = suggestion.ratio;
+
+    // Try fallback if primary not available
+    if (!baseline && suggestion.fallback) {
+        baseline = gameState.baselines[suggestion.fallback.baseline];
+        ratio = suggestion.fallback.ratio;
+    }
+
+    if (!baseline) return null;
+
+    // Calculate and round to nearest 5
+    return Math.round(baseline * ratio / 5) * 5;
+}
+
+// Get suggested reps based on exercise type and user's best set data
+function getSuggestedReps(exerciseId) {
+    // If user has best set data, use those reps
+    if (gameState?.bestSets && gameState.bestSets[exerciseId]) {
+        return gameState.bestSets[exerciseId].reps;
+    }
+
+    // Default suggestion: 8-10 reps for most exercises
+    return 10;
+}
+
+// Check if an exercise is bodyweight
+function isBodyweightExercise(exerciseId) {
+    const exercise = allExercises.find(ex => ex.id === exerciseId);
+    return exercise?.equipment === 'bodyweight';
+}
+
+// List of bodyweight exercise IDs for quick lookup
+const BODYWEIGHT_EXERCISES = [
+    'pushups', 'dips_chest', 'pullups', 'chinups', 'hyperextension',
+    'tricep_dips', 'diamond_pushup', 'bodyweight_squat', 'lunges_bw',
+    'pistol_squat', 'calf_raise_bw', 'plank', 'hanging_leg_raise',
+    'leg_raise', 'ab_wheel', 'mountain_climber', 'burpees'
+];
+
 // Milestone bonuses for exceeding baseline
 const MILESTONE_BONUSES = {
     100: { label: 'MATCHED PR', xp: 50, color: '#00ccff' },
@@ -517,6 +645,8 @@ let currentWorkout = null;
 let currentExercise = null;
 let exerciseSets = {};
 let workoutStartTime = null;
+let workoutMinimized = false;
+let previousScreen = 'menuScreen';
 
 // Calendar state
 let calendarDate = new Date();
@@ -615,7 +745,146 @@ document.addEventListener('DOMContentLoaded', () => {
         initializeDefaultPrograms();
     }, 100);
 
+    // Global ESC key handler for back/close navigation
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            handleEscapeKey();
+        }
+    });
+
 });
+
+// ============================================
+// ESCAPE KEY HANDLER
+// ============================================
+
+function handleEscapeKey() {
+    // Check for active modals (in priority order)
+    const modals = [
+        { id: 'prDetailModal', close: closePRDetailModal },
+        { id: 'weightEditModal', close: closeWeightEditModal },
+        { id: 'setModal', close: closeSetModal },
+        { id: 'workoutSummaryModal', close: closeWorkoutSummary },
+        { id: 'workoutDetailModal', close: closeWorkoutDetail },
+        { id: 'exerciseHistoryModal', close: closeExerciseHistory },
+        { id: 'statHistoryModal', close: closeStatHistory },
+        { id: 'swapExerciseModal', close: closeSwapModal },
+        { id: 'createExerciseModal', close: closeCreateExerciseModal },
+        { id: 'createWorkoutModal', close: closeCreateWorkoutModal },
+        { id: 'createProgramModal', close: closeCreateProgramModal },
+        { id: 'programDetailModal', close: closeProgramDetailModal },
+        { id: 'addWorkoutToProgramModal', close: closeAddWorkoutToProgramModal },
+        { id: 'createTeamModal', close: closeCreateTeamModal },
+        { id: 'joinTeamModal', close: closeJoinTeamModal },
+        { id: 'createChallengeModal', close: closeCreateChallengeModal },
+        { id: 'teamDetailModal', close: closeTeamDetail },
+        { id: 'coachImportModal', close: closeCoachImport },
+        { id: 'achievementPopup', close: closeAchievement }
+    ];
+
+    // Check each modal
+    for (const modal of modals) {
+        const el = document.getElementById(modal.id);
+        if (el && el.classList.contains('active')) {
+            modal.close();
+            return;
+        }
+    }
+
+    // Check for dropdown/picker that might be open
+    const iconPicker = document.getElementById('iconPickerDropdown');
+    if (iconPicker && iconPicker.classList.contains('active')) {
+        iconPicker.classList.remove('active');
+        return;
+    }
+
+    // No modal open, handle screen navigation
+    const activeScreen = document.querySelector('.screen.active');
+    if (!activeScreen) return;
+
+    const screenId = activeScreen.id;
+
+    // Define back navigation map
+    switch (screenId) {
+        case 'workoutScreen':
+            // Don't allow ESC to exit active workout easily - could lose data
+            break;
+        case 'menuScreen':
+            showScreen('selectScreen');
+            break;
+        case 'profileScreen':
+            showScreen('menuScreen');
+            break;
+        case 'testScreen':
+            showScreen('selectScreen');
+            break;
+        case 'coachViewScreen':
+            showScreen('selectScreen');
+            break;
+        case 'createScreen':
+            showScreen('authScreen');
+            break;
+        case 'authScreen':
+            // Already at root, do nothing
+            break;
+        case 'selectScreen':
+            // Character select is root after auth
+            break;
+        default:
+            // Default: try to go to menu
+            if (gameState) {
+                showScreen('menuScreen');
+            }
+    }
+}
+
+// ============================================
+// AVATAR UPLOAD
+// ============================================
+
+let customAvatarData = null;
+
+function triggerAvatarUpload() {
+    document.getElementById('avatarFileInput').click();
+}
+
+function handleAvatarUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+        showToast('Please select an image file');
+        return;
+    }
+
+    // Validate file size (max 500KB)
+    if (file.size > 500 * 1024) {
+        showToast('Image too large (max 500KB)');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        customAvatarData = e.target.result;
+
+        // Update preview
+        const preview = document.getElementById('avatarUploadPreview');
+        preview.innerHTML = `<img src="${customAvatarData}" alt="Custom avatar">`;
+
+        // Select this avatar option
+        document.querySelectorAll('.avatar-option').forEach(o => o.classList.remove('selected'));
+        document.querySelector('.avatar-upload').classList.add('selected');
+    };
+    reader.readAsDataURL(file);
+}
+
+function getAvatarHTML(avatar, customAvatar = null) {
+    if (avatar === 'custom' && customAvatar) {
+        return `<img src="${customAvatar}" alt="Avatar" class="custom-avatar-img">`;
+    }
+    return avatarSVGs[avatar] || avatarSVGs[1];
+}
 
 // ============================================
 // SAVE/LOAD SYSTEM
@@ -916,7 +1185,7 @@ function renderCharacterSlots() {
             return `
                 <div class="character-slot" onclick="selectCharacter(${index})">
                     <button class="delete-btn" onclick="event.stopPropagation(); deleteCharacter(${index})">×</button>
-                    <div class="slot-avatar">${avatarSVGs[slot.avatar] || avatarSVGs[1]}</div>
+                    <div class="slot-avatar">${getAvatarHTML(slot.avatar, slot.customAvatar)}</div>
                     <div class="slot-name">${slot.playerName}</div>
                     <div class="slot-level">LEVEL ${slot.level}</div>
                     <div class="slot-stats">${slot.totalWorkouts} workouts</div>
@@ -969,7 +1238,8 @@ function deleteCharacter(index) {
 function startGame() {
     const nameInput = document.getElementById('playerName');
     const selectedAvatar = document.querySelector('.avatar-option.selected');
-    const avatarId = selectedAvatar ? parseInt(selectedAvatar.dataset.avatar) : 1;
+    const avatarValue = selectedAvatar ? selectedAvatar.dataset.avatar : '1';
+    const avatarId = avatarValue === 'custom' ? 'custom' : parseInt(avatarValue);
 
     // Get character stats
     const heightFeet = parseInt(document.getElementById('heightFeet').value) || 0;
@@ -984,6 +1254,7 @@ function startGame() {
         name: nameInput.value.toUpperCase() || 'PLAYER_01',
         playerName: nameInput.value.toUpperCase() || 'PLAYER_01', // Keep for backwards compat
         avatar: avatarId,
+        customAvatar: avatarId === 'custom' ? customAvatarData : null,
         height: totalHeight,
         heightFeet: heightFeet,
         heightInches: heightInches,
@@ -1035,17 +1306,75 @@ function renderStrengthTest() {
                     </div>
                     <div class="test-exercise-tier" id="testTier_${index}">TIER ${ex.tier} <span class="multiplier">(${multiplierText} XP)</span></div>
                 </div>
-                <div class="test-exercise-input">
-                    <input type="number" id="test_${index}" placeholder="---" min="0" max="2000"
-                           class="dc-input numeric" inputmode="numeric"
-                           onchange="updateTestProgress()" oninput="updateTestRowStyle(${index})">
-                    <span class="unit-label">lbs</span>
+                <div class="test-exercise-inputs">
+                    <div class="test-input-toggle">
+                        <button class="test-toggle-btn active" data-type="1rm" onclick="toggleTestInputType(${index}, '1rm')">1RM</button>
+                        <button class="test-toggle-btn" data-type="best" onclick="toggleTestInputType(${index}, 'best')">Best Set</button>
+                    </div>
+                    <div class="test-input-fields">
+                        <div class="test-1rm-input" id="test1rm_${index}">
+                            <input type="number" id="test_${index}" placeholder="---" min="0" max="2000"
+                                   class="dc-input numeric" inputmode="numeric"
+                                   onchange="updateTestProgress()" oninput="updateTestRowStyle(${index})">
+                            <span class="unit-label">lbs</span>
+                        </div>
+                        <div class="test-best-input" id="testBest_${index}" style="display: none;">
+                            <input type="number" id="testBestWeight_${index}" placeholder="wt" min="0" max="2000"
+                                   class="dc-input numeric small" inputmode="numeric"
+                                   onchange="updateTestProgress(); calculateEstimated1RM(${index})" oninput="updateTestRowStyle(${index})">
+                            <span class="test-x">×</span>
+                            <input type="number" id="testBestReps_${index}" placeholder="reps" min="1" max="100"
+                                   class="dc-input numeric small" inputmode="numeric"
+                                   onchange="updateTestProgress(); calculateEstimated1RM(${index})" oninput="updateTestRowStyle(${index})">
+                            <span class="test-est-1rm" id="testEst1rm_${index}"></span>
+                        </div>
+                    </div>
                 </div>
             </div>
         `;
     }).join('');
 
     updateTestProgress();
+}
+
+function toggleTestInputType(index, type) {
+    const row = document.querySelector(`.test-exercise-row[data-index="${index}"]`);
+    if (!row) return;
+
+    // Toggle buttons
+    row.querySelectorAll('.test-toggle-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.type === type);
+    });
+
+    // Toggle input visibility
+    const input1rm = document.getElementById(`test1rm_${index}`);
+    const inputBest = document.getElementById(`testBest_${index}`);
+
+    if (type === '1rm') {
+        input1rm.style.display = 'flex';
+        inputBest.style.display = 'none';
+    } else {
+        input1rm.style.display = 'none';
+        inputBest.style.display = 'flex';
+    }
+
+    updateTestRowStyle(index);
+}
+
+function calculateEstimated1RM(index) {
+    const weight = parseFloat(document.getElementById(`testBestWeight_${index}`)?.value) || 0;
+    const reps = parseInt(document.getElementById(`testBestReps_${index}`)?.value) || 0;
+    const estDisplay = document.getElementById(`testEst1rm_${index}`);
+
+    if (weight > 0 && reps > 0 && estDisplay) {
+        // Epley formula: 1RM = weight × (1 + reps/30)
+        const estimated1RM = Math.round(weight * (1 + reps / 30));
+        estDisplay.textContent = `≈ ${estimated1RM} 1RM`;
+        estDisplay.style.display = 'inline';
+    } else if (estDisplay) {
+        estDisplay.textContent = '';
+        estDisplay.style.display = 'none';
+    }
 }
 
 function openSwapModal(exerciseIndex) {
@@ -1154,22 +1483,64 @@ function closeSwapModal() {
 }
 
 function updateTestRowStyle(index) {
-    const input = document.getElementById(`test_${index}`);
-    const row = input?.closest('.test-exercise-row');
-    if (row) {
-        if (input.value && parseInt(input.value) > 0) {
-            row.classList.add('has-value');
-        } else {
-            row.classList.remove('has-value');
+    const row = document.querySelector(`.test-exercise-row[data-index="${index}"]`);
+    if (!row) return;
+
+    // Check if 1RM or best set mode
+    const is1rmMode = document.getElementById(`test1rm_${index}`)?.style.display !== 'none';
+
+    let hasValue = false;
+    if (is1rmMode) {
+        const input = document.getElementById(`test_${index}`);
+        hasValue = input && input.value && parseInt(input.value) > 0;
+    } else {
+        const weight = document.getElementById(`testBestWeight_${index}`);
+        const reps = document.getElementById(`testBestReps_${index}`);
+        hasValue = weight && reps && parseInt(weight.value) > 0 && parseInt(reps.value) > 0;
+    }
+
+    if (hasValue) {
+        row.classList.add('has-value');
+    } else {
+        row.classList.remove('has-value');
+    }
+}
+
+function getTestValue(index) {
+    // Returns the 1RM value (either direct or calculated from best set)
+    const is1rmMode = document.getElementById(`test1rm_${index}`)?.style.display !== 'none';
+
+    if (is1rmMode) {
+        return parseInt(document.getElementById(`test_${index}`)?.value) || 0;
+    } else {
+        const weight = parseFloat(document.getElementById(`testBestWeight_${index}`)?.value) || 0;
+        const reps = parseInt(document.getElementById(`testBestReps_${index}`)?.value) || 0;
+        if (weight > 0 && reps > 0) {
+            // Epley formula: 1RM = weight × (1 + reps/30)
+            return Math.round(weight * (1 + reps / 30));
+        }
+        return 0;
+    }
+}
+
+function getBestSetData(index) {
+    // Returns the best set data if entered, otherwise null
+    const is1rmMode = document.getElementById(`test1rm_${index}`)?.style.display !== 'none';
+
+    if (!is1rmMode) {
+        const weight = parseFloat(document.getElementById(`testBestWeight_${index}`)?.value) || 0;
+        const reps = parseInt(document.getElementById(`testBestReps_${index}`)?.value) || 0;
+        if (weight > 0 && reps > 0) {
+            return { weight, reps };
         }
     }
+    return null;
 }
 
 function updateTestProgress() {
     let filled = 0;
     for (let i = 0; i < BASELINE_TEST_EXERCISES.length; i++) {
-        const input = document.getElementById(`test_${i}`);
-        if (input && input.value && parseInt(input.value) > 0) {
+        if (getTestValue(i) > 0) {
             filled++;
         }
     }
@@ -1183,29 +1554,35 @@ function updateTestProgress() {
 function completeStrengthTest() {
     // Collect baseline values (handling swapped exercises)
     const baselines = {};
+    const bestSets = {};
     const customTiers = {};
 
     BASELINE_TEST_EXERCISES.forEach((ex, index) => {
-        const input = document.getElementById(`test_${index}`);
-        const val = parseInt(input?.value) || 0;
+        const val = getTestValue(index);
+        const bestSet = getBestSetData(index);
 
         if (val > 0) {
             // Check if this exercise was swapped
             const swap = testExerciseSwaps[index];
-            if (swap) {
-                baselines[swap.id] = val;
-                // Store custom tier if different from default
-                if (swap.tier !== ex.tier) {
-                    customTiers[swap.id] = swap.tier;
-                }
-            } else {
-                baselines[ex.id] = val;
+            const exerciseId = swap ? swap.id : ex.id;
+
+            baselines[exerciseId] = val;
+
+            // Store best set data if entered
+            if (bestSet) {
+                bestSets[exerciseId] = bestSet;
+            }
+
+            // Store custom tier if different from default
+            if (swap && swap.tier !== ex.tier) {
+                customTiers[exerciseId] = swap.tier;
             }
         }
     });
 
     // Store in gameState
     gameState.baselines = baselines;
+    gameState.bestSets = bestSets; // Store best set data for weight suggestions
     gameState.customTiers = customTiers; // Store any custom tier assignments
     gameState.testCompletedAt = new Date().toISOString();
     gameState.achievedMilestones = {};
@@ -1308,6 +1685,73 @@ function backToCharacterSelect() {
 function showScreen(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(screenId).classList.add('active');
+
+    // Track previous screen for workout minimize feature
+    if (screenId !== 'workoutScreen') {
+        previousScreen = screenId;
+    }
+}
+
+// ============================================
+// WORKOUT MINIMIZE/EXPAND
+// ============================================
+
+function minimizeWorkout() {
+    if (!currentWorkout) return;
+
+    workoutMinimized = true;
+    document.body.classList.add('workout-minimized');
+
+    // Update minimized bar info
+    updateMinimizedWorkoutBar();
+
+    // Show minimized bar
+    document.getElementById('minimizedWorkoutBar').style.display = 'block';
+
+    // Go to previous screen (or menu)
+    showScreen(previousScreen);
+}
+
+function expandWorkout() {
+    if (!currentWorkout) return;
+
+    workoutMinimized = false;
+    document.body.classList.remove('workout-minimized');
+
+    // Hide minimized bar
+    document.getElementById('minimizedWorkoutBar').style.display = 'none';
+
+    // Show workout screen
+    showScreen('workoutScreen');
+}
+
+function updateMinimizedWorkoutBar() {
+    if (!currentWorkout) return;
+
+    // Update workout name
+    document.getElementById('minimizedWorkoutName').textContent = currentWorkout.name;
+
+    // Calculate progress
+    const totalExercises = currentWorkout.exercises.length;
+    const completedExercises = currentWorkout.exercises.filter(ex => {
+        const sets = exerciseSets[ex.id] || [];
+        return sets.length > 0;
+    }).length;
+
+    document.getElementById('minimizedWorkoutProgress').textContent =
+        `${completedExercises}/${totalExercises} exercises`;
+
+    // Update timer display in minimized bar
+    const minimizedTimer = document.getElementById('minimizedTimerDisplay');
+    if (minimizedTimer) {
+        minimizedTimer.textContent = document.getElementById('timerDisplay')?.textContent || '0:00';
+    }
+}
+
+function hideMinimizedWorkoutBar() {
+    workoutMinimized = false;
+    document.body.classList.remove('workout-minimized');
+    document.getElementById('minimizedWorkoutBar').style.display = 'none';
 }
 
 // ============================================
@@ -1350,7 +1794,7 @@ function updateMenuStats() {
     document.getElementById('totalWeight').textContent = formatNumber(gameState.totalWeight);
 
     // Update avatar
-    document.getElementById('menuAvatar').innerHTML = avatarSVGs[gameState.avatar] || avatarSVGs[1];
+    document.getElementById('menuAvatar').innerHTML = getAvatarHTML(gameState.avatar, gameState.customAvatar);
 }
 
 function formatNumber(num) {
@@ -1414,28 +1858,36 @@ function showStatHistory(type) {
             </div>
         `;
 
-        // List of workouts
-        listHTML = history.map(w => {
+        // Table header + rows
+        const tableHeader = `
+            <div class="stat-table-header">
+                <div class="stat-col-name">Workout</div>
+                <div class="stat-col-date">Date</div>
+                <div class="stat-col-ex">Ex</div>
+                <div class="stat-col-sets">Sets</div>
+                <div class="stat-col-vol">Volume</div>
+            </div>
+        `;
+
+        const rows = history.slice(0, 20).map(w => {
             const date = new Date(w.date);
-            const dateStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             const exerciseCount = w.exercises ? w.exercises.length : 0;
             const totalSets = w.totalSets || 0;
             const volume = w.totalVolume || 0;
 
             return `
-                <div class="stat-history-item" onclick="showWorkoutDetail('${w.id || w.date}')">
-                    <div class="history-item-main">
-                        <div class="history-item-name">${w.name || 'Workout'}</div>
-                        <div class="history-item-date">${dateStr}</div>
-                    </div>
-                    <div class="history-item-stats">
-                        <span>${exerciseCount} exercises</span>
-                        <span>${totalSets} sets</span>
-                        <span>${formatNumber(volume)} lbs</span>
-                    </div>
+                <div class="stat-table-row" onclick="showWorkoutDetail('${w.id || w.date}')">
+                    <div class="stat-col-name">${w.name || 'Workout'}</div>
+                    <div class="stat-col-date">${dateStr}</div>
+                    <div class="stat-col-ex">${exerciseCount}</div>
+                    <div class="stat-col-sets">${totalSets}</div>
+                    <div class="stat-col-vol">${formatNumber(volume)}</div>
                 </div>
             `;
         }).join('');
+
+        listHTML = tableHeader + `<div class="stat-table-body">${rows}</div>`;
 
     } else if (type === 'sets') {
         titleEl.textContent = 'SETS HISTORY';
@@ -1462,28 +1914,30 @@ function showStatHistory(type) {
             </div>
         `;
 
-        // List showing sets per workout
-        listHTML = history.map(w => {
+        // Table header + rows for sets
+        const tableHeader = `
+            <div class="stat-table-header sets-view">
+                <div class="stat-col-name">Workout</div>
+                <div class="stat-col-date">Date</div>
+                <div class="stat-col-sets">Sets</div>
+            </div>
+        `;
+
+        const rows = history.slice(0, 20).map(w => {
             const date = new Date(w.date);
-            const dateStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             const sets = w.totalSets || 0;
 
-            // Break down by exercise
-            const exerciseBreakdown = w.exercises ? w.exercises.map(ex =>
-                `${ex.name}: ${ex.sets ? ex.sets.length : 0}`
-            ).join(', ') : '';
-
             return `
-                <div class="stat-history-item">
-                    <div class="history-item-main">
-                        <div class="history-item-name">${w.name || 'Workout'}</div>
-                        <div class="history-item-date">${dateStr}</div>
-                    </div>
-                    <div class="history-item-value">${sets} sets</div>
-                    ${exerciseBreakdown ? `<div class="history-item-breakdown">${exerciseBreakdown}</div>` : ''}
+                <div class="stat-table-row sets-view">
+                    <div class="stat-col-name">${w.name || 'Workout'}</div>
+                    <div class="stat-col-date">${dateStr}</div>
+                    <div class="stat-col-sets highlight">${sets}</div>
                 </div>
             `;
         }).join('');
+
+        listHTML = tableHeader + `<div class="stat-table-body">${rows}</div>`;
 
     } else if (type === 'volume') {
         titleEl.textContent = 'VOLUME HISTORY';
@@ -1510,24 +1964,33 @@ function showStatHistory(type) {
             </div>
         `;
 
-        // List showing volume per workout
-        listHTML = history.map(w => {
+        // Table header + rows for volume
+        const tableHeader = `
+            <div class="stat-table-header volume-view">
+                <div class="stat-col-name">Workout</div>
+                <div class="stat-col-date">Date</div>
+                <div class="stat-col-sets">Sets</div>
+                <div class="stat-col-vol">Volume</div>
+            </div>
+        `;
+
+        const rows = history.slice(0, 20).map(w => {
             const date = new Date(w.date);
-            const dateStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             const volume = w.totalVolume || 0;
             const sets = w.totalSets || 0;
 
             return `
-                <div class="stat-history-item">
-                    <div class="history-item-main">
-                        <div class="history-item-name">${w.name || 'Workout'}</div>
-                        <div class="history-item-date">${dateStr}</div>
-                    </div>
-                    <div class="history-item-value">${formatNumber(volume)} lbs</div>
-                    <div class="history-item-sub">${sets} sets</div>
+                <div class="stat-table-row volume-view">
+                    <div class="stat-col-name">${w.name || 'Workout'}</div>
+                    <div class="stat-col-date">${dateStr}</div>
+                    <div class="stat-col-sets">${sets}</div>
+                    <div class="stat-col-vol highlight">${formatNumber(volume)}</div>
                 </div>
             `;
         }).join('');
+
+        listHTML = tableHeader + `<div class="stat-table-body">${rows}</div>`;
     }
 
     summaryEl.innerHTML = summaryHTML;
@@ -1607,13 +2070,11 @@ function renderExercises() {
                 processedIds.add(groupEx.id);
 
                 html += `
-                    <div class="exercise-item superset-exercise ${groupCompleted ? 'completed' : ''}"
+                    <div class="exercise-table-row superset-exercise ${groupCompleted ? 'completed' : ''}"
                          onclick="${supersetMode ? `toggleSupersetSelection('${groupEx.id}')` : `openSetModal('${groupEx.id}')`}">
-                        <div>
-                            <div class="exercise-name">${groupEx.name}</div>
-                            <div class="exercise-sets">${groupSets.length} / ${groupEx.targetSets} sets</div>
-                        </div>
-                        <div class="exercise-status">${groupCompleted ? 'COMPLETE' : 'TAP TO LOG'}</div>
+                        <div class="ex-col-name">${groupEx.name}</div>
+                        <div class="ex-col-sets">${groupSets.length}/${groupEx.targetSets}</div>
+                        <div class="ex-col-status ${groupCompleted ? 'complete' : ''}">${groupCompleted ? 'COMPLETE' : 'TAP TO LOG'}</div>
                     </div>
                 `;
             });
@@ -1624,16 +2085,19 @@ function renderExercises() {
             const isSelected = supersetSelections.includes(ex.id);
             processedIds.add(ex.id);
 
+            const statusText = supersetMode
+                ? (isSelected ? 'SELECTED' : 'TAP TO SELECT')
+                : (completed ? 'COMPLETE' : 'TAP TO LOG');
+            const statusClass = supersetMode
+                ? (isSelected ? 'selected' : '')
+                : (completed ? 'complete' : '');
+
             html += `
-                <div class="exercise-item ${completed ? 'completed' : ''} ${isSelected ? 'superset-selected' : ''}"
+                <div class="exercise-table-row ${completed ? 'completed' : ''} ${isSelected ? 'superset-selected' : ''}"
                      onclick="${supersetMode ? `toggleSupersetSelection('${ex.id}')` : `openSetModal('${ex.id}')`}">
-                    <div>
-                        <div class="exercise-name">${ex.name}</div>
-                        <div class="exercise-sets">${sets.length} / ${ex.targetSets} sets</div>
-                    </div>
-                    <div class="exercise-status">
-                        ${supersetMode ? (isSelected ? 'SELECTED' : 'TAP TO SELECT') : (completed ? 'COMPLETE' : 'TAP TO LOG')}
-                    </div>
+                    <div class="ex-col-name">${ex.name}</div>
+                    <div class="ex-col-sets">${sets.length}/${ex.targetSets}</div>
+                    <div class="ex-col-status ${statusClass}">${statusText}</div>
                 </div>
             `;
         }
@@ -1721,15 +2185,43 @@ function openSetModal(exerciseId) {
 
     // Reset set type to normal
     currentSetType = 'normal';
-    document.querySelectorAll('.set-type-btn').forEach(btn => {
+    document.querySelectorAll('.set-type-btn, .set-pill').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.type === 'normal');
     });
+
+    // Check if bodyweight exercise and toggle mode
+    const isBodyweight = isBodyweightExercise(exerciseId);
+    const primarySection = document.querySelector('.primary-input-section');
+    const weightLabel = document.querySelector('.primary-input-group:first-child label');
+    const weightInput = document.getElementById('weightInput');
+
+    if (isBodyweight) {
+        primarySection?.classList.add('bodyweight-mode');
+        if (weightLabel) weightLabel.textContent = '+WEIGHT';
+        if (weightInput) {
+            weightInput.value = 0;  // Default to 0 additional weight
+            weightInput.placeholder = '0';
+        }
+    } else {
+        primarySection?.classList.remove('bodyweight-mode');
+        if (weightLabel) weightLabel.textContent = 'WEIGHT';
+    }
+
+    // Apply weight suggestions for first-time exercises
+    applyWeightSuggestion(exerciseId);
 
     // Show previous workout data
     showPreviousWorkoutData();
 
-    // Update 1RM estimate
-    updateOrmEstimate();
+    // Update 1RM estimate (hide for bodyweight)
+    if (isBodyweight) {
+        const ormDisplay = document.querySelector('.orm-compact');
+        if (ormDisplay) ormDisplay.style.display = 'none';
+    } else {
+        const ormDisplay = document.querySelector('.orm-compact');
+        if (ormDisplay) ormDisplay.style.display = 'flex';
+        updateOrmEstimate();
+    }
 
     // Reset plate calculator
     document.getElementById('plateCalculator').style.display = 'none';
@@ -1741,6 +2233,49 @@ function openSetModal(exerciseId) {
     document.getElementById('weightInput').addEventListener('input', updateOrmEstimate);
     document.getElementById('repsInput').addEventListener('input', updateOrmEstimate);
     document.getElementById('weightInput').addEventListener('input', updatePlateCalculator);
+}
+
+function applyWeightSuggestion(exerciseId) {
+    const weightInput = document.getElementById('weightInput');
+    const repsInput = document.getElementById('repsInput');
+
+    // Check if user has previous sets for this exercise in workout history
+    const hasPreviousSets = gameState.workoutHistory?.some(workout =>
+        workout.exercises?.some(ex => ex.id === exerciseId && ex.sets?.length > 0)
+    );
+
+    // Check if user already logged sets this session
+    const hasCurrentSets = (exerciseSets[exerciseId] || []).length > 0;
+
+    // If no previous or current sets, apply weight suggestion
+    if (!hasPreviousSets && !hasCurrentSets) {
+        const suggestedWeight = getSuggestedWeight(exerciseId);
+        const suggestedReps = getSuggestedReps(exerciseId);
+
+        if (suggestedWeight && suggestedWeight > 0) {
+            weightInput.value = suggestedWeight;
+        }
+
+        if (suggestedReps) {
+            repsInput.value = suggestedReps;
+        }
+    } else if (hasCurrentSets) {
+        // Use last set values from this session
+        const lastSet = exerciseSets[exerciseId][exerciseSets[exerciseId].length - 1];
+        weightInput.value = lastSet.weight;
+        repsInput.value = lastSet.reps;
+    } else if (hasPreviousSets) {
+        // Use last set values from history
+        for (const workout of gameState.workoutHistory) {
+            const exerciseEntry = workout.exercises?.find(ex => ex.id === exerciseId);
+            if (exerciseEntry && exerciseEntry.sets?.length > 0) {
+                const lastSet = exerciseEntry.sets[exerciseEntry.sets.length - 1];
+                weightInput.value = lastSet.weight;
+                repsInput.value = lastSet.reps;
+                break;
+            }
+        }
+    }
 }
 
 function closeSetModal() {
@@ -1885,6 +2420,11 @@ function logSet() {
     renderLoggedSets();
     renderExercises();
     showXPPopup(xpGain);
+
+    // Update minimized bar if workout is minimized
+    if (workoutMinimized) {
+        updateMinimizedWorkoutBar();
+    }
 
     // If in a superset, prompt for next exercise
     if (nextExerciseInSuperset) {
@@ -2059,7 +2599,15 @@ function setTimer(seconds) {
 function updateTimerDisplay() {
     const mins = Math.floor(restTimeRemaining / 60);
     const secs = restTimeRemaining % 60;
-    document.getElementById('timerDisplay').textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+    const timeStr = `${mins}:${secs.toString().padStart(2, '0')}`;
+
+    document.getElementById('timerDisplay').textContent = timeStr;
+
+    // Also update minimized workout bar timer
+    const minimizedTimer = document.getElementById('minimizedTimerDisplay');
+    if (minimizedTimer) {
+        minimizedTimer.textContent = timeStr;
+    }
 
     // Visual feedback when timer is low
     const display = document.getElementById('timerDisplay');
@@ -2097,7 +2645,8 @@ function playTimerSound() {
 
 function selectSetType(type) {
     currentSetType = type;
-    document.querySelectorAll('.set-type-btn').forEach(btn => {
+    // Support both old .set-type-btn and new .set-pill classes
+    document.querySelectorAll('.set-type-btn, .set-pill').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.type === type);
     });
 }
@@ -2168,8 +2717,11 @@ function updateOrmEstimate() {
 // PLATE CALCULATOR
 // ============================================
 
-const PLATES = [45, 35, 25, 10, 5, 2.5];
-const BAR_WEIGHT = 45;
+const PLATES_LBS = [45, 35, 25, 10, 5, 2.5];
+const PLATES_KG = [25, 20, 15, 10, 5, 2.5, 1.25];
+const BAR_WEIGHT_LBS = 45;
+const BAR_WEIGHT_KG = 20;
+let currentPlateUnit = 'lbs';
 
 function togglePlateCalculator() {
     const calc = document.getElementById('plateCalculator');
@@ -2179,9 +2731,39 @@ function togglePlateCalculator() {
     }
 }
 
+function setPlateUnit(unit) {
+    currentPlateUnit = unit;
+    document.querySelectorAll('.plate-unit-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.unit === unit);
+    });
+    updatePlateCalculator();
+}
+
 function updatePlateCalculator() {
-    const weight = parseInt(document.getElementById('weightInput').value) || 0;
-    const perSide = (weight - BAR_WEIGHT) / 2;
+    const weightInput = parseFloat(document.getElementById('weightInput').value) || 0;
+
+    // Convert weight if needed
+    let weight = weightInput;
+    let barWeight, plates, unitLabel;
+
+    if (currentPlateUnit === 'kg') {
+        weight = weightInput * 0.453592; // Convert lbs to kg
+        barWeight = BAR_WEIGHT_KG;
+        plates = PLATES_KG;
+        unitLabel = 'kg';
+    } else {
+        barWeight = BAR_WEIGHT_LBS;
+        plates = PLATES_LBS;
+        unitLabel = 'lb';
+    }
+
+    const perSide = (weight - barWeight) / 2;
+
+    // Update bar weight display
+    const barDisplay = document.getElementById('barWeightDisplay');
+    if (barDisplay) {
+        barDisplay.textContent = `${barWeight} ${unitLabel}`;
+    }
 
     const plateVisual = document.getElementById('plateVisual');
     const plateList = document.getElementById('plateList');
@@ -2196,32 +2778,36 @@ function updatePlateCalculator() {
     let remaining = perSide;
     const platesNeeded = [];
 
-    for (const plate of PLATES) {
-        while (remaining >= plate) {
+    for (const plate of plates) {
+        while (remaining >= plate - 0.01) { // Small tolerance for floating point
             platesNeeded.push(plate);
             remaining -= plate;
         }
     }
 
-    // Visual representation
-    const colors = {
-        45: '#e74c3c',
-        35: '#f1c40f',
-        25: '#2ecc71',
-        10: '#3498db',
-        5: '#9b59b6',
-        2.5: '#95a5a6'
+    // Visual representation with Olympic colors
+    const colorsLbs = {
+        45: '#e74c3c', 35: '#f1c40f', 25: '#2ecc71',
+        10: '#3498db', 5: '#9b59b6', 2.5: '#95a5a6'
     };
+    const colorsKg = {
+        25: '#e74c3c', 20: '#3498db', 15: '#f1c40f',
+        10: '#2ecc71', 5: '#ffffff', 2.5: '#e74c3c', 1.25: '#95a5a6'
+    };
+    const colors = currentPlateUnit === 'kg' ? colorsKg : colorsLbs;
 
-    plateVisual.innerHTML = platesNeeded.map(p =>
-        `<div class="plate-disc" style="background: ${colors[p]}; height: ${20 + p}px;">${p}</div>`
-    ).join('') || '<div class="no-plates">Bar only</div>';
+    plateVisual.innerHTML = platesNeeded.map(p => {
+        const height = currentPlateUnit === 'kg' ? 20 + p * 1.5 : 20 + p * 0.8;
+        const textColor = (p === 5 && currentPlateUnit === 'kg') ? '#000' : '#fff';
+        return `<div class="plate-disc" style="background: ${colors[p] || '#666'}; height: ${height}px; color: ${textColor};">${p}</div>`;
+    }).join('') || '<div class="no-plates">Bar only</div>';
 
     // Text list
     const plateCounts = {};
     platesNeeded.forEach(p => plateCounts[p] = (plateCounts[p] || 0) + 1);
     plateList.innerHTML = Object.entries(plateCounts)
-        .map(([plate, count]) => `<span class="plate-count">${count}×${plate}lb</span>`)
+        .sort((a, b) => parseFloat(b[0]) - parseFloat(a[0]))
+        .map(([plate, count]) => `<span class="plate-count">${count}×${plate}${unitLabel}</span>`)
         .join(' ');
 }
 
@@ -2325,11 +2911,11 @@ function closeExerciseHistory() {
 function toggleWorkoutNotes() {
     const notes = document.getElementById('workoutNotes');
     const toggle = document.getElementById('notesToggle');
-    if (notes.style.display === 'none') {
-        notes.style.display = 'block';
+    if (notes.classList.contains('hidden')) {
+        notes.classList.remove('hidden');
         toggle.textContent = '▲';
     } else {
-        notes.style.display = 'none';
+        notes.classList.add('hidden');
         toggle.textContent = '▼';
     }
 }
@@ -2424,6 +3010,8 @@ function showWorkoutSummary(duration, totalSets, totalVolume, xpEarned, exercise
 function closeWorkoutSummary() {
     document.getElementById('workoutSummaryModal').classList.remove('active');
     workoutPRsHit = [];
+    currentWorkout = null;
+    exerciseSets = {};
     showScreen('menuScreen');
 }
 
@@ -2548,6 +3136,9 @@ async function finishWorkout() {
     // Stop rest timer
     stopRestTimer();
 
+    // Hide minimized workout bar if visible
+    hideMinimizedWorkoutBar();
+
     // Save to backend if online
     if (isOnlineMode) {
         try {
@@ -2572,9 +3163,10 @@ async function finishWorkout() {
     showWorkoutSummary(duration, totalSets, totalVolume, xpEarned + bonusXP, exerciseData);
 
     // Clear workout notes
-    if (document.getElementById('workoutNotes')) {
-        document.getElementById('workoutNotes').value = '';
-        document.getElementById('workoutNotes').style.display = 'none';
+    const notesEl = document.getElementById('workoutNotes');
+    if (notesEl) {
+        notesEl.value = '';
+        notesEl.classList.add('hidden');
     }
 }
 
@@ -2675,6 +3267,7 @@ function showDayWorkouts(dateStr) {
 
 function renderHistoryList() {
     const container = document.getElementById('historyList');
+    if (!container) return;
 
     if (!gameState.workoutHistory || gameState.workoutHistory.length === 0) {
         container.innerHTML = `
@@ -2686,22 +3279,43 @@ function renderHistoryList() {
         return;
     }
 
-    container.innerHTML = gameState.workoutHistory.slice(0, 10).map(workout => {
+    // Group workouts by type to find previous sessions
+    const workoutsByType = {};
+    gameState.workoutHistory.forEach(w => {
+        const key = w.type || w.name;
+        if (!workoutsByType[key]) workoutsByType[key] = [];
+        workoutsByType[key].push(w);
+    });
+
+    container.innerHTML = gameState.workoutHistory.slice(0, 10).map((workout, index) => {
         const date = new Date(workout.date);
         const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        const timeStr = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+        // Find previous session of same type
+        const key = workout.type || workout.name;
+        const sameTypeWorkouts = workoutsByType[key] || [];
+        const currentIndex = sameTypeWorkouts.findIndex(w => w.id === workout.id);
+        const previousSession = currentIndex < sameTypeWorkouts.length - 1 ? sameTypeWorkouts[currentIndex + 1] : null;
+
+        // Calculate volume difference
+        let vsLastHtml = '<span class="progress-badge neutral">--</span>';
+        if (previousSession && previousSession.totalVolume > 0) {
+            const diff = workout.totalVolume - previousSession.totalVolume;
+            const pctChange = Math.round((diff / previousSession.totalVolume) * 100);
+            const badgeClass = pctChange > 0 ? 'positive' : pctChange < 0 ? 'negative' : 'neutral';
+            const sign = pctChange > 0 ? '+' : '';
+            vsLastHtml = `<span class="progress-badge ${badgeClass}">${sign}${pctChange}%</span>`;
+        }
+
+        const typeBadge = workout.type ? `<span class="workout-type-badge ${workout.type}">${workout.type}</span>` : '';
 
         return `
-            <div class="history-item" onclick="showWorkoutDetail('${workout.id}')">
-                <div class="history-item-header">
-                    <span class="history-item-type ${workout.type}">${workout.name}</span>
-                    <span class="history-item-date">${dateStr} ${timeStr}</span>
-                </div>
-                <div class="history-item-stats">
-                    <div><span>${workout.totalSets}</span> sets</div>
-                    <div><span>${formatNumber(workout.totalVolume)}</span> lbs</div>
-                    <div><span>+${workout.xpEarned}</span> XP</div>
-                </div>
+            <div class="history-table-row" onclick="showWorkoutDetail('${workout.id}')">
+                <div class="hist-col-workout">${workout.name}${typeBadge}</div>
+                <div class="hist-col-date">${dateStr}</div>
+                <div class="hist-col-sets">${workout.totalSets}</div>
+                <div class="hist-col-volume">${formatNumber(workout.totalVolume)}</div>
+                <div class="hist-col-vs">${vsLastHtml}</div>
             </div>
         `;
     }).join('');
@@ -2730,8 +3344,11 @@ function showWorkoutDetail(workoutId) {
     }).join('');
 
     document.getElementById('workoutDetailContent').innerHTML = `
-        <h2>${workout.name}</h2>
-        <p style="text-align: center; color: var(--ps1-gray); margin-bottom: 20px;">
+        <div class="modal-header-row">
+            <h2>${workout.name}</h2>
+            <button class="icon-button small" onclick="closeWorkoutDetail()">✕</button>
+        </div>
+        <p style="text-align: center; color: var(--text-tertiary); margin-bottom: 20px;">
             ${date.toLocaleDateString()} • ${duration} • ${workout.totalSets} sets
         </p>
         <div class="workout-detail-exercises">${exercisesHtml}</div>
@@ -2749,7 +3366,10 @@ function showWorkoutDetail(workoutId) {
                 <div class="stat-label">XP Earned</div>
             </div>
         </div>
-        <button class="dc-button secondary" onclick="closeWorkoutDetail()" style="margin-top: 20px;">CLOSE</button>
+        <div class="modal-buttons" style="margin-top: 20px;">
+            <button class="dc-button secondary" onclick="closeWorkoutDetail()">CLOSE</button>
+            <button class="dc-button" onclick="editWorkout('${workoutId}')">EDIT</button>
+        </div>
     `;
 
     document.getElementById('workoutDetailModal').classList.add('active');
@@ -2757,6 +3377,127 @@ function showWorkoutDetail(workoutId) {
 
 function closeWorkoutDetail() {
     document.getElementById('workoutDetailModal').classList.remove('active');
+}
+
+let editingWorkoutId = null;
+
+function editWorkout(workoutId) {
+    const workout = gameState.workoutHistory.find(w => w.id === workoutId);
+    if (!workout) return;
+
+    editingWorkoutId = workoutId;
+    const date = new Date(workout.date);
+
+    let exercisesHtml = workout.exercises.map((ex, exIndex) => {
+        const setsHtml = ex.sets.map((s, setIndex) => `
+            <div class="edit-set-row">
+                <span class="edit-set-num">${setIndex + 1}</span>
+                <input type="number" class="edit-set-weight" data-ex="${exIndex}" data-set="${setIndex}" value="${s.weight}" min="0">
+                <span class="edit-set-x">×</span>
+                <input type="number" class="edit-set-reps" data-ex="${exIndex}" data-set="${setIndex}" value="${s.reps}" min="1">
+                <button class="edit-set-delete" onclick="deleteEditSet(${exIndex}, ${setIndex})">×</button>
+            </div>
+        `).join('');
+
+        return `
+            <div class="edit-exercise-block">
+                <div class="edit-exercise-header">${ex.name}</div>
+                <div class="edit-sets-list" id="editSets_${exIndex}">${setsHtml}</div>
+                <button class="add-set-btn" onclick="addEditSet(${exIndex})">+ Add Set</button>
+            </div>
+        `;
+    }).join('');
+
+    document.getElementById('workoutDetailContent').innerHTML = `
+        <div class="modal-header-row">
+            <h2>Edit: ${workout.name}</h2>
+            <button class="icon-button small" onclick="cancelEditWorkout()">✕</button>
+        </div>
+        <p style="text-align: center; color: var(--text-tertiary); margin-bottom: 20px;">
+            ${date.toLocaleDateString()}
+        </p>
+        <div class="edit-workout-exercises">${exercisesHtml}</div>
+        <div class="modal-buttons" style="margin-top: 20px;">
+            <button class="dc-button secondary" onclick="cancelEditWorkout()">CANCEL</button>
+            <button class="dc-button" onclick="saveWorkoutEdits()">SAVE</button>
+        </div>
+    `;
+}
+
+function addEditSet(exIndex) {
+    const workout = gameState.workoutHistory.find(w => w.id === editingWorkoutId);
+    if (!workout || !workout.exercises[exIndex]) return;
+
+    const exercise = workout.exercises[exIndex];
+    const lastSet = exercise.sets[exercise.sets.length - 1] || { weight: 0, reps: 10 };
+    exercise.sets.push({ weight: lastSet.weight, reps: lastSet.reps, type: 'normal' });
+
+    // Re-render the edit view
+    editWorkout(editingWorkoutId);
+}
+
+function deleteEditSet(exIndex, setIndex) {
+    const workout = gameState.workoutHistory.find(w => w.id === editingWorkoutId);
+    if (!workout || !workout.exercises[exIndex]) return;
+
+    const exercise = workout.exercises[exIndex];
+    if (exercise.sets.length <= 1) {
+        showToast('Cannot delete last set');
+        return;
+    }
+
+    exercise.sets.splice(setIndex, 1);
+    editWorkout(editingWorkoutId);
+}
+
+function cancelEditWorkout() {
+    // Reload the original workout data (undo unsaved changes)
+    editingWorkoutId = null;
+    closeWorkoutDetail();
+    renderHistory();
+}
+
+function saveWorkoutEdits() {
+    const workout = gameState.workoutHistory.find(w => w.id === editingWorkoutId);
+    if (!workout) return;
+
+    // Collect all edited values from inputs
+    document.querySelectorAll('.edit-set-weight').forEach(input => {
+        const exIndex = parseInt(input.dataset.ex);
+        const setIndex = parseInt(input.dataset.set);
+        if (workout.exercises[exIndex] && workout.exercises[exIndex].sets[setIndex]) {
+            workout.exercises[exIndex].sets[setIndex].weight = parseFloat(input.value) || 0;
+        }
+    });
+
+    document.querySelectorAll('.edit-set-reps').forEach(input => {
+        const exIndex = parseInt(input.dataset.ex);
+        const setIndex = parseInt(input.dataset.set);
+        if (workout.exercises[exIndex] && workout.exercises[exIndex].sets[setIndex]) {
+            workout.exercises[exIndex].sets[setIndex].reps = parseInt(input.value) || 0;
+        }
+    });
+
+    // Recalculate workout totals
+    let totalSets = 0;
+    let totalVolume = 0;
+    workout.exercises.forEach(ex => {
+        totalSets += ex.sets.length;
+        ex.sets.forEach(s => {
+            totalVolume += (s.weight || 0) * (s.reps || 0);
+        });
+    });
+
+    workout.totalSets = totalSets;
+    workout.totalVolume = totalVolume;
+
+    // Save to localStorage
+    saveGame();
+    showToast('Workout updated!');
+
+    editingWorkoutId = null;
+    closeWorkoutDetail();
+    renderHistory();
 }
 
 // ============================================
@@ -2862,6 +3603,7 @@ function renderVolumeChart() {
 
     // Get weekly volume for last 8 weeks
     const weeklyVolume = {};
+    const workoutCounts = {};
     const now = new Date();
 
     if (gameState.workoutHistory) {
@@ -2871,15 +3613,17 @@ function renderVolumeChart() {
             const key = weekStart.toISOString();
 
             if (!weeklyVolume[key]) {
-                weeklyVolume[key] = { date: weekStart, volume: 0 };
+                weeklyVolume[key] = { date: weekStart, volume: 0, workouts: 0, sets: 0 };
             }
             weeklyVolume[key].volume += workout.totalVolume;
+            weeklyVolume[key].workouts += 1;
+            weeklyVolume[key].sets += workout.totalSets || 0;
         });
     }
 
     const data = Object.values(weeklyVolume)
-        .sort((a, b) => a.date - b.date)
-        .slice(-8);
+        .sort((a, b) => b.date - a.date) // Most recent first
+        .slice(0, 8);
 
     if (data.length === 0) {
         container.innerHTML = `
@@ -2893,18 +3637,40 @@ function renderVolumeChart() {
 
     const maxVolume = Math.max(...data.map(d => d.volume));
 
-    const bars = data.map(d => {
-        const height = (d.volume / maxVolume) * 100;
-        const label = d.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const rows = data.map((d, i) => {
+        const weekLabel = d.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const weekEnd = new Date(d.date);
+        weekEnd.setDate(weekEnd.getDate() + 6);
+        const weekEndLabel = weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const barWidth = maxVolume > 0 ? (d.volume / maxVolume) * 100 : 0;
+        const isCurrentWeek = i === 0;
+
         return `
-            <div class="bar" style="height: ${height}%">
-                <span class="bar-value">${formatNumber(d.volume)}</span>
-                <span class="bar-label">${label}</span>
+            <div class="volume-table-row ${isCurrentWeek ? 'current' : ''}">
+                <div class="volume-week">${weekLabel} - ${weekEndLabel}</div>
+                <div class="volume-workouts">${d.workouts}</div>
+                <div class="volume-sets">${d.sets}</div>
+                <div class="volume-amount">
+                    <div class="volume-bar-bg">
+                        <div class="volume-bar-fill" style="width: ${barWidth}%"></div>
+                    </div>
+                    <span class="volume-value">${formatNumber(d.volume)}</span>
+                </div>
             </div>
         `;
     }).join('');
 
-    container.innerHTML = `<div class="bar-chart">${bars}</div>`;
+    container.innerHTML = `
+        <div class="volume-table">
+            <div class="volume-table-header">
+                <div class="volume-week">Week</div>
+                <div class="volume-workouts">Workouts</div>
+                <div class="volume-sets">Sets</div>
+                <div class="volume-amount">Volume (lbs)</div>
+            </div>
+            ${rows}
+        </div>
+    `;
 }
 
 function getWeekStart(date) {
@@ -2927,6 +3693,7 @@ function generateShareCode() {
         v: 1,
         n: gameState.playerName,
         a: gameState.avatar,
+        ca: gameState.customAvatar || null,
         l: gameState.level,
         w: gameState.totalWorkouts,
         s: gameState.totalSets,
@@ -2939,7 +3706,7 @@ function generateShareCode() {
     const code = btoa(encodeURIComponent(json));
 
     document.getElementById('shareCode').textContent = code;
-    document.getElementById('shareCodeDisplay').style.display = 'block';
+    document.getElementById('shareCodeDisplay').classList.remove('hidden');
 }
 
 function copyShareCode() {
@@ -3053,7 +3820,7 @@ function showCoachView(data) {
     document.getElementById('coachWorkouts').textContent = data.w;
     document.getElementById('coachSets').textContent = data.s;
     document.getElementById('coachWeight').textContent = formatNumber(data.t);
-    document.getElementById('coachAvatar').innerHTML = avatarSVGs[data.a] || avatarSVGs[1];
+    document.getElementById('coachAvatar').innerHTML = getAvatarHTML(data.a, data.ca);
 
     // Render PRs
     const prContainer = document.getElementById('coachPRs');
@@ -3209,6 +3976,18 @@ function closeCreateWorkoutModal() {
     selectedWorkoutExercises = [];
 }
 
+function toggleWorkoutSelection() {
+    const selected = document.querySelector('.builder-selected.collapsible');
+    const icon = document.getElementById('workoutCollapseIcon');
+
+    if (selected) {
+        selected.classList.toggle('collapsed');
+        if (icon) {
+            icon.textContent = selected.classList.contains('collapsed') ? '▶' : '▼';
+        }
+    }
+}
+
 function toggleIconPicker() {
     document.getElementById('iconPickerDropdown').classList.toggle('active');
 }
@@ -3245,6 +4024,8 @@ function renderExerciseBrowser() {
             exercises = exercises.filter(ex => ['biceps', 'triceps', 'forearms'].includes(ex.muscle));
         } else if (currentMuscleFilter === 'legs') {
             exercises = exercises.filter(ex => ['quads', 'hamstrings', 'glutes', 'calves'].includes(ex.muscle));
+        } else if (currentMuscleFilter === 'bodyweight') {
+            exercises = exercises.filter(ex => ex.equipment === 'bodyweight');
         } else {
             exercises = exercises.filter(ex => ex.muscle === currentMuscleFilter);
         }
@@ -3266,17 +4047,47 @@ function renderExerciseBrowser() {
         return;
     }
 
+    // Get previous performance data
+    const history = gameState.workoutHistory || [];
+    const prs = gameState.personalRecords || {};
+
     container.innerHTML = exercises.map(ex => {
         const isSelected = selectedWorkoutExercises.some(s => s.id === ex.id);
-        const muscleLabel = ex.muscle.charAt(0).toUpperCase() + ex.muscle.slice(1);
+
+        // Find best weight (PR)
+        let bestWeight = '--';
+        const pr = prs[ex.id];
+        if (pr) {
+            const weight = typeof pr === 'number' ? pr : (pr.weight || pr.maxWeight || 0);
+            if (weight > 0) bestWeight = `${weight}`;
+        }
+
+        // Find last session data for this exercise
+        let lastSession = '--';
+        for (let i = history.length - 1; i >= 0; i--) {
+            const workout = history[i];
+            if (!workout.exercises) continue;
+            const exData = workout.exercises.find(e => e.id === ex.id);
+            if (exData && exData.sets && exData.sets.length > 0) {
+                // Get best set from last session
+                const workingSets = exData.sets.filter(s => s.type !== 'warmup');
+                if (workingSets.length > 0) {
+                    const best = workingSets.reduce((max, s) =>
+                        (s.weight || 0) > (max.weight || 0) ? s : max, workingSets[0]);
+                    lastSession = `${best.weight}×${best.reps}`;
+                }
+                break;
+            }
+        }
 
         return `
-            <div class="browser-exercise ${isSelected ? 'selected' : ''}" onclick="toggleExerciseSelection('${ex.id}')">
-                <div class="browser-exercise-info">
-                    <div class="browser-exercise-name">${ex.name}</div>
-                    <div class="browser-exercise-muscle">${muscleLabel}${ex.isCustom ? ' • Custom' : ''}</div>
+            <div class="browser-exercise-row ${isSelected ? 'selected' : ''}" onclick="toggleExerciseSelection('${ex.id}')">
+                <div class="ex-browse-col-name">
+                    <span class="exercise-name-text">${ex.name}</span>
                 </div>
-                <div class="browser-exercise-action">
+                <div class="ex-browse-col-pr">${bestWeight}</div>
+                <div class="ex-browse-col-last">${lastSession}</div>
+                <div class="ex-browse-col-action">
                     ${isSelected ? '<span class="check-icon">✓</span>' : '<span class="add-icon">+</span>'}
                 </div>
             </div>
@@ -3446,16 +4257,56 @@ function renderCustomWorkoutList() {
         return;
     }
 
-    container.innerHTML = customWorkouts.map(workout => `
-        <div class="custom-workout-card" onclick="startCustomWorkout('${workout.id}')">
-            <div class="workout-icon">${workout.icon}</div>
-            <div class="workout-info">
-                <div class="workout-name">${workout.name}</div>
-                <div class="workout-exercises">${workout.exercises.length} exercises</div>
+    // Find last session for each workout
+    const workoutHistory = gameState.workoutHistory || [];
+
+    container.innerHTML = customWorkouts.map(workout => {
+        // Find last session of this workout
+        const lastSession = workoutHistory.find(w => w.workoutId === workout.id || w.name === workout.name);
+
+        // Format last done date
+        let lastDoneText = '—';
+        if (lastSession && lastSession.date) {
+            const date = new Date(lastSession.date);
+            const today = new Date();
+            const diffDays = Math.floor((today - date) / (1000 * 60 * 60 * 24));
+            if (diffDays === 0) lastDoneText = 'Today';
+            else if (diffDays === 1) lastDoneText = 'Yesterday';
+            else if (diffDays < 7) lastDoneText = `${diffDays}d ago`;
+            else lastDoneText = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        // Calculate volume from last session
+        let volumeText = '—';
+        if (lastSession && lastSession.exercises) {
+            let totalVolume = 0;
+            lastSession.exercises.forEach(ex => {
+                if (ex.sets) {
+                    ex.sets.forEach(set => {
+                        if (set.weight && set.reps) {
+                            totalVolume += set.weight * set.reps;
+                        }
+                    });
+                }
+            });
+            if (totalVolume > 0) {
+                volumeText = totalVolume >= 1000 ? `${(totalVolume / 1000).toFixed(1)}k` : totalVolume.toLocaleString();
+            }
+        }
+
+        return `
+            <div class="workout-table-row" onclick="startCustomWorkout('${workout.id}')">
+                <div class="wkt-col-name">
+                    <span class="workout-icon-small">${workout.icon}</span>
+                    <span class="workout-name-text">${workout.name}</span>
+                </div>
+                <div class="wkt-col-exercises">${workout.exercises.length}</div>
+                <div class="wkt-col-last">${lastDoneText}</div>
+                <div class="wkt-col-volume">${volumeText}</div>
+                <button class="row-delete-btn" onclick="event.stopPropagation(); deleteCustomWorkout('${workout.id}')">×</button>
             </div>
-            <button class="delete-btn" onclick="event.stopPropagation(); deleteCustomWorkout('${workout.id}')">×</button>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 function renderCustomExerciseList() {
@@ -3626,20 +4477,83 @@ function renderCustomProgramList() {
         return;
     }
 
+    const workoutHistory = gameState.workoutHistory || [];
+
     container.innerHTML = customPrograms.map(program => {
-        const workoutCount = program.workouts ? program.workouts.length : 0;
         const periodLabel = getPeriodLabel(program.period);
+
+        // Calculate workouts completed this period
+        const periodStart = getPeriodStartDate(program.period);
+        const workoutsThisPeriod = workoutHistory.filter(w => {
+            if (!w.programId || w.programId !== program.id) return false;
+            const workoutDate = new Date(w.date);
+            return workoutDate >= periodStart;
+        }).length;
+
+        // Get next workout in the program
+        let nextUpText = '—';
+        if (program.workouts && program.workouts.length > 0) {
+            // Find last completed workout index
+            const lastCompleted = workoutHistory
+                .filter(w => w.programId === program.id)
+                .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+
+            if (lastCompleted) {
+                const lastIndex = program.workouts.findIndex(w => w.id === lastCompleted.workoutId);
+                const nextIndex = (lastIndex + 1) % program.workouts.length;
+                const nextWorkout = program.workouts[nextIndex];
+                nextUpText = nextWorkout ? nextWorkout.name : program.workouts[0].name;
+            } else {
+                nextUpText = program.workouts[0].name;
+            }
+        }
+
+        // Progress bar percentage
+        const progressPercent = Math.min((workoutsThisPeriod / program.workoutsPerPeriod) * 100, 100);
+
         return `
-            <div class="custom-program-card" onclick="openProgramDetail('${program.id}')">
-                <div class="program-icon">${program.icon}</div>
-                <div class="program-info">
-                    <div class="program-name">${program.name}</div>
-                    <div class="program-schedule">${workoutCount}/${program.workoutsPerPeriod} workouts / ${periodLabel}</div>
+            <div class="program-table-row" onclick="openProgramDetail('${program.id}')">
+                <div class="prog-col-name">
+                    <span class="program-icon-small">${program.icon}</span>
+                    <span class="program-name-text">${program.name}</span>
                 </div>
-                <div class="program-arrow">›</div>
+                <div class="prog-col-progress">
+                    <div class="progress-mini">
+                        <div class="progress-mini-bar" style="width: ${progressPercent}%"></div>
+                    </div>
+                    <span class="progress-text">${workoutsThisPeriod}/${program.workoutsPerPeriod}</span>
+                </div>
+                <div class="prog-col-next">${nextUpText}</div>
             </div>
         `;
     }).join('');
+}
+
+function getPeriodStartDate(period) {
+    const now = new Date();
+    const start = new Date(now);
+
+    switch(period) {
+        case 'week':
+            // Start of current week (Sunday)
+            start.setDate(now.getDate() - now.getDay());
+            break;
+        case '2weeks':
+            // Start of current 2-week period
+            const weekNum = getISOWeek(now);
+            const weeksBack = weekNum % 2;
+            start.setDate(now.getDate() - now.getDay() - (weeksBack * 7));
+            break;
+        case 'month':
+            // Start of current month
+            start.setDate(1);
+            break;
+        default:
+            start.setDate(now.getDate() - now.getDay());
+    }
+
+    start.setHours(0, 0, 0, 0);
+    return start;
 }
 
 function getPeriodLabel(period) {
@@ -3733,16 +4647,16 @@ function renderProgramWorkouts() {
     }
 
     container.innerHTML = currentProgram.workouts.map((workout, index) => `
-        <div class="program-workout-item" onclick="showWorkoutOptions('${currentProgram.id}', ${index})">
-            <div class="workout-order">${index + 1}</div>
-            <div class="workout-icon">${workout.icon || '💪'}</div>
-            <div class="workout-info">
-                <div class="workout-name">${workout.name}</div>
-                <div class="workout-exercises">${workout.exercises.length} exercises</div>
+        <div class="prog-wkt-table-row" onclick="showWorkoutOptions('${currentProgram.id}', ${index})">
+            <div class="prog-wkt-col-order">${index + 1}</div>
+            <div class="prog-wkt-col-name">
+                <span class="workout-icon-small">${workout.icon || '💪'}</span>
+                <span class="workout-name-text">${workout.name}</span>
             </div>
-            <div class="workout-actions">
-                <button class="launch-btn" onclick="event.stopPropagation(); launchProgramWorkout('${currentProgram.id}', ${index})" title="Start Workout">▶</button>
-                <button class="delete-btn" onclick="event.stopPropagation(); removeWorkoutFromProgram(${index})">×</button>
+            <div class="prog-wkt-col-exercises">${workout.exercises.length}</div>
+            <div class="prog-wkt-col-actions">
+                <button class="action-btn play" onclick="event.stopPropagation(); launchProgramWorkout('${currentProgram.id}', ${index})" title="Start Workout">▶</button>
+                <button class="action-btn delete" onclick="event.stopPropagation(); removeWorkoutFromProgram(${index})">×</button>
             </div>
         </div>
     `).join('');
@@ -4498,13 +5412,17 @@ const ACHIEVEMENTS = [
     { id: 'volume_1m', name: 'Million Pound Club', desc: 'Lift 1,000,000 lbs total', icon: '🌟', xp: 5000 },
     { id: 'level_5', name: 'Rising Star', desc: 'Reach Level 5', icon: '⭐', xp: 300 },
     { id: 'level_10', name: 'Veteran', desc: 'Reach Level 10', icon: '🌙', xp: 600 },
-    { id: 'level_25', name: 'Elite', desc: 'Reach Level 25', icon: '☀️', xp: 1500 }
+    { id: 'level_25', name: 'Elite', desc: 'Reach Level 25', icon: '☀️', xp: 1500 },
+    // Progress-based achievements
+    { id: 'progress_10', name: 'Getting Stronger', desc: '10% improvement on any lift', icon: '📈', xp: 200 },
+    { id: 'progress_20', name: 'Serious Gains', desc: '20% improvement on any lift', icon: '💪', xp: 400 },
+    { id: 'progress_30', name: 'Transformation', desc: '30% improvement on any lift', icon: '🔥', xp: 600 },
+    { id: 'progress_50', name: 'Beast Mode', desc: '50% improvement on any lift', icon: '🦍', xp: 1000 },
+    { id: 'progress_100', name: 'Doubled Up', desc: '100% improvement on any lift', icon: '🏆', xp: 2000 }
 ];
 
 function openCharacterProfile() {
-    console.log('openCharacterProfile called, gameState:', gameState);
     if (!gameState) {
-        console.warn('No gameState - cannot open profile');
         showToast('Create a character first!');
         return;
     }
@@ -4554,7 +5472,7 @@ function renderCharacterProfile() {
     // Profile header
     const avatarEl = document.getElementById('profileAvatar');
     if (avatarEl) {
-        avatarEl.innerHTML = avatarSVGs[gameState.avatar] || avatarSVGs[1];
+        avatarEl.innerHTML = getAvatarHTML(gameState.avatar, gameState.customAvatar);
     }
 
     document.getElementById('profileName').textContent = gameState.name || gameState.playerName || 'WARRIOR';
@@ -4575,19 +5493,33 @@ function renderCharacterProfile() {
     const totalSets = history.reduce((sum, w) => sum + (w.totalSets || 0), 0);
     const totalVolume = history.reduce((sum, w) => sum + (w.totalVolume || 0), 0);
 
-    document.getElementById('profileWorkouts').textContent = formatNumber(gameState.totalWorkouts || 0);
-    document.getElementById('profileSets').textContent = formatNumber(totalSets);
-    document.getElementById('profileVolume').textContent = formatNumber(totalVolume);
+    const profileWorkoutsEl = document.getElementById('profileWorkouts');
+    const profileVolumeEl = document.getElementById('profileVolume');
+    const profileStreakEl = document.getElementById('profileStreak');
+    const profileAchievementCountEl = document.getElementById('profileAchievementCount');
+
+    if (profileWorkoutsEl) profileWorkoutsEl.textContent = formatNumber(gameState.totalWorkouts || 0);
+    if (profileVolumeEl) profileVolumeEl.textContent = formatNumber(totalVolume);
+
+    // Streak calculation
+    const streak = calculateWeekStreak();
+    if (profileStreakEl) profileStreakEl.textContent = streak;
 
     // Count unlocked achievements
     const unlockedAchievements = getUnlockedAchievements();
-    document.getElementById('profileAchievementCount').textContent = unlockedAchievements.length;
+    if (profileAchievementCountEl) profileAchievementCountEl.textContent = unlockedAchievements.length;
+
+    // Weekly goal setup
+    renderWeeklyGoal();
 
     // Body stats
     renderBodyStats();
 
     // Personal records
     renderProfilePRs();
+
+    // Best sets
+    renderBestSets();
 
     // Lift progression
     renderLiftProgress();
@@ -4631,58 +5563,749 @@ function renderBodyStats() {
 
     weightEl.textContent = gameState.weight ? `${gameState.weight} lbs` : '--';
     genderEl.textContent = gameState.gender ? gameState.gender.charAt(0).toUpperCase() + gameState.gender.slice(1) : '--';
+
+    // Show weight change from initial
+    const weightChangeEl = document.getElementById('weightChange');
+    if (weightChangeEl && gameState.weightHistory && gameState.weightHistory.length > 1) {
+        const initial = gameState.weightHistory[0].weight;
+        const current = gameState.weight;
+        const change = current - initial;
+        if (change !== 0) {
+            const sign = change > 0 ? '+' : '';
+            weightChangeEl.textContent = `${sign}${change.toFixed(1)} lbs`;
+            weightChangeEl.className = 'body-stat-change ' + (change > 0 ? 'gain' : 'loss');
+        } else {
+            weightChangeEl.textContent = '';
+        }
+    }
+}
+
+// ============================================
+// WEIGHT TRACKING FUNCTIONS
+// ============================================
+
+function openWeightEditModal() {
+    const currentWeight = gameState.weight || 0;
+    document.getElementById('weightEditCurrent').textContent = currentWeight ? `${currentWeight} lbs` : '-- lbs';
+    document.getElementById('newWeightInput').value = currentWeight || '';
+
+    // Render weight history
+    renderWeightHistoryChart();
+    renderWeightHistoryList();
+
+    document.getElementById('weightEditModal').classList.add('active');
+}
+
+function closeWeightEditModal() {
+    document.getElementById('weightEditModal').classList.remove('active');
+}
+
+function saveNewWeight() {
+    const input = document.getElementById('newWeightInput');
+    const newWeight = parseFloat(input.value);
+
+    if (!newWeight || newWeight < 50 || newWeight > 500) {
+        showToast('Enter a valid weight (50-500 lbs)');
+        return;
+    }
+
+    // Initialize weight history if needed
+    if (!gameState.weightHistory) {
+        gameState.weightHistory = [];
+        // Add initial weight if we have one
+        if (gameState.weight) {
+            gameState.weightHistory.push({
+                weight: gameState.weight,
+                date: gameState.createdAt || new Date().toISOString()
+            });
+        }
+    }
+
+    // Add new weight entry
+    gameState.weightHistory.push({
+        weight: newWeight,
+        date: new Date().toISOString()
+    });
+
+    // Update current weight
+    gameState.weight = newWeight;
+    saveGame();
+
+    // Refresh displays
+    renderBodyStats();
+    closeWeightEditModal();
+    showToast('Weight updated!');
+}
+
+function renderWeightHistoryChart() {
+    const container = document.getElementById('weightHistoryChart');
+    const history = gameState.weightHistory || [];
+
+    if (history.length < 2) {
+        container.innerHTML = '<div class="empty-hint">Track weight over time</div>';
+        return;
+    }
+
+    // Take last 12 entries
+    const dataPoints = history.slice(-12);
+
+    const weights = dataPoints.map(d => d.weight);
+    const minWeight = Math.min(...weights) - 2;
+    const maxWeight = Math.max(...weights) + 2;
+    const range = maxWeight - minWeight || 1;
+
+    const width = 260;
+    const height = 50;
+    const padding = { top: 5, right: 5, bottom: 5, left: 30 };
+    const chartWidth = width - padding.left - padding.right;
+    const chartHeight = height - padding.top - padding.bottom;
+
+    const points = dataPoints.map((d, i) => ({
+        x: padding.left + (i / (dataPoints.length - 1)) * chartWidth,
+        y: padding.top + chartHeight - ((d.weight - minWeight) / range) * chartHeight,
+        weight: d.weight
+    }));
+
+    const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+    const areaD = pathD + ` L ${points[points.length - 1].x} ${height - padding.bottom} L ${points[0].x} ${height - padding.bottom} Z`;
+
+    let svg = `<svg viewBox="0 0 ${width} ${height}" class="weight-chart-svg">`;
+    svg += `<text x="${padding.left - 5}" y="${padding.top + 4}" class="weight-chart-label">${Math.round(maxWeight)}</text>`;
+    svg += `<text x="${padding.left - 5}" y="${height - padding.bottom}" class="weight-chart-label">${Math.round(minWeight)}</text>`;
+    svg += `<path d="${areaD}" class="weight-chart-area" />`;
+    svg += `<path d="${pathD}" class="weight-chart-line" />`;
+    points.forEach(p => {
+        svg += `<circle cx="${p.x}" cy="${p.y}" r="2.5" class="weight-chart-point" />`;
+    });
+    svg += '</svg>';
+
+    container.innerHTML = svg;
+}
+
+function renderWeightHistoryList() {
+    const container = document.getElementById('weightHistoryList');
+    const history = gameState.weightHistory || [];
+
+    if (history.length === 0) {
+        container.innerHTML = '<div class="empty-hint">No weight history</div>';
+        return;
+    }
+
+    // Show last 5 entries, newest first
+    const recent = [...history].reverse().slice(0, 5);
+
+    container.innerHTML = recent.map((entry, idx) => {
+        const date = new Date(entry.date);
+        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' });
+
+        // Calculate change from previous
+        let changeHtml = '';
+        if (idx < recent.length - 1) {
+            const prev = recent[idx + 1].weight;
+            const change = entry.weight - prev;
+            if (change !== 0) {
+                const sign = change > 0 ? '+' : '';
+                const changeClass = change > 0 ? 'gain' : 'loss';
+                changeHtml = `<span class="weight-change ${changeClass}">${sign}${change.toFixed(1)}</span>`;
+            }
+        }
+
+        return `
+            <div class="weight-history-row">
+                <span class="weight-history-date">${dateStr}</span>
+                <span class="weight-history-value">${entry.weight} lbs</span>
+                ${changeHtml}
+            </div>
+        `;
+    }).join('');
+}
+
+// ============================================
+// STREAK & WEEKLY GOAL FUNCTIONS
+// ============================================
+
+function getISOWeek(date) {
+    // Returns ISO week number and year for a given date
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+    const yearStart = new Date(d.getFullYear(), 0, 1);
+    const weekNum = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    return { year: d.getFullYear(), week: weekNum };
+}
+
+function getWorkoutsThisWeek() {
+    const history = gameState.workoutHistory || [];
+    const now = new Date();
+    const currentWeek = getISOWeek(now);
+
+    // Count unique days with workouts this week
+    const workoutDays = new Set();
+    history.forEach(workout => {
+        const workoutDate = new Date(workout.date);
+        const workoutWeek = getISOWeek(workoutDate);
+        if (workoutWeek.year === currentWeek.year && workoutWeek.week === currentWeek.week) {
+            workoutDays.add(workoutDate.toDateString());
+        }
+    });
+
+    return workoutDays.size;
+}
+
+function calculateWeekStreak() {
+    const goal = gameState.streakGoal || 3;
+    const history = gameState.workoutHistory || [];
+
+    if (history.length === 0) return 0;
+
+    // Group workouts by ISO week
+    const weeklyWorkouts = {};
+    history.forEach(workout => {
+        const workoutDate = new Date(workout.date);
+        const { year, week } = getISOWeek(workoutDate);
+        const key = `${year}-${week}`;
+
+        if (!weeklyWorkouts[key]) {
+            weeklyWorkouts[key] = new Set();
+        }
+        weeklyWorkouts[key].add(workoutDate.toDateString());
+    });
+
+    // Get current week info
+    const now = new Date();
+    const currentWeek = getISOWeek(now);
+
+    // Count backwards from previous completed week
+    let streak = 0;
+    let checkDate = new Date(now);
+
+    // Start from last week (current week may not be complete)
+    checkDate.setDate(checkDate.getDate() - 7);
+
+    while (true) {
+        const { year, week } = getISOWeek(checkDate);
+        const key = `${year}-${week}`;
+        const daysWorkedOut = weeklyWorkouts[key] ? weeklyWorkouts[key].size : 0;
+
+        if (daysWorkedOut >= goal) {
+            streak++;
+            checkDate.setDate(checkDate.getDate() - 7);
+        } else {
+            break;
+        }
+
+        // Safety limit
+        if (streak > 520) break; // Max ~10 years
+    }
+
+    // Check if current week already meets goal (add to streak)
+    const currentKey = `${currentWeek.year}-${currentWeek.week}`;
+    const currentWeekDays = weeklyWorkouts[currentKey] ? weeklyWorkouts[currentKey].size : 0;
+    if (currentWeekDays >= goal) {
+        streak++;
+    }
+
+    return streak;
+}
+
+function renderWeeklyGoal() {
+    const goal = gameState.streakGoal || 3;
+    const workoutsThisWeek = getWorkoutsThisWeek();
+
+    // Set the dropdown to current goal
+    const selectEl = document.getElementById('streakGoalSelect');
+    if (selectEl) {
+        selectEl.value = goal;
+    }
+
+    // Update progress display
+    const thisWeekEl = document.getElementById('thisWeekWorkouts');
+    const goalDisplayEl = document.getElementById('weeklyGoalDisplay');
+    const progressFillEl = document.getElementById('weeklyProgressFill');
+
+    if (thisWeekEl) thisWeekEl.textContent = workoutsThisWeek;
+    if (goalDisplayEl) goalDisplayEl.textContent = goal;
+
+    // Update progress bar
+    if (progressFillEl) {
+        const progressPercent = Math.min((workoutsThisWeek / goal) * 100, 100);
+        progressFillEl.style.width = `${progressPercent}%`;
+    }
+}
+
+function updateStreakGoal(value) {
+    gameState.streakGoal = parseInt(value);
+    saveSaveSlots();
+
+    // Re-render streak and weekly progress
+    const streak = calculateWeekStreak();
+    const streakEl = document.getElementById('profileStreak');
+    if (streakEl) streakEl.textContent = streak;
+    renderWeeklyGoal();
+}
+
+// ============================================
+// BEST SETS FUNCTION
+// ============================================
+
+function renderBestSets() {
+    const container = document.getElementById('profileBestSets');
+    if (!container) return;
+
+    const history = gameState.workoutHistory || [];
+
+    if (history.length === 0) {
+        container.innerHTML = '<div class="empty-hint">Complete workouts to see your best sets</div>';
+        return;
+    }
+
+    // Collect all sets from history
+    const allSets = [];
+    history.forEach(workout => {
+        if (!workout.exercises) return;
+        workout.exercises.forEach(exercise => {
+            if (!exercise.sets) return;
+            exercise.sets.forEach(set => {
+                if (set.type === 'warmup') return; // Skip warmup sets
+                const volume = (set.weight || 0) * (set.reps || 0);
+                if (volume > 0) {
+                    allSets.push({
+                        exerciseId: exercise.id,
+                        exerciseName: exercise.name || getExerciseName(exercise.id),
+                        weight: set.weight,
+                        reps: set.reps,
+                        volume: volume,
+                        date: workout.date
+                    });
+                }
+            });
+        });
+    });
+
+    if (allSets.length === 0) {
+        container.innerHTML = '<div class="empty-hint">Complete workouts to see your best sets</div>';
+        return;
+    }
+
+    // Sort by volume and take top 5
+    allSets.sort((a, b) => b.volume - a.volume);
+    const topSets = allSets.slice(0, 5);
+
+    container.innerHTML = topSets.map((set, index) => {
+        const rankClass = index === 0 ? 'gold' : index === 1 ? 'silver' : index === 2 ? 'bronze' : '';
+        const dateStr = new Date(set.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+        return `
+            <div class="best-set-item">
+                <div class="best-set-rank ${rankClass}">${index + 1}</div>
+                <div class="best-set-info">
+                    <div class="best-set-exercise">${set.exerciseName}</div>
+                    <div class="best-set-details">${set.weight} lbs × ${set.reps} reps • ${dateStr}</div>
+                </div>
+                <div class="best-set-volume">${formatNumber(set.volume)}</div>
+            </div>
+        `;
+    }).join('');
 }
 
 function renderProfilePRs() {
     const container = document.getElementById('profilePRGrid');
-    const prs = gameState.personalRecords || {};
-    const prEntries = Object.entries(prs);
+    if (!container) return;
 
-    if (prEntries.length === 0) {
-        container.innerHTML = '<div class="empty-hint">No personal records yet. Complete workouts to set PRs!</div>';
+    const prs = gameState.personalRecords || {};
+    const baselines = gameState.baselines || {};
+    const history = gameState.workoutHistory || [];
+
+    // Combine all exercises that have baselines or PRs
+    const allExerciseIds = new Set([...Object.keys(prs), ...Object.keys(baselines)]);
+
+    if (allExerciseIds.size === 0) {
+        container.innerHTML = '<div class="empty-hint">Complete the strength test and workouts to see your records!</div>';
         return;
     }
 
-    // Normalize and sort by max weight descending
-    const normalizedPRs = prEntries.map(([exerciseId, pr]) => {
-        // Handle legacy format (just a number)
-        if (typeof pr === 'number') {
-            return {
-                exerciseId,
-                maxWeight: pr,
-                maxWeightDate: null,
-                maxTonnage: null,
-                maxTonnageWeight: null,
-                maxTonnageReps: null
-            };
+    // Build data for each exercise
+    const exerciseData = [];
+
+    allExerciseIds.forEach(exerciseId => {
+        const pr = prs[exerciseId];
+        const baseline = baselines[exerciseId] || 0;
+
+        // Get max weight from PR
+        let maxWeight = 0;
+        if (pr) {
+            maxWeight = typeof pr === 'number' ? pr : (pr.maxWeight || 0);
         }
-        return { exerciseId, ...pr };
+
+        // Find best set (highest calculated 1RM) from workout history
+        let bestSet = null;
+        let best1RM = 0;
+
+        history.forEach(workout => {
+            if (!workout.exercises) return;
+            workout.exercises.forEach(exercise => {
+                if (exercise.id !== exerciseId || !exercise.sets) return;
+                exercise.sets.forEach(set => {
+                    if (set.type === 'warmup') return;
+                    const weight = set.weight || 0;
+                    const reps = set.reps || 0;
+                    if (weight > 0 && reps > 0) {
+                        const est1RM = calculate1RM(weight, reps);
+                        if (est1RM > best1RM) {
+                            best1RM = est1RM;
+                            bestSet = { weight, reps, est1RM };
+                        }
+                    }
+                });
+            });
+        });
+
+        // Use baseline as maxWeight if no PR recorded yet
+        if (maxWeight === 0 && baseline > 0) {
+            maxWeight = baseline;
+        }
+
+        // Calculate progress from baseline
+        let progress = 0;
+        if (baseline > 0 && maxWeight > 0) {
+            progress = Math.round(((maxWeight - baseline) / baseline) * 100);
+        }
+
+        exerciseData.push({
+            exerciseId,
+            name: getExerciseName(exerciseId),
+            maxWeight,
+            baseline,
+            bestSet,
+            best1RM,
+            progress
+        });
     });
 
-    normalizedPRs.sort((a, b) => (b.maxWeight || 0) - (a.maxWeight || 0));
+    // Sort by max weight descending
+    exerciseData.sort((a, b) => b.maxWeight - a.maxWeight);
 
-    container.innerHTML = normalizedPRs.map(pr => {
-        const exerciseName = getExerciseName(pr.exerciseId);
-        const maxWeightDate = pr.maxWeightDate ? new Date(pr.maxWeightDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
-        const tonnageDisplay = pr.maxTonnage ? `${pr.maxTonnageWeight}×${pr.maxTonnageReps} = ${formatNumber(pr.maxTonnage)} lbs` : '--';
+    container.innerHTML = exerciseData.map(data => {
+        // Best set display
+        let bestSetDisplay = '--';
+        if (data.bestSet) {
+            bestSetDisplay = `${data.bestSet.weight}×${data.bestSet.reps} <span class="best-1rm">(${data.best1RM} 1RM)</span>`;
+        }
+
+        // Progress badge
+        let progressBadge = '';
+        if (data.baseline > 0) {
+            const badgeClass = data.progress > 0 ? 'positive' : data.progress < 0 ? 'negative' : 'neutral';
+            const sign = data.progress > 0 ? '+' : '';
+            progressBadge = `<span class="progress-badge ${badgeClass}">${sign}${data.progress}%</span>`;
+        } else {
+            progressBadge = `<span class="progress-badge neutral">--</span>`;
+        }
 
         return `
-            <div class="profile-pr-card">
-                <div class="profile-pr-header">
-                    <div class="profile-pr-icon">🏆</div>
-                    <div class="profile-pr-exercise">${exerciseName}</div>
-                </div>
-                <div class="profile-pr-stats">
-                    <div class="pr-stat">
-                        <div class="pr-stat-label">MAX WEIGHT</div>
-                        <div class="pr-stat-value">${pr.maxWeight || 0} lbs</div>
-                        ${maxWeightDate ? `<div class="pr-stat-date">${maxWeightDate}</div>` : ''}
-                    </div>
-                    <div class="pr-stat">
-                        <div class="pr-stat-label">MAX TONNAGE</div>
-                        <div class="pr-stat-value tonnage">${tonnageDisplay}</div>
-                    </div>
-                </div>
+            <div class="pr-table-row" onclick="openPRDetail('${data.exerciseId}')">
+                <div class="pr-col-exercise">${data.name}</div>
+                <div class="pr-col-max">${data.maxWeight} lbs</div>
+                <div class="pr-col-best">${bestSetDisplay}</div>
+                <div class="pr-col-progress">${progressBadge}</div>
+            </div>
+        `;
+    }).join('');
+}
+
+// ============================================
+// PR DETAIL MODAL
+// ============================================
+
+function openPRDetail(exerciseId) {
+    const history = gameState.workoutHistory || [];
+    const prs = gameState.personalRecords || {};
+    const baselines = gameState.baselines || {};
+
+    const exerciseName = getExerciseName(exerciseId);
+    const baseline = baselines[exerciseId] || 0;
+    const pr = prs[exerciseId];
+
+    // Gather all sessions where this exercise was performed
+    const sessions = [];
+    history.forEach(workout => {
+        if (!workout.exercises) return;
+        workout.exercises.forEach(ex => {
+            if (ex.id !== exerciseId || !ex.sets) return;
+
+            const workingSets = ex.sets.filter(s => s.type !== 'warmup');
+            if (workingSets.length === 0) return;
+
+            let bestWeight = 0;
+            let bestReps = 0;
+            let best1RM = 0;
+            let totalVolume = 0;
+
+            workingSets.forEach(set => {
+                const weight = set.weight || 0;
+                const reps = set.reps || 0;
+                totalVolume += weight * reps;
+
+                const est1RM = calculate1RM(weight, reps);
+                if (est1RM > best1RM) {
+                    best1RM = est1RM;
+                    bestWeight = weight;
+                    bestReps = reps;
+                }
+            });
+
+            sessions.push({
+                date: new Date(workout.date),
+                sets: workingSets.length,
+                bestWeight,
+                bestReps,
+                best1RM,
+                volume: totalVolume
+            });
+        });
+    });
+
+    // Sort sessions by date (newest first for display, oldest first for chart)
+    sessions.sort((a, b) => b.date - a.date);
+
+    // Calculate stats
+    const totalSessions = sessions.length;
+    const lastSession = sessions[0];
+
+    let maxWeight = 0;
+    let overallBestSet = null;
+    let overallBest1RM = 0;
+
+    sessions.forEach(s => {
+        if (s.bestWeight > maxWeight) maxWeight = s.bestWeight;
+        if (s.best1RM > overallBest1RM) {
+            overallBest1RM = s.best1RM;
+            overallBestSet = { weight: s.bestWeight, reps: s.bestReps };
+        }
+    });
+
+    // Use PR or baseline if no sessions
+    if (maxWeight === 0) {
+        maxWeight = pr ? (typeof pr === 'number' ? pr : pr.maxWeight || 0) : baseline;
+    }
+
+    // Calculate progress
+    let progress = 0;
+    if (baseline > 0 && maxWeight > 0) {
+        progress = Math.round(((maxWeight - baseline) / baseline) * 100);
+    }
+
+    // Calculate frequency (sessions per week over last 12 weeks)
+    const twelveWeeksAgo = new Date();
+    twelveWeeksAgo.setDate(twelveWeeksAgo.getDate() - 84);
+    const recentSessions = sessions.filter(s => s.date >= twelveWeeksAgo);
+    const weeksTracked = Math.min(12, Math.ceil((new Date() - twelveWeeksAgo) / (7 * 24 * 60 * 60 * 1000)));
+    const avgPerWeek = weeksTracked > 0 ? (recentSessions.length / weeksTracked).toFixed(1) : 0;
+
+    // Update modal content
+    document.getElementById('prDetailExerciseName').textContent = exerciseName;
+    document.getElementById('prDetailLastPerformed').textContent = lastSession
+        ? `Last: ${formatDate(lastSession.date)}`
+        : 'Never performed';
+    document.getElementById('prDetailTotalSessions').textContent = `${totalSessions} session${totalSessions !== 1 ? 's' : ''} total`;
+
+    document.getElementById('prDetailMax').textContent = maxWeight > 0 ? `${maxWeight} lbs` : '--';
+    document.getElementById('prDetailBestSet').textContent = overallBestSet
+        ? `${overallBestSet.weight}×${overallBestSet.reps}`
+        : '--';
+    document.getElementById('prDetailEst1RM').textContent = overallBest1RM > 0 ? `${overallBest1RM} lbs` : '--';
+
+    const progressEl = document.getElementById('prDetailProgress');
+    if (baseline > 0) {
+        const sign = progress > 0 ? '+' : '';
+        progressEl.textContent = `${sign}${progress}%`;
+        progressEl.className = 'pr-stat-value ' + (progress > 0 ? 'positive' : progress < 0 ? 'negative' : '');
+    } else {
+        progressEl.textContent = '--';
+        progressEl.className = 'pr-stat-value';
+    }
+
+    document.getElementById('prDetailFrequency').textContent = `${avgPerWeek}× per week avg`;
+
+    // Render calendar
+    renderPRCalendar(exerciseId, sessions);
+
+    // Render chart
+    renderPRChart(sessions);
+
+    // Render history table
+    renderPRHistoryTable(sessions);
+
+    // Show modal
+    document.getElementById('prDetailModal').classList.add('active');
+}
+
+function closePRDetailModal() {
+    document.getElementById('prDetailModal').classList.remove('active');
+}
+
+function togglePRHistory() {
+    const table = document.getElementById('prDetailHistory');
+    const icon = document.getElementById('prHistoryCollapseIcon');
+    table.classList.toggle('collapsed');
+    icon.textContent = table.classList.contains('collapsed') ? '▼' : '▲';
+}
+
+function formatDate(date) {
+    const now = new Date();
+    const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined });
+}
+
+function renderPRCalendar(exerciseId, sessions) {
+    const container = document.getElementById('prDetailCalendar');
+
+    // Create a map of dates when exercise was performed
+    const performedDates = new Set();
+    sessions.forEach(s => {
+        performedDates.add(s.date.toDateString());
+    });
+
+    // Generate last 12 weeks of calendar
+    const today = new Date();
+    const weeks = [];
+
+    for (let w = 11; w >= 0; w--) {
+        const weekDays = [];
+        for (let d = 0; d < 7; d++) {
+            const date = new Date(today);
+            date.setDate(today.getDate() - (w * 7) - (6 - d) - today.getDay());
+            weekDays.push({
+                date,
+                performed: performedDates.has(date.toDateString()),
+                future: date > today
+            });
+        }
+        weeks.push(weekDays);
+    }
+
+    // Render calendar grid
+    let html = '<div class="pr-calendar-grid">';
+
+    // Day labels
+    html += '<div class="pr-calendar-labels">';
+    ['S', 'M', 'T', 'W', 'T', 'F', 'S'].forEach(day => {
+        html += `<div class="pr-calendar-day-label">${day}</div>`;
+    });
+    html += '</div>';
+
+    // Weeks
+    html += '<div class="pr-calendar-weeks">';
+    weeks.forEach(week => {
+        html += '<div class="pr-calendar-week">';
+        week.forEach(day => {
+            const classes = ['pr-calendar-day'];
+            if (day.performed) classes.push('performed');
+            if (day.future) classes.push('future');
+            html += `<div class="${classes.join(' ')}" title="${day.date.toLocaleDateString()}"></div>`;
+        });
+        html += '</div>';
+    });
+    html += '</div>';
+
+    html += '</div>';
+
+    container.innerHTML = html;
+}
+
+function renderPRChart(sessions) {
+    const container = document.getElementById('prDetailChart');
+
+    if (sessions.length < 2) {
+        container.innerHTML = '<div class="empty-hint">Complete more sessions to see progress chart</div>';
+        return;
+    }
+
+    // Sort by date ascending for chart
+    const chartData = [...sessions].sort((a, b) => a.date - b.date);
+
+    // Take last 20 sessions max
+    const dataPoints = chartData.slice(-20);
+
+    // Find min/max for scaling
+    const weights = dataPoints.map(d => d.bestWeight);
+    const minWeight = Math.min(...weights);
+    const maxWeight = Math.max(...weights);
+    const range = maxWeight - minWeight || 1;
+
+    // Generate SVG chart
+    const width = 280;
+    const height = 60;
+    const padding = { top: 5, right: 5, bottom: 5, left: 30 };
+    const chartWidth = width - padding.left - padding.right;
+    const chartHeight = height - padding.top - padding.bottom;
+
+    // Calculate points
+    const points = dataPoints.map((d, i) => ({
+        x: padding.left + (i / (dataPoints.length - 1)) * chartWidth,
+        y: padding.top + chartHeight - ((d.bestWeight - minWeight) / range) * chartHeight,
+        weight: d.bestWeight,
+        date: d.date
+    }));
+
+    // Create path
+    const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+
+    // Create area path
+    const areaD = pathD + ` L ${points[points.length - 1].x} ${height - padding.bottom} L ${points[0].x} ${height - padding.bottom} Z`;
+
+    let svg = `<svg viewBox="0 0 ${width} ${height}" class="pr-chart-svg">`;
+
+    // Only show min/max labels
+    svg += `<text x="${padding.left - 5}" y="${padding.top + 4}" class="pr-chart-label">${maxWeight}</text>`;
+    svg += `<text x="${padding.left - 5}" y="${height - padding.bottom}" class="pr-chart-label">${minWeight}</text>`;
+
+    // Area fill
+    svg += `<path d="${areaD}" class="pr-chart-area" />`;
+
+    // Line
+    svg += `<path d="${pathD}" class="pr-chart-line" />`;
+
+    // Points (smaller)
+    points.forEach(p => {
+        svg += `<circle cx="${p.x}" cy="${p.y}" r="2.5" class="pr-chart-point" />`;
+    });
+
+    svg += '</svg>';
+
+    container.innerHTML = svg;
+}
+
+function renderPRHistoryTable(sessions) {
+    const container = document.getElementById('prDetailHistoryBody');
+
+    if (sessions.length === 0) {
+        container.innerHTML = '<div class="empty-hint">No sessions recorded</div>';
+        return;
+    }
+
+    container.innerHTML = sessions.map(session => {
+        const dateStr = session.date.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: session.date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
+        });
+
+        const volumeStr = session.volume >= 1000
+            ? `${(session.volume / 1000).toFixed(1)}k`
+            : session.volume.toLocaleString();
+
+        return `
+            <div class="pr-history-row">
+                <div class="pr-hist-col-date">${dateStr}</div>
+                <div class="pr-hist-col-sets">${session.sets}</div>
+                <div class="pr-hist-col-best">${session.bestWeight}×${session.bestReps}</div>
+                <div class="pr-hist-col-volume">${volumeStr}</div>
             </div>
         `;
     }).join('');
@@ -4806,6 +6429,31 @@ function getUnlockedAchievements() {
     if (gameState.level >= 10) unlocked.push({ ...ACHIEVEMENTS.find(a => a.id === 'level_10') });
     if (gameState.level >= 25) unlocked.push({ ...ACHIEVEMENTS.find(a => a.id === 'level_25') });
 
+    // Progress-based achievements (compare current PRs to baselines)
+    const baselines = gameState.baselines || {};
+    let maxProgress = 0;
+
+    Object.keys(prs).forEach(exerciseId => {
+        const baseline = baselines[exerciseId];
+        if (!baseline || baseline <= 0) return;
+
+        const currentPR = prs[exerciseId];
+        const currentWeight = typeof currentPR === 'number' ? currentPR : (currentPR?.weight || currentPR?.maxWeight || 0);
+
+        if (currentWeight > 0) {
+            const progressPercent = ((currentWeight - baseline) / baseline) * 100;
+            if (progressPercent > maxProgress) {
+                maxProgress = progressPercent;
+            }
+        }
+    });
+
+    if (maxProgress >= 10) unlocked.push({ ...ACHIEVEMENTS.find(a => a.id === 'progress_10') });
+    if (maxProgress >= 20) unlocked.push({ ...ACHIEVEMENTS.find(a => a.id === 'progress_20') });
+    if (maxProgress >= 30) unlocked.push({ ...ACHIEVEMENTS.find(a => a.id === 'progress_30') });
+    if (maxProgress >= 50) unlocked.push({ ...ACHIEVEMENTS.find(a => a.id === 'progress_50') });
+    if (maxProgress >= 100) unlocked.push({ ...ACHIEVEMENTS.find(a => a.id === 'progress_100') });
+
     return unlocked.filter(a => a); // Remove any undefined
 }
 
@@ -4924,15 +6572,18 @@ function renderMilestones() {
 }
 
 function getExerciseName(exerciseId) {
-    // Check built-in exercises
-    const allExercises = [
-        ...Object.values(EXERCISES.push || {}),
-        ...Object.values(EXERCISES.pull || {}),
-        ...Object.values(EXERCISES.legs || {})
-    ].flat();
-
+    // Check built-in exercises (allExercises is defined at top of file)
     const builtIn = allExercises.find(e => e.id === exerciseId);
     if (builtIn) return builtIn.name;
+
+    // Check workout templates
+    const workoutExercises = [
+        ...workouts.push.exercises,
+        ...workouts.pull.exercises,
+        ...workouts.legs.exercises
+    ];
+    const fromWorkout = workoutExercises.find(e => e.id === exerciseId);
+    if (fromWorkout) return fromWorkout.name;
 
     // Check custom exercises
     const custom = customExercises.find(e => e.id === exerciseId);

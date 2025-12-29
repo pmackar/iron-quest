@@ -4,7 +4,13 @@
  */
 
 const API = {
-    baseUrl: 'http://localhost:3001/api',
+    // Production API URL - update this after deploying backend to Railway
+    PRODUCTION_API_URL: 'https://iron-quest-production.up.railway.app',
+
+    // Use production URL or localhost in development
+    baseUrl: window.location.hostname === 'localhost'
+        ? 'http://localhost:3001/api'
+        : (window.IRON_QUEST_API_URL || 'https://iron-quest-production.up.railway.app') + '/api',
     token: null,
     socket: null,
 
@@ -212,7 +218,11 @@ const API = {
             return;
         }
 
-        this.socket = io('http://localhost:3001', {
+        const socketUrl = window.location.hostname === 'localhost'
+            ? 'http://localhost:3001'
+            : (window.IRON_QUEST_API_URL || this.PRODUCTION_API_URL);
+
+        this.socket = io(socketUrl, {
             auth: { token }
         });
 

@@ -8,6 +8,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
+const path = require('path');
 const { Server } = require('socket.io');
 
 // Import routes
@@ -120,9 +121,21 @@ app.get('/api', (req, res) => {
     });
 });
 
-// 404 handler
-app.use((req, res) => {
-    res.status(404).json({ error: 'Endpoint not found' });
+// ============================================
+// STATIC FILES (Production)
+// ============================================
+
+// Serve static files from the frontend directory
+app.use(express.static(path.join(__dirname, '../../')));
+
+// Serve index.html for all non-API routes (SPA fallback)
+app.get('*', (req, res) => {
+    // Only serve index.html for non-API routes
+    if (!req.path.startsWith('/api')) {
+        res.sendFile(path.join(__dirname, '../../index.html'));
+    } else {
+        res.status(404).json({ error: 'Endpoint not found' });
+    }
 });
 
 // Error handler
