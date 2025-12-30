@@ -1018,7 +1018,7 @@ function showRegisterForm() {
 function showAuthOptions() {
     document.getElementById('authScreen').classList.add('showing-forms');
     document.getElementById('authFormsContainer').classList.add('active');
-    initClerkSignIn();
+    initGoogleSignIn();
 }
 
 function hideAuthForms() {
@@ -1026,130 +1026,84 @@ function hideAuthForms() {
     document.getElementById('authScreen').classList.remove('showing-forms');
 }
 
-// Clerk Sign-In
-let pendingClerkUser = null;
+// Google Sign-In
+let pendingGoogleUser = null;
 
-async function initClerkSignIn() {
-    // Wait for Clerk to load
-    if (!window.Clerk) {
-        console.log('Clerk SDK not yet loaded, will retry...');
-        setTimeout(initClerkSignIn, 500);
+function initGoogleSignIn() {
+    // Wait for Google Identity Services to load
+    if (!window.google?.accounts?.id) {
+        console.log('Google SDK not yet loaded, will retry...');
+        setTimeout(initGoogleSignIn, 500);
+        return;
+    }
+
+    const clientId = window.APP_CONFIG?.GOOGLE_CLIENT_ID;
+    if (!clientId || clientId === 'your-google-client-id.apps.googleusercontent.com') {
+        console.error('Google Client ID not configured');
+        const errorEl = document.getElementById('googleSignInError');
+        if (errorEl) errorEl.textContent = 'Google Sign-In not configured';
         return;
     }
 
     try {
-        await window.Clerk.load();
+        // Initialize Google Sign-In
+        window.google.accounts.id.initialize({
+            client_id: clientId,
+            callback: handleGoogleSignIn,
+            auto_select: false
+        });
 
-        const signInButton = document.getElementById('clerkSignInButton');
-
-        // Check if already signed in - show continue option instead of auto-login
-        if (window.Clerk.user) {
-            const userName = window.Clerk.user.firstName || window.Clerk.user.username || 'Warrior';
-            if (signInButton) {
-                signInButton.innerHTML = `
-                    <button class="dc-button" onclick="handleClerkUserLoaded()" style="width: 100%; margin-bottom: 12px;">
-                        CONTINUE AS ${userName.toUpperCase()}
-                    </button>
-                    <button class="dc-button secondary" onclick="switchClerkAccount()" style="width: 100%;">
-                        SWITCH ACCOUNT
-                    </button>
-                `;
-            }
-        } else {
-            // Mount sign-in button for new users
-            if (signInButton) {
-                signInButton.innerHTML = `
-                    <button class="dc-button" onclick="openClerkSignIn()" style="width: 100%;">
-                        SIGN IN / SIGN UP
-                    </button>
-                `;
-            }
+        // Render the Google Sign-In button
+        const buttonContainer = document.getElementById('googleSignInButton');
+        if (buttonContainer) {
+            window.google.accounts.id.renderButton(buttonContainer, {
+                theme: 'filled_black',
+                size: 'large',
+                width: 280,
+                text: 'signin_with'
+            });
         }
-
-        // Listen for auth state changes (for after signing in)
-        window.Clerk.addListener(({ user }) => {
-            if (user && !window.Clerk._listenerTriggeredOnce) {
-                window.Clerk._listenerTriggeredOnce = true;
-                handleClerkUserLoaded();
-            }
-        });
     } catch (error) {
-        console.error('Clerk init error:', error);
+        console.error('Google Sign-In init error:', error);
     }
 }
 
-function switchClerkAccount() {
-    if (window.Clerk) {
-        window.Clerk.signOut().then(() => {
-            window.Clerk._listenerTriggeredOnce = false;
-            openClerkSignIn();
-        });
-    }
-}
-
-function openClerkSignIn() {
-    if (window.Clerk) {
-        window.Clerk.openSignIn({
-            afterSignInUrl: window.location.href,
-            afterSignUpUrl: window.location.href
-        });
-    }
-}
-
-async function handleClerkUserLoaded() {
-    const errorEl = document.getElementById('clerkSignInError');
+async function handleGoogleSignIn(response) {
+    const errorEl = document.getElementById('googleSignInError');
     if (errorEl) errorEl.textContent = '';
 
     try {
-        const clerkUser = window.Clerk.user;
-        if (!clerkUser) return;
-
-        // Get session token for backend auth
-        const token = await window.Clerk.session.getToken();
-
-        // Send to our backend to create/get user
-        const result = await API.clerkSignIn(token, {
-            clerkUserId: clerkUser.id,
-            email: clerkUser.primaryEmailAddress?.emailAddress,
-            username: clerkUser.username || clerkUser.firstName || 'Warrior',
-            avatarUrl: clerkUser.imageUrl
-        });
+        // Send the ID token to our backend
+        const result = await API.googleSignIn(response.credential);
 
         if (result.isNewUser) {
             // New user - show role selection
-            pendingClerkUser = { token, clerkUser };
+            pendingGoogleUser = { idToken: response.credential };
             document.getElementById('roleSelection').style.display = 'block';
         } else {
             // Existing user - proceed directly
             completeSignIn(result);
         }
     } catch (error) {
-        console.error('Clerk sign-in error:', error);
+        console.error('Google sign-in error:', error);
         if (errorEl) errorEl.textContent = error.message || 'Sign-in failed. Please try again.';
     }
 }
 
-async function completeClerkSignIn(role) {
-    const errorEl = document.getElementById('clerkSignInError');
+async function completeGoogleSignIn(role) {
+    const errorEl = document.getElementById('googleSignInError');
     if (errorEl) errorEl.textContent = '';
 
-    if (!pendingClerkUser) {
+    if (!pendingGoogleUser) {
         if (errorEl) errorEl.textContent = 'Session expired. Please sign in again.';
         document.getElementById('roleSelection').style.display = 'none';
         return;
     }
 
     try {
-        const { token, clerkUser } = pendingClerkUser;
-        const result = await API.clerkSignIn(token, {
-            clerkUserId: clerkUser.id,
-            email: clerkUser.primaryEmailAddress?.emailAddress,
-            username: clerkUser.username || clerkUser.firstName || 'Warrior',
-            avatarUrl: clerkUser.imageUrl,
-            role
-        });
+        const result = await API.googleSignIn(pendingGoogleUser.idToken, { role });
 
-        pendingClerkUser = null;
+        pendingGoogleUser = null;
         document.getElementById('roleSelection').style.display = 'none';
         completeSignIn(result);
     } catch (error) {
