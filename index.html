@@ -10,29 +10,29 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* SNES Platformer Palette */
-            --sky-light: #87CEEB;
-            --sky-mid: #5BA3D9;
-            --sky-dark: #2E86C1;
-            --grass-light: #7FE07F;
-            --grass-mid: #32CD32;
-            --grass-dark: #228B22;
-            --gold: #FFD700;
-            --gold-light: #FFEB3B;
-            --gold-dark: #FFA000;
-            --coin-yellow: #FFE135;
-            --brick-red: #C0392B;
-            --pipe-green: #27AE60;
-            --cloud-white: #FFFFFF;
+            /* Modern Dark Palette */
+            --bg-deep: #0a0a0f;
+            --bg-dark: #12121a;
+            --bg-card: #1a1a24;
+            --surface: #22222e;
 
-            /* Modern accents */
-            --bg-dark: #1a1a2e;
-            --bg-card: rgba(255, 255, 255, 0.15);
-            --glass-border: rgba(255, 255, 255, 0.3);
-            --glass-highlight: rgba(255, 255, 255, 0.5);
+            /* Accent Colors */
+            --gold: #f0c674;
+            --gold-bright: #ffd93d;
+            --gold-dim: #c9a04d;
+            --neon-green: #4ade80;
+            --neon-blue: #60a5fa;
+            --neon-purple: #a78bfa;
+
+            /* Glass Effects */
+            --glass-bg: rgba(255, 255, 255, 0.06);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --glass-highlight: rgba(255, 255, 255, 0.2);
+
+            /* Text - Higher Contrast */
             --text-primary: #ffffff;
-            --text-secondary: rgba(255, 255, 255, 0.9);
-            --text-dark: #1a1a2e;
+            --text-secondary: rgba(255, 255, 255, 0.85);
+            --text-muted: rgba(255, 255, 255, 0.6);
         }
 
         * {
@@ -47,7 +47,7 @@
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(180deg, var(--sky-light) 0%, var(--sky-mid) 50%, var(--sky-dark) 100%);
+            background: var(--bg-deep);
             color: var(--text-primary);
             overflow-x: hidden;
             line-height: 1.6;
@@ -58,7 +58,7 @@
             font-family: 'Press Start 2P', cursive;
         }
 
-        /* Animated Sky Background */
+        /* Animated Background */
         .bg-animation {
             position: fixed;
             top: 0;
@@ -67,161 +67,58 @@
             height: 100%;
             z-index: -1;
             overflow: hidden;
-            background: linear-gradient(180deg,
-                #87CEEB 0%,
-                #5BA3D9 30%,
-                #4A90C2 60%,
-                #2E86C1 100%);
+            background:
+                radial-gradient(ellipse at 20% 20%, rgba(160, 120, 250, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(74, 222, 128, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(240, 198, 116, 0.04) 0%, transparent 60%),
+                linear-gradient(180deg, var(--bg-deep) 0%, #0d0d14 50%, var(--bg-dark) 100%);
         }
 
-        /* Pixel Clouds */
-        .cloud {
+        /* Floating Particles - Subtle */
+        .particle {
             position: absolute;
-            background: var(--cloud-white);
-            border-radius: 50px;
-            box-shadow:
-                0 8px 0 rgba(0,0,0,0.05),
-                inset 0 -8px 0 rgba(0,0,0,0.05);
-            animation: cloudFloat 30s linear infinite;
-        }
-
-        .cloud::before,
-        .cloud::after {
-            content: '';
-            position: absolute;
-            background: var(--cloud-white);
+            width: 4px;
+            height: 4px;
+            background: var(--gold);
             border-radius: 50%;
+            opacity: 0.3;
+            animation: particleFloat 20s linear infinite;
         }
 
-        .cloud-1 {
-            width: 200px;
-            height: 60px;
-            top: 8%;
-            left: -200px;
-            animation-duration: 45s;
-        }
-        .cloud-1::before { width: 80px; height: 80px; top: -40px; left: 30px; }
-        .cloud-1::after { width: 60px; height: 60px; top: -30px; left: 100px; }
+        .particle:nth-child(1) { top: 20%; left: 10%; animation-delay: 0s; animation-duration: 25s; }
+        .particle:nth-child(2) { top: 60%; left: 85%; animation-delay: -5s; animation-duration: 30s; }
+        .particle:nth-child(3) { top: 40%; left: 50%; animation-delay: -10s; animation-duration: 22s; }
+        .particle:nth-child(4) { top: 80%; left: 25%; animation-delay: -15s; animation-duration: 28s; }
+        .particle:nth-child(5) { top: 10%; left: 70%; animation-delay: -8s; animation-duration: 24s; }
 
-        .cloud-2 {
-            width: 150px;
-            height: 45px;
-            top: 15%;
-            left: -150px;
-            animation-duration: 55s;
-            animation-delay: -20s;
-        }
-        .cloud-2::before { width: 60px; height: 60px; top: -30px; left: 20px; }
-        .cloud-2::after { width: 45px; height: 45px; top: -22px; left: 75px; }
-
-        .cloud-3 {
-            width: 180px;
-            height: 55px;
-            top: 25%;
-            left: -180px;
-            animation-duration: 50s;
-            animation-delay: -35s;
-        }
-        .cloud-3::before { width: 70px; height: 70px; top: -35px; left: 25px; }
-        .cloud-3::after { width: 55px; height: 55px; top: -27px; left: 90px; }
-
-        .cloud-4 {
-            width: 120px;
-            height: 36px;
-            top: 5%;
-            left: -120px;
-            animation-duration: 60s;
-            animation-delay: -10s;
-        }
-        .cloud-4::before { width: 48px; height: 48px; top: -24px; left: 16px; }
-        .cloud-4::after { width: 36px; height: 36px; top: -18px; left: 60px; }
-
-        @keyframes cloudFloat {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(calc(100vw + 300px)); }
+        @keyframes particleFloat {
+            0%, 100% {
+                transform: translateY(0) translateX(0);
+                opacity: 0.2;
+            }
+            25% {
+                transform: translateY(-30px) translateX(15px);
+                opacity: 0.4;
+            }
+            50% {
+                transform: translateY(-15px) translateX(-10px);
+                opacity: 0.3;
+            }
+            75% {
+                transform: translateY(-45px) translateX(5px);
+                opacity: 0.5;
+            }
         }
 
-        /* Floating Coins */
-        .coin {
-            position: absolute;
-            width: 30px;
-            height: 30px;
-            background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 50%, var(--gold-dark) 100%);
-            border-radius: 50%;
-            box-shadow:
-                inset -4px -4px 0 rgba(0,0,0,0.2),
-                0 4px 8px rgba(0,0,0,0.2);
-            animation: coinBounce 2s ease-in-out infinite;
-        }
-
-        .coin::after {
-            content: '★';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 14px;
-            color: var(--gold-dark);
-        }
-
-        .coin-1 { top: 20%; right: 10%; animation-delay: 0s; }
-        .coin-2 { top: 40%; right: 5%; animation-delay: 0.3s; }
-        .coin-3 { top: 60%; right: 15%; animation-delay: 0.6s; }
-        .coin-4 { top: 30%; left: 8%; animation-delay: 0.2s; }
-        .coin-5 { top: 55%; left: 12%; animation-delay: 0.5s; }
-
-        @keyframes coinBounce {
-            0%, 100% { transform: translateY(0) rotate(0deg); }
-            50% { transform: translateY(-15px) rotate(180deg); }
-        }
-
-        /* Pixel Stars */
-        .pixel-star {
-            position: absolute;
-            width: 8px;
-            height: 8px;
-            background: var(--gold-light);
-            animation: starTwinkle 1.5s ease-in-out infinite;
-        }
-
-        .pixel-star::before,
-        .pixel-star::after {
-            content: '';
-            position: absolute;
-            background: var(--gold-light);
-        }
-
-        .pixel-star::before {
-            width: 8px;
-            height: 8px;
-            top: -8px;
-            left: 0;
-        }
-
-        .pixel-star::after {
-            width: 8px;
-            height: 24px;
-            top: -8px;
-            left: -8px;
-            transform: rotate(90deg);
-            transform-origin: center;
-        }
-
-        @keyframes starTwinkle {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(0.8); }
-        }
-
-        /* Glass Card - Brighter for sky */
+        /* Modern Glass Card */
         .glass {
-            background: rgba(255, 255, 255, 0.2);
+            background: var(--glass-bg);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            border: 2px solid rgba(255, 255, 255, 0.4);
-            border-radius: 24px;
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
             position: relative;
             overflow: hidden;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
 
         .glass::before {
@@ -230,8 +127,8 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--glass-highlight), transparent);
         }
 
         /* Navigation */
@@ -245,45 +142,38 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(10, 10, 15, 0.8);
             backdrop-filter: blur(20px);
-            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+            border-bottom: 1px solid var(--glass-border);
         }
 
         .logo {
             font-family: 'Press Start 2P', cursive;
-            font-size: 18px;
-            background: linear-gradient(180deg, var(--gold-light) 0%, var(--gold) 50%, var(--gold-dark) 100%);
+            font-size: 14px;
+            background: linear-gradient(135deg, var(--gold-bright) 0%, var(--gold) 50%, var(--gold-dim) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            text-shadow: 3px 3px 0 rgba(0,0,0,0.1);
-            filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.2));
+            letter-spacing: 1px;
         }
 
         .nav-cta {
-            padding: 14px 28px;
-            background: linear-gradient(180deg, var(--grass-light) 0%, var(--grass-mid) 100%);
-            border: 3px solid var(--grass-dark);
-            border-radius: 50px;
-            color: #fff;
-            font-weight: 800;
-            font-size: 14px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dim) 100%);
+            border: none;
+            border-radius: 12px;
+            color: var(--bg-deep);
+            font-weight: 700;
+            font-size: 13px;
             cursor: pointer;
             transition: all 0.3s ease;
             text-decoration: none;
-            text-shadow: 1px 1px 0 rgba(0,0,0,0.3);
-            box-shadow: 0 4px 0 var(--grass-dark);
+            box-shadow: 0 4px 20px rgba(240, 198, 116, 0.25);
         }
 
         .nav-cta:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 0 var(--grass-dark);
-        }
-
-        .nav-cta:active {
-            transform: translateY(2px);
-            box-shadow: 0 2px 0 var(--grass-dark);
+            box-shadow: 0 6px 25px rgba(240, 198, 116, 0.35);
         }
 
         /* Hero Section */
@@ -306,88 +196,83 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            padding: 10px 20px;
-            background: rgba(255, 215, 0, 0.3);
-            border: 2px solid var(--gold);
+            padding: 8px 18px;
+            background: rgba(240, 198, 116, 0.1);
+            border: 1px solid rgba(240, 198, 116, 0.3);
             border-radius: 50px;
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--text-dark);
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--gold);
             margin-bottom: 24px;
-            font-family: 'Press Start 2P', cursive;
+            letter-spacing: 1.5px;
             text-transform: uppercase;
         }
 
         .hero-badge::before {
-            content: '●';
-            color: var(--grass-mid);
-            animation: pulse 1s ease-in-out infinite;
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: var(--neon-green);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+            box-shadow: 0 0 10px var(--neon-green);
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
         }
 
         h1 {
-            font-family: 'Press Start 2P', cursive;
-            font-size: clamp(28px, 5vw, 48px);
-            line-height: 1.4;
+            font-family: 'Inter', sans-serif;
+            font-size: clamp(36px, 6vw, 64px);
+            font-weight: 800;
+            line-height: 1.1;
             margin-bottom: 24px;
-            color: #fff;
-            text-shadow:
-                4px 4px 0 var(--sky-dark),
-                -1px -1px 0 rgba(255,255,255,0.5);
+            letter-spacing: -1px;
         }
 
         h1 span {
-            background: linear-gradient(180deg, var(--gold-light) 0%, var(--gold) 100%);
+            background: linear-gradient(135deg, var(--gold-bright) 0%, var(--gold) 50%, var(--neon-green) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            filter: drop-shadow(3px 3px 0 var(--gold-dark));
         }
 
         .hero-subtitle {
-            font-size: clamp(16px, 2vw, 20px);
-            color: #fff;
-            max-width: 650px;
+            font-size: clamp(16px, 2vw, 19px);
+            color: var(--text-secondary);
+            max-width: 580px;
             margin: 0 auto 40px;
             line-height: 1.8;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            font-weight: 450;
         }
 
         .hero-cta {
             display: inline-flex;
             align-items: center;
-            gap: 12px;
-            padding: 20px 44px;
-            background: linear-gradient(180deg, var(--gold-light) 0%, var(--gold) 100%);
-            border: 4px solid var(--gold-dark);
-            border-radius: 60px;
-            color: var(--text-dark);
-            font-weight: 800;
-            font-size: 18px;
+            gap: 10px;
+            padding: 18px 36px;
+            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dim) 100%);
+            border: none;
+            border-radius: 14px;
+            color: var(--bg-deep);
+            font-weight: 700;
+            font-size: 16px;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
             text-decoration: none;
-            box-shadow: 0 6px 0 var(--gold-dark);
-            text-shadow: none;
+            box-shadow: 0 8px 30px rgba(240, 198, 116, 0.3);
         }
 
         .hero-cta:hover {
             transform: translateY(-3px);
-            box-shadow: 0 9px 0 var(--gold-dark);
-        }
-
-        .hero-cta:active {
-            transform: translateY(3px);
-            box-shadow: 0 3px 0 var(--gold-dark);
+            box-shadow: 0 12px 40px rgba(240, 198, 116, 0.4);
         }
 
         .hero-cta svg {
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             transition: transform 0.3s ease;
         }
 
@@ -398,13 +283,9 @@
         .hero-stats {
             display: flex;
             justify-content: center;
-            gap: 40px;
+            gap: 50px;
             margin-top: 60px;
-            padding: 30px;
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 30px 40px;
         }
 
         .hero-stat {
@@ -413,62 +294,66 @@
 
         .hero-stat-value {
             font-family: 'Press Start 2P', cursive;
-            font-size: 24px;
+            font-size: 20px;
             color: var(--gold);
-            text-shadow: 2px 2px 0 var(--gold-dark);
+            margin-bottom: 8px;
         }
 
         .hero-stat-label {
             font-size: 12px;
-            color: #fff;
+            color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-top: 8px;
-            font-weight: 600;
+            font-weight: 500;
         }
 
         /* Mockup Section */
         .mockup-section {
-            padding: 60px 40px;
+            padding: 40px 40px 80px;
             position: relative;
         }
 
         .mockup-container {
-            max-width: 1200px;
+            max-width: 1100px;
             margin: 0 auto;
             display: flex;
-            gap: 30px;
+            gap: 24px;
             align-items: center;
             justify-content: center;
             flex-wrap: wrap;
         }
 
         .mockup-phone {
-            width: 260px;
-            height: 540px;
-            background: linear-gradient(180deg, #2a2a3e 0%, #1a1a28 100%);
-            border-radius: 36px;
-            border: 4px solid #3a3a4e;
-            padding: 10px;
+            width: 240px;
+            height: 500px;
+            background: linear-gradient(180deg, #1e1e28 0%, #14141c 100%);
+            border-radius: 32px;
+            border: 2px solid var(--surface);
+            padding: 8px;
             position: relative;
             box-shadow:
-                0 20px 60px rgba(0, 0, 0, 0.3),
-                inset 0 2px 0 rgba(255, 255, 255, 0.1);
+                0 25px 80px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
             transform: perspective(1000px) rotateY(-5deg);
-            transition: transform 0.4s ease;
+            transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
         }
 
         .mockup-phone:hover {
             transform: perspective(1000px) rotateY(0deg) translateY(-10px);
+            box-shadow:
+                0 35px 100px rgba(0, 0, 0, 0.6),
+                0 0 0 1px rgba(255, 255, 255, 0.08),
+                0 0 60px rgba(240, 198, 116, 0.1);
         }
 
         .mockup-phone:nth-child(2) {
-            transform: perspective(1000px) rotateY(0deg) scale(1.08);
+            transform: perspective(1000px) rotateY(0deg) scale(1.05);
             z-index: 2;
         }
 
         .mockup-phone:nth-child(2):hover {
-            transform: perspective(1000px) rotateY(0deg) scale(1.12) translateY(-10px);
+            transform: perspective(1000px) rotateY(0deg) scale(1.08) translateY(-10px);
         }
 
         .mockup-phone:nth-child(3) {
@@ -480,12 +365,12 @@
         }
 
         .mockup-notch {
-            width: 90px;
-            height: 26px;
+            width: 80px;
+            height: 24px;
             background: #000;
-            border-radius: 20px;
+            border-radius: 16px;
             position: absolute;
-            top: 18px;
+            top: 16px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 10;
@@ -494,8 +379,8 @@
         .mockup-screen {
             width: 100%;
             height: 100%;
-            background: linear-gradient(180deg, #12121a 0%, #0a0a10 100%);
-            border-radius: 28px;
+            background: linear-gradient(180deg, #0d0d12 0%, #08080c 100%);
+            border-radius: 26px;
             overflow: hidden;
             display: flex;
             flex-direction: column;
@@ -506,48 +391,34 @@
         }
 
         .mockup-screen .screen-icon {
-            font-size: 44px;
+            font-size: 40px;
             margin-bottom: 16px;
         }
 
         .mockup-screen .screen-title {
-            font-family: 'Press Start 2P', cursive;
-            font-size: 12px;
-            margin-bottom: 12px;
-            color: var(--gold);
+            font-weight: 700;
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: var(--text-primary);
         }
 
         .mockup-screen .screen-desc {
             font-size: 12px;
-            color: rgba(255,255,255,0.6);
+            color: var(--text-muted);
         }
 
-        /* Ground/Grass Section Divider */
-        .grass-divider {
-            height: 40px;
-            background:
-                linear-gradient(180deg, transparent 0%, var(--grass-mid) 40%, var(--grass-dark) 100%);
-            position: relative;
-            margin-top: 40px;
-        }
-
-        .grass-divider::before {
-            content: '';
-            position: absolute;
-            top: -20px;
-            left: 0;
-            right: 0;
-            height: 30px;
-            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 30'%3E%3Cpath fill='%2332CD32' d='M0,30 L5,10 L10,30 L15,8 L20,30 L25,12 L30,30 L35,6 L40,30 L45,14 L50,30 L55,8 L60,30 L65,10 L70,30 L75,12 L80,30 L85,6 L90,30 L95,14 L100,30 Z'/%3E%3C/svg%3E") repeat-x;
-            background-size: 100px 30px;
+        /* Section Divider */
+        .section-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--glass-border), transparent);
+            margin: 40px 0;
         }
 
         /* Features Section */
         .features {
-            padding: 80px 40px;
-            max-width: 1400px;
+            padding: 100px 40px;
+            max-width: 1300px;
             margin: 0 auto;
-            background: linear-gradient(180deg, var(--grass-dark) 0%, var(--bg-dark) 15%);
         }
 
         .section-header {
@@ -557,86 +428,86 @@
 
         .section-tag {
             display: inline-block;
-            padding: 8px 16px;
-            background: var(--gold);
-            border: 3px solid var(--gold-dark);
+            padding: 6px 14px;
+            background: rgba(74, 222, 128, 0.1);
+            border: 1px solid rgba(74, 222, 128, 0.2);
             border-radius: 8px;
-            font-family: 'Press Start 2P', cursive;
-            font-size: 10px;
-            color: var(--text-dark);
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--neon-green);
             text-transform: uppercase;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 0 var(--gold-dark);
+            letter-spacing: 1px;
+            margin-bottom: 16px;
         }
 
         .section-title {
-            font-family: 'Press Start 2P', cursive;
-            font-size: clamp(20px, 4vw, 32px);
+            font-size: clamp(28px, 4vw, 42px);
+            font-weight: 800;
             margin-bottom: 16px;
-            color: #fff;
-            text-shadow: 3px 3px 0 rgba(0,0,0,0.3);
+            letter-spacing: -0.5px;
         }
 
         .section-subtitle {
             font-size: 16px;
             color: var(--text-secondary);
-            max-width: 600px;
+            max-width: 500px;
             margin: 0 auto;
+            line-height: 1.7;
+            font-weight: 450;
         }
 
         .features-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 24px;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
         }
 
         .feature-card {
             padding: 32px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 2px solid rgba(255, 255, 255, 0.1);
             transition: all 0.3s ease;
         }
 
         .feature-card:hover {
-            transform: translateY(-8px);
-            border-color: var(--gold);
-            box-shadow: 0 8px 0 rgba(212, 168, 83, 0.3);
+            transform: translateY(-4px);
+            border-color: rgba(240, 198, 116, 0.2);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         }
 
         .feature-icon {
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
-            border-radius: 12px;
+            width: 52px;
+            height: 52px;
+            background: linear-gradient(135deg, rgba(240, 198, 116, 0.15) 0%, rgba(240, 198, 116, 0.05) 100%);
+            border: 1px solid rgba(240, 198, 116, 0.2);
+            border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 28px;
+            font-size: 24px;
             margin-bottom: 20px;
-            box-shadow: 0 4px 0 var(--gold-dark);
         }
 
         .feature-title {
-            font-family: 'Press Start 2P', cursive;
-            font-size: 12px;
-            margin-bottom: 12px;
-            color: var(--gold);
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--text-primary);
         }
 
         .feature-desc {
             font-size: 14px;
             color: var(--text-secondary);
             line-height: 1.7;
+            font-weight: 450;
         }
 
         /* Gamification Section */
         .gamification {
-            padding: 80px 40px;
-            background: var(--bg-dark);
+            padding: 100px 40px;
+            background: linear-gradient(180deg, transparent 0%, rgba(240, 198, 116, 0.02) 50%, transparent 100%);
         }
 
         .gamification-content {
-            max-width: 1100px;
+            max-width: 1000px;
             margin: 0 auto;
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -645,11 +516,10 @@
         }
 
         .gamification-text h2 {
-            font-family: 'Press Start 2P', cursive;
-            font-size: clamp(16px, 3vw, 24px);
-            margin-bottom: 24px;
-            color: #fff;
-            line-height: 1.6;
+            font-size: clamp(24px, 3vw, 36px);
+            font-weight: 800;
+            margin-bottom: 20px;
+            line-height: 1.2;
         }
 
         .gamification-text h2 span {
@@ -659,66 +529,54 @@
         .gamification-text p {
             font-size: 15px;
             color: var(--text-secondary);
-            margin-bottom: 24px;
+            margin-bottom: 16px;
             line-height: 1.8;
+            font-weight: 450;
         }
 
         .xp-preview {
             padding: 28px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 2px solid rgba(255, 255, 255, 0.1);
         }
 
         .xp-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 16px;
+            margin-bottom: 14px;
         }
 
         .xp-level {
             font-family: 'Press Start 2P', cursive;
-            font-size: 11px;
+            font-size: 10px;
             color: var(--gold);
         }
 
         .xp-amount {
-            font-size: 12px;
-            color: var(--text-muted);
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
         }
 
         .xp-bar {
-            height: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
+            height: 12px;
+            background: var(--surface);
+            border-radius: 6px;
             overflow: hidden;
             margin-bottom: 24px;
-            border: 2px solid rgba(255, 255, 255, 0.2);
         }
 
         .xp-fill {
             height: 100%;
             width: 68%;
-            background: linear-gradient(90deg, var(--grass-mid) 0%, var(--grass-light) 50%, var(--gold) 100%);
-            border-radius: 8px;
-            animation: xpGlow 2s ease-in-out infinite;
+            background: linear-gradient(90deg, var(--neon-green) 0%, var(--gold) 100%);
+            border-radius: 6px;
             position: relative;
+            animation: xpPulse 3s ease-in-out infinite;
         }
 
-        .xp-fill::after {
-            content: '';
-            position: absolute;
-            top: 2px;
-            left: 4px;
-            right: 4px;
-            height: 6px;
-            background: rgba(255,255,255,0.3);
-            border-radius: 4px;
-        }
-
-        @keyframes xpGlow {
-            0%, 100% { box-shadow: 0 0 10px rgba(50, 205, 50, 0.5); }
-            50% { box-shadow: 0 0 20px rgba(50, 205, 50, 0.8); }
+        @keyframes xpPulse {
+            0%, 100% { box-shadow: 0 0 10px rgba(74, 222, 128, 0.3); }
+            50% { box-shadow: 0 0 20px rgba(74, 222, 128, 0.5); }
         }
 
         .xp-stats {
@@ -730,14 +588,14 @@
         .xp-stat {
             text-align: center;
             padding: 16px 8px;
-            background: rgba(255, 255, 255, 0.05);
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
             border-radius: 12px;
-            border: 2px solid rgba(255, 255, 255, 0.1);
         }
 
         .xp-stat-value {
             font-family: 'Press Start 2P', cursive;
-            font-size: 14px;
+            font-size: 12px;
             color: var(--gold);
         }
 
@@ -751,31 +609,31 @@
 
         /* Roadmap Section */
         .roadmap {
-            padding: 80px 40px;
-            max-width: 900px;
+            padding: 100px 40px;
+            max-width: 800px;
             margin: 0 auto;
-            background: var(--bg-dark);
         }
 
         .roadmap-timeline {
             position: relative;
-            padding-left: 50px;
+            padding-left: 40px;
         }
 
         .roadmap-timeline::before {
             content: '';
             position: absolute;
-            left: 11px;
+            left: 7px;
             top: 0;
             bottom: 0;
-            width: 4px;
-            background: linear-gradient(180deg, var(--gold) 0%, var(--grass-mid) 50%, var(--sky-mid) 100%);
-            border-radius: 2px;
+            width: 2px;
+            background: linear-gradient(180deg, var(--gold) 0%, var(--neon-green) 50%, var(--neon-blue) 100%);
+            border-radius: 1px;
+            opacity: 0.3;
         }
 
         .roadmap-item {
             position: relative;
-            padding-bottom: 40px;
+            padding-bottom: 36px;
         }
 
         .roadmap-item:last-child {
@@ -784,111 +642,108 @@
 
         .roadmap-dot {
             position: absolute;
-            left: -50px;
+            left: -40px;
             top: 4px;
-            width: 24px;
-            height: 24px;
+            width: 16px;
+            height: 16px;
             background: var(--gold);
             border-radius: 50%;
-            border: 4px solid var(--bg-dark);
-            box-shadow: 0 0 0 3px var(--gold);
+            border: 3px solid var(--bg-deep);
+            box-shadow: 0 0 0 2px var(--gold), 0 0 15px rgba(240, 198, 116, 0.3);
         }
 
         .roadmap-dot.upcoming {
-            background: var(--bg-dark);
-            border: 4px solid var(--sky-mid);
-            box-shadow: 0 0 0 3px var(--sky-mid);
+            background: var(--bg-card);
+            box-shadow: 0 0 0 2px var(--neon-blue), 0 0 15px rgba(96, 165, 250, 0.2);
         }
 
         .roadmap-phase {
             font-family: 'Press Start 2P', cursive;
-            font-size: 9px;
-            color: var(--gold);
+            font-size: 8px;
+            color: var(--text-muted);
             text-transform: uppercase;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
+            letter-spacing: 1px;
         }
 
         .roadmap-title {
-            font-size: 18px;
+            font-size: 17px;
             font-weight: 700;
-            margin-bottom: 10px;
-            color: #fff;
+            margin-bottom: 8px;
         }
 
         .roadmap-desc {
             font-size: 14px;
             color: var(--text-secondary);
             line-height: 1.7;
+            font-weight: 450;
         }
 
         .roadmap-status {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            padding: 6px 14px;
-            border-radius: 8px;
+            gap: 5px;
+            padding: 5px 12px;
+            border-radius: 6px;
             font-size: 11px;
-            font-weight: 700;
-            margin-top: 12px;
+            font-weight: 600;
+            margin-top: 10px;
         }
 
         .roadmap-status.live {
-            background: var(--grass-mid);
-            color: #fff;
-            box-shadow: 0 3px 0 var(--grass-dark);
+            background: rgba(74, 222, 128, 0.15);
+            color: var(--neon-green);
+            border: 1px solid rgba(74, 222, 128, 0.3);
         }
 
         .roadmap-status.planned {
-            background: rgba(91, 163, 217, 0.2);
-            color: var(--sky-light);
-            border: 2px solid var(--sky-mid);
+            background: rgba(96, 165, 250, 0.1);
+            color: var(--neon-blue);
+            border: 1px solid rgba(96, 165, 250, 0.2);
         }
 
         /* CTA Section */
         .cta-section {
-            padding: 80px 40px;
-            background: linear-gradient(180deg, var(--bg-dark) 0%, var(--sky-dark) 100%);
+            padding: 100px 40px;
         }
 
         .cta-card {
-            max-width: 700px;
+            max-width: 650px;
             margin: 0 auto;
             padding: 50px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 3px solid var(--gold);
             text-align: center;
-            box-shadow: 0 8px 0 var(--gold-dark);
+            border-color: rgba(240, 198, 116, 0.15);
         }
 
         .cta-card h2 {
-            font-family: 'Press Start 2P', cursive;
-            font-size: clamp(14px, 3vw, 20px);
-            margin-bottom: 16px;
-            color: #fff;
-            line-height: 1.6;
+            font-size: clamp(24px, 4vw, 32px);
+            font-weight: 800;
+            margin-bottom: 14px;
         }
 
         .cta-card p {
-            font-size: 15px;
+            font-size: 16px;
             color: var(--text-secondary);
             margin-bottom: 28px;
+            line-height: 1.7;
+            font-weight: 450;
         }
 
         /* Footer */
         footer {
             padding: 30px 40px;
             text-align: center;
-            background: var(--sky-dark);
-            border-top: 4px solid var(--grass-mid);
+            border-top: 1px solid var(--glass-border);
         }
 
         footer p {
             font-size: 13px;
-            color: rgba(255,255,255,0.7);
+            color: var(--text-muted);
         }
 
-        footer p span {
+        footer span {
             color: var(--gold);
+            font-weight: 600;
         }
 
         /* Responsive */
@@ -898,7 +753,7 @@
             }
 
             .logo {
-                font-size: 14px;
+                font-size: 12px;
             }
 
             .hero {
@@ -906,8 +761,8 @@
             }
 
             .hero-stats {
-                flex-direction: column;
-                gap: 20px;
+                flex-wrap: wrap;
+                gap: 30px;
             }
 
             .mockup-container {
@@ -927,7 +782,7 @@
                 gap: 40px;
             }
 
-            .features, .roadmap {
+            .features, .roadmap, .gamification {
                 padding: 60px 20px;
             }
 
@@ -946,17 +801,12 @@
             }
 
             .mockup-phone {
-                width: 220px;
-                height: 460px;
-            }
-
-            .hero-badge {
-                font-size: 9px;
-                padding: 8px 14px;
+                width: 200px;
+                height: 420px;
             }
 
             .hero-stat-value {
-                font-size: 18px;
+                font-size: 16px;
             }
 
             .xp-stats {
@@ -968,13 +818,8 @@
                 font-size: 12px;
             }
 
-            .coin {
-                width: 20px;
-                height: 20px;
-            }
-
-            .coin::after {
-                font-size: 10px;
+            h1 {
+                font-size: 28px;
             }
         }
     </style>
@@ -982,24 +827,17 @@
 <body>
     <!-- Animated Background -->
     <div class="bg-animation">
-        <!-- Pixel Clouds -->
-        <div class="cloud cloud-1"></div>
-        <div class="cloud cloud-2"></div>
-        <div class="cloud cloud-3"></div>
-        <div class="cloud cloud-4"></div>
-
-        <!-- Floating Coins -->
-        <div class="coin coin-1"></div>
-        <div class="coin coin-2"></div>
-        <div class="coin coin-3"></div>
-        <div class="coin coin-4"></div>
-        <div class="coin coin-5"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
     </div>
 
     <!-- Navigation -->
     <nav>
         <div class="logo">IRON QUEST</div>
-        <a href="app.html" class="nav-cta">Play Now!</a>
+        <a href="app.html" class="nav-cta">Get Started</a>
     </nav>
 
     <!-- Hero Section -->
@@ -1008,16 +846,16 @@
             <div class="hero-badge">Limited Alpha</div>
             <h1>Level Up Your <span>Gains</span></h1>
             <p class="hero-subtitle">
-                Transform every rep into XP. Track your lifts, unlock legendary achievements,
-                and compete with your squad. The RPG fitness tracker that makes gains addictive.
+                Transform every rep into XP. Track your lifts, unlock achievements,
+                and compete with your squad. The RPG fitness tracker that makes progress addictive.
             </p>
             <a href="app.html" class="hero-cta">
                 Start Your Quest
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M5 12h14M12 5l7 7-7 7"/>
                 </svg>
             </a>
-            <div class="hero-stats">
+            <div class="hero-stats glass">
                 <div class="hero-stat">
                     <div class="hero-stat-value">50+</div>
                     <div class="hero-stat-label">Exercises</div>
@@ -1064,14 +902,13 @@
         </div>
     </section>
 
-    <!-- Grass Divider -->
-    <div class="grass-divider"></div>
+    <div class="section-divider"></div>
 
     <!-- Features Section -->
     <section class="features">
         <div class="section-header">
-            <div class="section-tag">Power-Ups</div>
-            <h2 class="section-title">Forged for Warriors</h2>
+            <div class="section-tag">Features</div>
+            <h2 class="section-title">Built for Warriors</h2>
             <p class="section-subtitle">Every feature designed to maximize your gains and keep you coming back.</p>
         </div>
         <div class="features-grid">
@@ -1124,7 +961,7 @@
             </div>
             <div class="xp-preview glass">
                 <div class="xp-header">
-                    <span class="xp-level">LVL 24 Warrior</span>
+                    <span class="xp-level">LVL 24</span>
                     <span class="xp-amount">6,840 / 10,000 XP</span>
                 </div>
                 <div class="xp-bar">
@@ -1151,8 +988,8 @@
     <!-- Roadmap Section -->
     <section class="roadmap">
         <div class="section-header">
-            <div class="section-tag">Quest Log</div>
-            <h2 class="section-title">Roadmap</h2>
+            <div class="section-tag">Roadmap</div>
+            <h2 class="section-title">The Journey</h2>
             <p class="section-subtitle">Where we've been and where we're going.</p>
         </div>
         <div class="roadmap-timeline">
@@ -1208,7 +1045,7 @@
             <p>Join warriors already leveling up their fitness journey. Your quest awaits.</p>
             <a href="app.html" class="hero-cta">
                 Enter the Arena
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M5 12h14M12 5l7 7-7 7"/>
                 </svg>
             </a>
@@ -1217,7 +1054,7 @@
 
     <!-- Footer -->
     <footer>
-        <p>© 2025 <span>Iron Quest</span>. Built with 💪 by lifters, for lifters.</p>
+        <p>© 2025 <span>Iron Quest</span>. Built for lifters, by lifters.</p>
     </footer>
 </body>
 </html>
