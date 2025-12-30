@@ -27,10 +27,18 @@ const { initializeSocket } = require('./socket/handler');
 const app = express();
 const server = http.createServer(app);
 
-// Initialize Socket.io
+// Initialize Socket.io with permissive CORS for Vercel
 const io = new Server(server, {
     cors: {
-        origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+        origin: function(origin, callback) {
+            // Allow requests with no origin
+            if (!origin) return callback(null, true);
+            // Allow localhost and vercel.app
+            if (origin.includes('localhost') || origin.endsWith('.vercel.app')) {
+                return callback(null, true);
+            }
+            return callback(null, true); // Allow all for now
+        },
         methods: ['GET', 'POST'],
         credentials: true
     }
@@ -40,9 +48,28 @@ const io = new Server(server, {
 // MIDDLEWARE
 // ============================================
 
-// CORS configuration
+// CORS configuration - allow multiple origins
+const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:8080',
+    'https://iron-quest.vercel.app',
+    'https://iron-quest-production.vercel.app',
+    process.env.FRONTEND_URL
+].filter(Boolean);
+
 app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: function(origin, callback) {
+        // Allow requests with no origin (mobile apps, curl, etc)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+        // Also allow any vercel.app subdomain
+        if (origin.endsWith('.vercel.app')) {
+            return callback(null, true);
+        }
+        return callback(new Error('Not allowed by CORS'), false);
+    },
     credentials: true
 }));
 
