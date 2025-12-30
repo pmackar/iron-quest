@@ -4704,18 +4704,21 @@ body.workout-minimized .screen {
 }
 
 .test-1rm-input,
-.test-best-input {
+.test-best-input,
+.test-maxreps-input {
     display: flex;
     align-items: center;
     gap: var(--space-xs);
 }
 
 .test-1rm-input input,
-.test-best-input input {
+.test-best-input input,
+.test-maxreps-input input {
     text-align: center;
 }
 
-.test-1rm-input input {
+.test-1rm-input input,
+.test-maxreps-input input {
     width: 70px;
 }
 

@@ -212,13 +212,40 @@ function getSuggestedReps(exerciseId) {
 
 // Check if an exercise is bodyweight
 function isBodyweightExercise(exerciseId) {
+    // Check in allExercises first
     const exercise = allExercises.find(ex => ex.id === exerciseId);
-    return exercise?.equipment === 'bodyweight';
+    if (exercise?.equipment === 'bodyweight') return true;
+
+    // Also check the BODYWEIGHT_EXERCISES list (handles ID variations like chinup vs chinups)
+    if (BODYWEIGHT_EXERCISES.includes(exerciseId)) return true;
+
+    // Check for common variations (singular/plural)
+    const variations = [
+        exerciseId,
+        exerciseId + 's',  // chinup -> chinups
+        exerciseId.replace(/s$/, '')  // chinups -> chinup
+    ];
+    return variations.some(id => BODYWEIGHT_EXERCISES.includes(id));
+}
+
+// Calculate volume for a set, accounting for bodyweight exercises
+// For bodyweight exercises: (userBodyweight + additionalWeight) × reps
+// For regular exercises: weight × reps
+function calculateVolume(exerciseId, additionalWeight, reps) {
+    const weight = additionalWeight || 0;
+    const repCount = reps || 0;
+
+    if (isBodyweightExercise(exerciseId)) {
+        const userBodyweight = gameState?.weight || 0;
+        return (userBodyweight + weight) * repCount;
+    }
+    return weight * repCount;
 }
 
 // List of bodyweight exercise IDs for quick lookup
 const BODYWEIGHT_EXERCISES = [
-    'pushups', 'dips_chest', 'pullups', 'chinups', 'hyperextension',
+    'pushups', 'dips_chest', 'dip', 'bench_dip', 'pullups', 'chinups', 'chinup',
+    'neutral_grip_pullup', 'assisted_pullup', 'hyperextension',
     'tricep_dips', 'diamond_pushup', 'bodyweight_squat', 'lunges_bw',
     'pistol_squat', 'calf_raise_bw', 'plank', 'hanging_leg_raise',
     'leg_raise', 'ab_wheel', 'mountain_climber', 'burpees'
@@ -297,6 +324,8 @@ const allExercises = [
     { id: 'pec_deck', name: 'Pec Deck', muscle: 'chest', equipment: 'machine' },
     { id: 'pushups', name: 'Push-Ups', muscle: 'chest', equipment: 'bodyweight' },
     { id: 'dips_chest', name: 'Chest Dips', muscle: 'chest', equipment: 'bodyweight' },
+    { id: 'dip', name: 'Dip', muscle: 'chest', equipment: 'bodyweight' },
+    { id: 'bench_dip', name: 'Bench Dip', muscle: 'triceps', equipment: 'bodyweight' },
 
     // BACK (16 exercises)
     { id: 'deadlift', name: 'Deadlift', muscle: 'back', equipment: 'barbell' },
@@ -986,11 +1015,101 @@ function showRegisterForm() {
 function showAuthOptions() {
     document.getElementById('authScreen').classList.add('showing-forms');
     document.getElementById('authFormsContainer').classList.add('active');
+    initGoogleSignIn();
 }
 
 function hideAuthForms() {
     document.getElementById('authFormsContainer').classList.remove('active');
     document.getElementById('authScreen').classList.remove('showing-forms');
+}
+
+// Google Sign-In
+let pendingGoogleCredential = null;
+
+function initGoogleSignIn() {
+    // Set the Google Client ID (should be configured in your deployment)
+    // For development, this can be set in the HTML or a config file
+    const clientId = window.GOOGLE_CLIENT_ID || '1022977955769-tjbbf5tnfhb4dhmsr6aq30f1rqs3t48v.apps.googleusercontent.com';
+    API.GOOGLE_CLIENT_ID = clientId;
+
+    if (!window.google) {
+        console.log('Google SDK not yet loaded, will retry...');
+        setTimeout(initGoogleSignIn, 500);
+        return;
+    }
+
+    google.accounts.id.initialize({
+        client_id: clientId,
+        callback: handleGoogleSignIn
+    });
+
+    google.accounts.id.renderButton(
+        document.getElementById('googleSignInButton'),
+        {
+            theme: 'filled_black',
+            size: 'large',
+            width: 280,
+            text: 'continue_with',
+            shape: 'rectangular'
+        }
+    );
+}
+
+async function handleGoogleSignIn(response) {
+    const errorEl = document.getElementById('googleSignInError');
+    errorEl.textContent = '';
+
+    try {
+        // First, try to sign in with Google
+        const result = await API.googleSignIn(response.credential);
+
+        if (result.isNewUser) {
+            // New user - show role selection
+            pendingGoogleCredential = response.credential;
+            document.getElementById('roleSelection').style.display = 'block';
+        } else {
+            // Existing user - proceed directly
+            completeSignIn(result);
+        }
+    } catch (error) {
+        console.error('Google sign-in error:', error);
+        errorEl.textContent = error.message || 'Sign-in failed. Please try again.';
+    }
+}
+
+async function completeGoogleSignIn(role) {
+    const errorEl = document.getElementById('googleSignInError');
+    errorEl.textContent = '';
+
+    if (!pendingGoogleCredential) {
+        errorEl.textContent = 'Session expired. Please sign in again.';
+        document.getElementById('roleSelection').style.display = 'none';
+        return;
+    }
+
+    try {
+        const result = await API.googleSignIn(pendingGoogleCredential, { role });
+        pendingGoogleCredential = null;
+        document.getElementById('roleSelection').style.display = 'none';
+        completeSignIn(result);
+    } catch (error) {
+        console.error('Role selection error:', error);
+        errorEl.textContent = error.message || 'Failed to complete sign-up.';
+    }
+}
+
+function completeSignIn(result) {
+    currentUser = result.user;
+    isOnlineMode = true;
+
+    // Connect socket for real-time updates
+    API.connectSocket();
+    setupSocketListeners();
+
+    updateOnlineUI();
+    showToast(result.isNewUser ? 'WELCOME, WARRIOR!' : 'LOGGED IN!');
+    hideAuthForms();
+    showScreen('selectScreen');
 }
 
 async function handleLogin(event) {
@@ -1296,8 +1415,10 @@ function renderStrengthTest() {
     container.innerHTML = BASELINE_TEST_EXERCISES.map((ex, index) => {
         const multiplierText = ex.tier === 1 ? '3x' : ex.tier === 2 ? '2x' : '1x';
         const hasAlternatives = ex.alternatives && ex.alternatives.length > 0;
+        const isBW = isBodyweightExercise(ex.id);
+
         return `
-            <div class="test-exercise-row tier-${ex.tier}" data-exercise="${ex.id}" data-index="${index}">
+            <div class="test-exercise-row tier-${ex.tier} ${isBW ? 'bodyweight-exercise' : ''}" data-exercise="${ex.id}" data-index="${index}" data-bodyweight="${isBW}">
                 <div class="test-exercise-icon">${ex.icon}</div>
                 <div class="test-exercise-info">
                     <div class="test-exercise-name-row">
@@ -1307,6 +1428,22 @@ function renderStrengthTest() {
                     <div class="test-exercise-tier" id="testTier_${index}">TIER ${ex.tier} <span class="multiplier">(${multiplierText} XP)</span></div>
                 </div>
                 <div class="test-exercise-inputs">
+                    ${isBW ? `
+                    <!-- Bodyweight exercise: Max Reps input -->
+                    <div class="test-input-toggle">
+                        <button class="test-toggle-btn active" data-type="maxreps" disabled>Max Reps</button>
+                    </div>
+                    <div class="test-input-fields">
+                        <div class="test-maxreps-input" id="testMaxReps_${index}">
+                            <input type="number" id="testBWReps_${index}" placeholder="reps" min="1" max="500"
+                                   class="dc-input numeric" inputmode="numeric"
+                                   onchange="updateTestProgress(); calculateBodyweight1RM(${index})" oninput="updateTestRowStyle(${index})">
+                            <span class="unit-label">reps</span>
+                            <span class="test-est-1rm" id="testBWEst1rm_${index}"></span>
+                        </div>
+                    </div>
+                    ` : `
+                    <!-- Weighted exercise: 1RM or Best Set -->
                     <div class="test-input-toggle">
                         <button class="test-toggle-btn active" data-type="1rm" onclick="toggleTestInputType(${index}, '1rm')">1RM</button>
                         <button class="test-toggle-btn" data-type="best" onclick="toggleTestInputType(${index}, 'best')">Best Set</button>
@@ -1329,6 +1466,7 @@ function renderStrengthTest() {
                             <span class="test-est-1rm" id="testEst1rm_${index}"></span>
                         </div>
                     </div>
+                    `}
                 </div>
             </div>
         `;
@@ -1370,6 +1508,22 @@ function calculateEstimated1RM(index) {
         // Epley formula: 1RM = weight × (1 + reps/30)
         const estimated1RM = Math.round(weight * (1 + reps / 30));
         estDisplay.textContent = `≈ ${estimated1RM} 1RM`;
+        estDisplay.style.display = 'inline';
+    } else if (estDisplay) {
+        estDisplay.textContent = '';
+        estDisplay.style.display = 'none';
+    }
+}
+
+function calculateBodyweight1RM(index) {
+    const reps = parseInt(document.getElementById(`testBWReps_${index}`)?.value) || 0;
+    const estDisplay = document.getElementById(`testBWEst1rm_${index}`);
+    const userBodyweight = gameState?.weight || 0;
+
+    if (reps > 0 && userBodyweight > 0 && estDisplay) {
+        // Epley formula with bodyweight: 1RM = bodyweight × (1 + reps/30)
+        const estimated1RM = Math.round(userBodyweight * (1 + reps / 30));
+        estDisplay.textContent = `≈ ${estimated1RM} lbs`;
         estDisplay.style.display = 'inline';
     } else if (estDisplay) {
         estDisplay.textContent = '';
@@ -1467,13 +1621,64 @@ function updateTestExerciseDisplay(exerciseIndex, name, tier) {
         tierEl.innerHTML = `TIER ${tier} <span class="multiplier">(${multiplierText} XP)</span>`;
     }
     if (row) {
-        row.className = `test-exercise-row tier-${tier}`;
+        // Check if the new exercise is bodyweight
+        const swap = testExerciseSwaps[exerciseIndex];
+        const exerciseId = swap ? swap.id : BASELINE_TEST_EXERCISES[exerciseIndex].id;
+        const isBW = isBodyweightExercise(exerciseId);
+        const wasBW = row.dataset.bodyweight === 'true';
+
+        row.className = `test-exercise-row tier-${tier}${isBW ? ' bodyweight-exercise' : ''}`;
         row.dataset.index = exerciseIndex;
-        // Preserve has-value class if present
-        const input = document.getElementById(`test_${exerciseIndex}`);
-        if (input && input.value && parseInt(input.value) > 0) {
-            row.classList.add('has-value');
+        row.dataset.bodyweight = isBW;
+        row.dataset.exercise = exerciseId;
+
+        // If bodyweight status changed, update the input fields
+        if (isBW !== wasBW) {
+            const inputsContainer = row.querySelector('.test-exercise-inputs');
+            if (inputsContainer) {
+                inputsContainer.innerHTML = isBW ? `
+                    <!-- Bodyweight exercise: Max Reps input -->
+                    <div class="test-input-toggle">
+                        <button class="test-toggle-btn active" data-type="maxreps" disabled>Max Reps</button>
+                    </div>
+                    <div class="test-input-fields">
+                        <div class="test-maxreps-input" id="testMaxReps_${exerciseIndex}">
+                            <input type="number" id="testBWReps_${exerciseIndex}" placeholder="reps" min="1" max="500"
+                                   class="dc-input numeric" inputmode="numeric"
+                                   onchange="updateTestProgress(); calculateBodyweight1RM(${exerciseIndex})" oninput="updateTestRowStyle(${exerciseIndex})">
+                            <span class="unit-label">reps</span>
+                            <span class="test-est-1rm" id="testBWEst1rm_${exerciseIndex}"></span>
+                        </div>
+                    </div>
+                ` : `
+                    <!-- Weighted exercise: 1RM or Best Set -->
+                    <div class="test-input-toggle">
+                        <button class="test-toggle-btn active" data-type="1rm" onclick="toggleTestInputType(${exerciseIndex}, '1rm')">1RM</button>
+                        <button class="test-toggle-btn" data-type="best" onclick="toggleTestInputType(${exerciseIndex}, 'best')">Best Set</button>
+                    </div>
+                    <div class="test-input-fields">
+                        <div class="test-1rm-input" id="test1rm_${exerciseIndex}">
+                            <input type="number" id="test_${exerciseIndex}" placeholder="---" min="0" max="2000"
+                                   class="dc-input numeric" inputmode="numeric"
+                                   onchange="updateTestProgress()" oninput="updateTestRowStyle(${exerciseIndex})">
+                            <span class="unit-label">lbs</span>
+                        </div>
+                        <div class="test-best-input" id="testBest_${exerciseIndex}" style="display: none;">
+                            <input type="number" id="testBestWeight_${exerciseIndex}" placeholder="wt" min="0" max="2000"
+                                   class="dc-input numeric small" inputmode="numeric"
+                                   onchange="updateTestProgress(); calculateEstimated1RM(${exerciseIndex})" oninput="updateTestRowStyle(${exerciseIndex})">
+                            <span class="test-x">×</span>
+                            <input type="number" id="testBestReps_${exerciseIndex}" placeholder="reps" min="1" max="100"
+                                   class="dc-input numeric small" inputmode="numeric"
+                                   onchange="updateTestProgress(); calculateEstimated1RM(${exerciseIndex})" oninput="updateTestRowStyle(${exerciseIndex})">
+                            <span class="test-est-1rm" id="testEst1rm_${exerciseIndex}"></span>
+                        </div>
+                    </div>
+                `;
+            }
         }
+
+        updateTestRowStyle(exerciseIndex);
     }
 }
 
@@ -1486,17 +1691,25 @@ function updateTestRowStyle(index) {
     const row = document.querySelector(`.test-exercise-row[data-index="${index}"]`);
     if (!row) return;
 
-    // Check if 1RM or best set mode
-    const is1rmMode = document.getElementById(`test1rm_${index}`)?.style.display !== 'none';
-
+    const isBodyweight = row.dataset.bodyweight === 'true';
     let hasValue = false;
-    if (is1rmMode) {
-        const input = document.getElementById(`test_${index}`);
-        hasValue = input && input.value && parseInt(input.value) > 0;
+
+    if (isBodyweight) {
+        // Bodyweight exercise: check max reps input
+        const repsInput = document.getElementById(`testBWReps_${index}`);
+        hasValue = repsInput && repsInput.value && parseInt(repsInput.value) > 0;
     } else {
-        const weight = document.getElementById(`testBestWeight_${index}`);
-        const reps = document.getElementById(`testBestReps_${index}`);
-        hasValue = weight && reps && parseInt(weight.value) > 0 && parseInt(reps.value) > 0;
+        // Check if 1RM or best set mode
+        const is1rmMode = document.getElementById(`test1rm_${index}`)?.style.display !== 'none';
+
+        if (is1rmMode) {
+            const input = document.getElementById(`test_${index}`);
+            hasValue = input && input.value && parseInt(input.value) > 0;
+        } else {
+            const weight = document.getElementById(`testBestWeight_${index}`);
+            const reps = document.getElementById(`testBestReps_${index}`);
+            hasValue = weight && reps && parseInt(weight.value) > 0 && parseInt(reps.value) > 0;
+        }
     }
 
     if (hasValue) {
@@ -1507,7 +1720,20 @@ function updateTestRowStyle(index) {
 }
 
 function getTestValue(index) {
-    // Returns the 1RM value (either direct or calculated from best set)
+    // Returns the 1RM value (either direct, calculated from best set, or from bodyweight reps)
+    const row = document.querySelector(`.test-exercise-row[data-index="${index}"]`);
+    const isBodyweight = row?.dataset.bodyweight === 'true';
+
+    if (isBodyweight) {
+        // Bodyweight exercise: calculate 1RM from bodyweight × (1 + reps/30)
+        const reps = parseInt(document.getElementById(`testBWReps_${index}`)?.value) || 0;
+        const userBodyweight = gameState?.weight || 0;
+        if (reps > 0 && userBodyweight > 0) {
+            return Math.round(userBodyweight * (1 + reps / 30));
+        }
+        return 0;
+    }
+
     const is1rmMode = document.getElementById(`test1rm_${index}`)?.style.display !== 'none';
 
     if (is1rmMode) {
@@ -1525,6 +1751,18 @@ function getTestValue(index) {
 
 function getBestSetData(index) {
     // Returns the best set data if entered, otherwise null
+    const row = document.querySelector(`.test-exercise-row[data-index="${index}"]`);
+    const isBodyweight = row?.dataset.bodyweight === 'true';
+
+    if (isBodyweight) {
+        // For bodyweight exercises, store reps with weight = 0 (means bodyweight only)
+        const reps = parseInt(document.getElementById(`testBWReps_${index}`)?.value) || 0;
+        if (reps > 0) {
+            return { weight: 0, reps, isBodyweight: true };
+        }
+        return null;
+    }
+
     const is1rmMode = document.getElementById(`test1rm_${index}`)?.style.display !== 'none';
 
     if (!is1rmMode) {
@@ -2346,9 +2584,10 @@ function logSet() {
         startRestTimer();
     }
 
-    // Calculate XP with tier multiplier
+    // Calculate XP with tier multiplier (using bodyweight-aware volume)
     const tierMultiplier = getExerciseTierMultiplier(currentExercise.id);
-    const baseXP = Math.floor((weight * reps) / 10);
+    const setVolume = calculateVolume(currentExercise.id, weight, reps);
+    const baseXP = Math.floor(setVolume / 10);
     const xpGain = baseXP * tierMultiplier;
 
     // Check for milestone bonus (percentage of baseline)
@@ -2359,13 +2598,13 @@ function logSet() {
 
     // Update stats
     gameState.totalSets++;
-    gameState.totalWeight += weight * reps;
+    gameState.totalWeight += setVolume;
 
     // Check for weight milestone achievements (legacy system)
     checkMilestones(currentExercise.id, weight);
 
     // Update personal records (max single rep weight and max tonnage)
-    const tonnage = weight * reps;
+    const tonnage = setVolume;
     let newWeightPR = false;
 
     if (!gameState.personalRecords[currentExercise.id]) {
@@ -2943,7 +3182,7 @@ function getMusclesWorked(exercises) {
     exercises.forEach(ex => {
         const exerciseDef = allExercises.find(e => e.id === ex.id);
         if (exerciseDef && exerciseDef.muscle) {
-            const volume = ex.sets.reduce((sum, s) => sum + (s.weight * s.reps), 0);
+            const volume = ex.sets.reduce((sum, s) => sum + calculateVolume(ex.id, s.weight, s.reps), 0);
             muscleVolume[exerciseDef.muscle] = (muscleVolume[exerciseDef.muscle] || 0) + volume;
         }
     });
@@ -3031,7 +3270,7 @@ function exportCSV() {
         const date = new Date(workout.date).toLocaleDateString();
         workout.exercises?.forEach(ex => {
             ex.sets?.forEach((set, i) => {
-                const volume = set.weight * set.reps;
+                const volume = calculateVolume(ex.id, set.weight, set.reps);
                 csv += `"${date}","${workout.name}","${ex.name}",${i + 1},${set.weight},${set.reps},${set.type || 'normal'},${set.rpe || ''},${volume}\n`;
             });
         });
@@ -3081,7 +3320,7 @@ async function finishWorkout() {
         const sets = exerciseSets[ex.id] || [];
         if (sets.length > 0) {
             totalSets += sets.length;
-            sets.forEach(s => totalVolume += s.weight * s.reps);
+            sets.forEach(s => totalVolume += calculateVolume(ex.id, s.weight, s.reps));
             exerciseData.push({
                 id: ex.id,
                 name: ex.name,
@@ -3478,13 +3717,13 @@ function saveWorkoutEdits() {
         }
     });
 
-    // Recalculate workout totals
+    // Recalculate workout totals (bodyweight-aware)
     let totalSets = 0;
     let totalVolume = 0;
     workout.exercises.forEach(ex => {
         totalSets += ex.sets.length;
         ex.sets.forEach(s => {
-            totalVolume += (s.weight || 0) * (s.reps || 0);
+            totalVolume += calculateVolume(ex.id, s.weight || 0, s.reps || 0);
         });
     });
 
@@ -3730,7 +3969,7 @@ function exportCSV() {
         const date = new Date(workout.date).toLocaleDateString();
         workout.exercises.forEach(ex => {
             ex.sets.forEach((set, i) => {
-                csv += `${date},${workout.name},${ex.name},${i + 1},${set.weight},${set.reps},${set.weight * set.reps}\n`;
+                csv += `${date},${workout.name},${ex.name},${i + 1},${set.weight},${set.reps},${calculateVolume(ex.id, set.weight, set.reps)}\n`;
             });
         });
     });
@@ -4276,15 +4515,15 @@ function renderCustomWorkoutList() {
             else lastDoneText = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         }
 
-        // Calculate volume from last session
+        // Calculate volume from last session (bodyweight-aware)
         let volumeText = '—';
         if (lastSession && lastSession.exercises) {
             let totalVolume = 0;
             lastSession.exercises.forEach(ex => {
                 if (ex.sets) {
                     ex.sets.forEach(set => {
-                        if (set.weight && set.reps) {
-                            totalVolume += set.weight * set.reps;
+                        if (set.weight !== undefined && set.reps) {
+                            totalVolume += calculateVolume(ex.id, set.weight, set.reps);
                         }
                     });
                 }
@@ -5859,7 +6098,7 @@ function renderBestSets() {
         return;
     }
 
-    // Collect all sets from history
+    // Collect all sets from history (bodyweight-aware volume)
     const allSets = [];
     history.forEach(workout => {
         if (!workout.exercises) return;
@@ -5867,7 +6106,7 @@ function renderBestSets() {
             if (!exercise.sets) return;
             exercise.sets.forEach(set => {
                 if (set.type === 'warmup') return; // Skip warmup sets
-                const volume = (set.weight || 0) * (set.reps || 0);
+                const volume = calculateVolume(exercise.id, set.weight || 0, set.reps || 0);
                 if (volume > 0) {
                     allSets.push({
                         exerciseId: exercise.id,
@@ -6044,7 +6283,7 @@ function openPRDetail(exerciseId) {
             workingSets.forEach(set => {
                 const weight = set.weight || 0;
                 const reps = set.reps || 0;
-                totalVolume += weight * reps;
+                totalVolume += calculateVolume(exerciseId, weight, reps);
 
                 const est1RM = calculate1RM(weight, reps);
                 if (est1RM > best1RM) {

@@ -113,6 +113,53 @@ const API = {
         return response;
     },
 
+    // Google Sign-In
+    async googleSignIn(idToken, options = {}) {
+        const response = await this.post('/auth/google', {
+            idToken,
+            username: options.username,
+            role: options.role || 'user'
+        });
+        if (response.token) {
+            this.setToken(response.token);
+        }
+        return response;
+    },
+
+    // Initialize Google Sign-In
+    initGoogleSignIn(buttonId, callback) {
+        if (!window.google) {
+            console.error('Google Sign-In SDK not loaded');
+            return;
+        }
+
+        google.accounts.id.initialize({
+            client_id: this.GOOGLE_CLIENT_ID,
+            callback: async (response) => {
+                try {
+                    const result = await this.googleSignIn(response.credential);
+                    callback(null, result);
+                } catch (error) {
+                    callback(error, null);
+                }
+            }
+        });
+
+        google.accounts.id.renderButton(
+            document.getElementById(buttonId),
+            {
+                theme: 'filled_black',
+                size: 'large',
+                width: 280,
+                text: 'continue_with',
+                shape: 'rectangular'
+            }
+        );
+    },
+
+    // Google Client ID (loaded from script or config)
+    GOOGLE_CLIENT_ID: null,
+
     async getProfile() {
         return this.get('/auth/me');
     },

@@ -10,7 +10,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255), -- Nullable for Google OAuth users
     username VARCHAR(50) UNIQUE NOT NULL,
     avatar INTEGER DEFAULT 1,
     height_feet INTEGER,
@@ -24,10 +24,20 @@ CREATE TABLE IF NOT EXISTS users (
     total_sets INTEGER DEFAULT 0,
     total_weight BIGINT DEFAULT 0,
     achievements TEXT[] DEFAULT '{}',
+    -- Google OAuth fields
+    google_id VARCHAR(255) UNIQUE,
+    google_email VARCHAR(255),
+    google_avatar_url TEXT,
+    auth_provider VARCHAR(20) DEFAULT 'email', -- 'email', 'google'
+    role VARCHAR(20) DEFAULT 'user', -- 'user', 'coach'
+    last_sync_at TIMESTAMP WITH TIME ZONE, -- For offline sync
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     last_login TIMESTAMP WITH TIME ZONE
 );
+
+-- Index for Google lookups
+CREATE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id);
 
 -- ============================================
 -- PERSONAL RECORDS TABLE
@@ -260,3 +270,79 @@ BEGIN
     RETURN result;
 END;
 $$ LANGUAGE plpgsql;
+
+-- ============================================
+-- CAMPAIGNS TABLE
+-- ============================================
+CREATE TABLE IF NOT EXISTS campaigns (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    creator_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    team_id UUID REFERENCES teams(id) ON DELETE CASCADE, -- NULL for personal campaigns
+    title VARCHAR(100) NOT NULL,
+    description TEXT,
+    campaign_type VARCHAR(20) NOT NULL, -- 'personal', 'team'
+    target_date DATE NOT NULL,
+    is_completed BOOLEAN DEFAULT false,
+    completed_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_campaigns_creator ON campaigns(creator_id);
+CREATE INDEX IF NOT EXISTS idx_campaigns_team ON campaigns(team_id);
+CREATE INDEX IF NOT EXISTS idx_campaigns_target_date ON campaigns(target_date);
+
+-- ============================================
+-- CAMPAIGN GOALS TABLE
+-- ============================================
+CREATE TABLE IF NOT EXISTS campaign_goals (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+    exercise_id VARCHAR(100) NOT NULL,
+    exercise_name VARCHAR(100) NOT NULL,
+    goal_type VARCHAR(20) NOT NULL, -- '1rm', 'reps', 'tonnage'
+    target_weight INTEGER, -- For 1RM and rep goals
+    target_reps INTEGER, -- For rep goals (e.g., 315x5)
+    target_tonnage BIGINT, -- For tonnage goals
+    current_value INTEGER DEFAULT 0, -- Current progress
+    is_achieved BOOLEAN DEFAULT false,
+    achieved_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_campaign_goals_campaign ON campaign_goals(campaign_id);
+CREATE INDEX IF NOT EXISTS idx_campaign_goals_exercise ON campaign_goals(exercise_id);
+
+-- ============================================
+-- COACH-CLIENT RELATIONSHIPS TABLE
+-- ============================================
+CREATE TABLE IF NOT EXISTS coach_clients (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    coach_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    client_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    status VARCHAR(20) DEFAULT 'pending', -- 'pending', 'active', 'revoked'
+    permissions TEXT[] DEFAULT '{"view_workouts", "view_stats", "view_progress", "assign_campaigns"}',
+    invited_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    accepted_at TIMESTAMP WITH TIME ZONE,
+    UNIQUE(coach_id, client_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_coach_clients_coach ON coach_clients(coach_id);
+CREATE INDEX IF NOT EXISTS idx_coach_clients_client ON coach_clients(client_id);
+
+-- ============================================
+-- OFFLINE SYNC QUEUE TABLE
+-- ============================================
+CREATE TABLE IF NOT EXISTS sync_queue (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    action_type VARCHAR(50) NOT NULL, -- 'workout', 'pr', 'campaign_progress'
+    payload JSONB NOT NULL,
+    client_timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
+    synced BOOLEAN DEFAULT false,
+    synced_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_sync_queue_user ON sync_queue(user_id);
+CREATE INDEX IF NOT EXISTS idx_sync_queue_unsynced ON sync_queue(user_id, synced) WHERE synced = false;

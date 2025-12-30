@@ -6,6 +6,8 @@
     <title>IRON QUEST - Workout Tracker</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
+    <!-- Google Sign-In SDK -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
     <!-- App Background -->
@@ -40,60 +42,35 @@
                     <div class="subtitle">ENTER THE ARENA</div>
                 </div>
 
-                <!-- Login Form -->
-                <div id="loginForm">
-                    <form onsubmit="handleLogin(event)">
-                        <div class="bevel-box">
-                            <div class="input-group">
-                                <label>EMAIL</label>
-                                <input type="email" id="loginEmail" class="dc-input" placeholder="warrior@email.com" required>
-                            </div>
-                            <div class="input-group">
-                                <label>PASSWORD</label>
-                                <input type="password" id="loginPassword" class="dc-input" placeholder="Enter password" required>
-                            </div>
-                            <div class="form-error" id="loginError"></div>
-                        </div>
-                        <button type="submit" class="dc-button">LOGIN</button>
-                    </form>
-                    <p class="form-switch-text">
-                        New warrior? <a href="#" onclick="showRegisterForm(); return false;">Create Account</a>
-                    </p>
-                </div>
+                <!-- Google Sign-In -->
+                <div id="googleSignInSection">
+                    <div class="bevel-box" style="text-align: center; padding: 24px;">
+                        <p style="margin-bottom: 16px; color: var(--text-secondary); font-size: 0.9rem;">
+                            Sign in to sync your progress across devices
+                        </p>
+                        <div id="googleSignInButton" style="display: flex; justify-content: center;"></div>
+                        <div class="form-error" id="googleSignInError" style="margin-top: 12px;"></div>
+                    </div>
 
-                <!-- Register Form -->
-                <div id="registerForm" style="display: none;">
-                    <form onsubmit="handleRegister(event)">
+                    <!-- Role Selection for New Users -->
+                    <div id="roleSelection" style="display: none; margin-top: 16px;">
                         <div class="bevel-box">
-                            <div class="input-group">
-                                <label>USERNAME</label>
-                                <input type="text" id="registerUsername" class="dc-input" placeholder="WARRIOR_01" maxlength="20" required>
+                            <label class="label" style="margin-bottom: 12px;">I AM A...</label>
+                            <div class="role-buttons">
+                                <button class="dc-button" onclick="completeGoogleSignIn('user')">ATHLETE</button>
+                                <button class="dc-button secondary" onclick="completeGoogleSignIn('coach')">COACH</button>
                             </div>
-                            <div class="input-group">
-                                <label>EMAIL</label>
-                                <input type="email" id="registerEmail" class="dc-input" placeholder="warrior@email.com" required>
-                            </div>
-                            <div class="input-group">
-                                <label>PASSWORD</label>
-                                <input type="password" id="registerPassword" class="dc-input" placeholder="Min 6 characters" minlength="6" required>
-                            </div>
-                            <div class="input-group">
-                                <label>CONFIRM PASSWORD</label>
-                                <input type="password" id="registerConfirmPassword" class="dc-input" placeholder="Repeat password" required>
-                            </div>
-                            <div class="form-error" id="registerError"></div>
                         </div>
-                        <button type="submit" class="dc-button">CREATE ACCOUNT</button>
-                    </form>
-                    <p class="form-switch-text">
-                        Already a warrior? <a href="#" onclick="showLoginForm(); return false;">Login</a>
-                    </p>
+                    </div>
                 </div>
 
                 <div class="auth-divider">
                     <span>OR</span>
                 </div>
                 <button class="dc-button secondary" onclick="playOffline()">PLAY OFFLINE</button>
+                <p style="text-align: center; color: var(--text-muted); font-size: 0.75rem; margin-top: 12px;">
+                    Offline mode saves data locally only
+                </p>
             </div>
         </div>
     </div>
