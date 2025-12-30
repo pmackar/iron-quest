@@ -1295,21 +1295,38 @@ function saveCustomData() {
 // AUTHENTICATION & ONLINE MODE
 // ============================================
 
-function checkAuthState() {
+async function checkAuthState() {
     if (API.isAuthenticated()) {
-        // Verify token is still valid
-        API.getProfile().then(response => {
+        try {
+            // Verify token is still valid
+            const response = await API.getProfile();
             currentUser = response.user;
             isOnlineMode = true;
             API.connectSocket();
             setupSocketListeners();
             updateOnlineUI();
-        }).catch(() => {
+
+            // Load characters and workouts from server
+            await loadCharactersFromServer();
+            await loadWorkoutsFromServer();
+
+            // Restore game state from save slot
+            const slotIndex = saveSlots.findIndex(slot => slot && slot.onlineUserId === currentUser.id);
+            if (slotIndex !== -1 && saveSlots[slotIndex].testCompletedAt) {
+                currentSlotIndex = slotIndex;
+                gameState = { ...saveSlots[slotIndex] };
+                updateMenuStats();
+                renderCustomLists();
+                showScreen('menuScreen');
+                console.log('Session restored for user:', currentUser.username);
+            }
+        } catch (error) {
             // Token invalid, clear it
+            console.warn('Auth check failed:', error);
             API.logout();
             isOnlineMode = false;
             currentUser = null;
-        });
+        }
     }
 }
 
