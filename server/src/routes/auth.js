@@ -155,10 +155,23 @@ router.post('/clerk', async (req, res) => {
     }
 });
 
-// Google Sign-In (legacy)
+// Google Sign-In
 router.post('/google', async (req, res) => {
+    console.log('[Google] Auth request received');
+
+    // Check for required environment variables
+    if (!process.env.GOOGLE_CLIENT_ID) {
+        console.error('[Google] FATAL: GOOGLE_CLIENT_ID not configured');
+        return res.status(500).json({ error: 'Server configuration error', details: 'GOOGLE_CLIENT_ID not configured' });
+    }
+    if (!process.env.JWT_SECRET) {
+        console.error('[Google] FATAL: JWT_SECRET not configured');
+        return res.status(500).json({ error: 'Server configuration error', details: 'JWT_SECRET not configured' });
+    }
+
     try {
         const { idToken, username, role } = req.body;
+        console.log('[Google] Request body:', { hasIdToken: !!idToken, username, role });
 
         if (!idToken) {
             return res.status(400).json({ error: 'Google ID token is required' });
@@ -167,14 +180,16 @@ router.post('/google', async (req, res) => {
         // Verify the Google ID token
         let payload;
         try {
+            console.log('[Google] Verifying token with client ID:', process.env.GOOGLE_CLIENT_ID.substring(0, 20) + '...');
             const ticket = await googleClient.verifyIdToken({
                 idToken,
                 audience: process.env.GOOGLE_CLIENT_ID
             });
             payload = ticket.getPayload();
+            console.log('[Google] Token verified, email:', payload.email);
         } catch (err) {
-            console.error('Google token verification failed:', err);
-            return res.status(401).json({ error: 'Invalid Google token' });
+            console.error('Google token verification failed:', err.message);
+            return res.status(401).json({ error: 'Invalid Google token', details: err.message });
         }
 
         const { sub: googleId, email, name, picture } = payload;
@@ -287,7 +302,7 @@ router.post('/google', async (req, res) => {
 
     } catch (error) {
         console.error('Google auth error:', error);
-        res.status(500).json({ error: 'Google authentication failed' });
+        res.status(500).json({ error: 'Google authentication failed', details: error.message });
     }
 });
 
