@@ -11,18 +11,16 @@ const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Clerk Sign-In (SSO)
 router.post('/clerk', async (req, res) => {
+    console.log('[Clerk] Auth request received');
     try {
         const { clerkToken, clerkUserId, email, username, avatarUrl, role } = req.body;
+        console.log('[Clerk] Parsed body:', { clerkUserId, email, username, role });
 
         if (!clerkToken || !clerkUserId) {
             return res.status(400).json({ error: 'Clerk token and user ID are required' });
         }
 
-        // For now, we trust the Clerk token since it's verified on the client side
-        // In production, you should verify the token using Clerk's backend SDK
-        // npm install @clerk/clerk-sdk-node
-        // const { verifyToken } = require('@clerk/clerk-sdk-node');
-
+        console.log('[Clerk] Step 1: Querying by clerk_id');
         // Check if user exists by Clerk ID
         let result = await db.query(
             'SELECT * FROM users WHERE clerk_id = $1',
@@ -32,9 +30,11 @@ router.post('/clerk', async (req, res) => {
         let user;
         let isNewUser = false;
 
+        console.log('[Clerk] Step 2: Found', result.rows.length, 'existing users by clerk_id');
         if (result.rows.length > 0) {
             // Existing user - update last login
             user = result.rows[0];
+            console.log('[Clerk] Existing user found, updating last login');
             await db.query(
                 'UPDATE users SET last_login = CURRENT_TIMESTAMP, google_avatar_url = $1 WHERE id = $2',
                 [avatarUrl, user.id]
@@ -42,9 +42,11 @@ router.post('/clerk', async (req, res) => {
         } else {
             // Check if email exists (user might have registered before)
             if (email) {
+                console.log('[Clerk] Step 3: Checking email');
                 result = await db.query('SELECT * FROM users WHERE email = $1', [email.toLowerCase()]);
             }
 
+            console.log('[Clerk] Step 4: Email check result:', result.rows.length);
             if (result.rows.length > 0) {
                 // Link Clerk account to existing email account
                 user = result.rows[0];
@@ -60,10 +62,12 @@ router.post('/clerk', async (req, res) => {
             } else {
                 // Create new user
                 isNewUser = true;
+                console.log('[Clerk] Step 5: Creating new user');
 
                 // Generate a unique username
                 let baseUsername = username || email?.split('@')[0] || 'Warrior';
                 let finalUsername = baseUsername.substring(0, 45);
+                console.log('[Clerk] Username:', finalUsername);
 
                 // Check if username exists and append number if needed
                 let counter = 1;
@@ -77,6 +81,7 @@ router.post('/clerk', async (req, res) => {
                     counter++;
                 }
 
+                console.log('[Clerk] Step 6: Inserting user into DB');
                 result = await db.query(
                     `INSERT INTO users (
                         email, username, clerk_id, google_avatar_url,
@@ -86,11 +91,14 @@ router.post('/clerk', async (req, res) => {
                     [email?.toLowerCase(), finalUsername, clerkUserId, avatarUrl, role || 'user']
                 );
                 user = result.rows[0];
+                console.log('[Clerk] Step 7: User created with id:', user.id);
             }
         }
 
+        console.log('[Clerk] Step 8: Generating JWT token');
         // Generate JWT token
         const token = generateToken(user.id);
+        console.log('[Clerk] Step 9: Token generated successfully');
 
         // Get personal records if existing user
         let personalRecords = {};
@@ -134,7 +142,7 @@ router.post('/clerk', async (req, res) => {
         console.error('Clerk auth error:', error);
         res.status(500).json({
             error: 'Clerk authentication failed',
-            details: error.message
+            details: error.message || error.toString() || 'Unknown error'
         });
     }
 });
