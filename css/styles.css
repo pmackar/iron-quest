@@ -8,42 +8,51 @@
    ============================================ */
 
 :root {
-    /* Premium Dark Backgrounds */
-    --bg-primary: #0a0a0b;
-    --bg-secondary: #141416;
-    --bg-tertiary: #1c1c1f;
-    --bg-elevated: #242428;
-    --bg-hover: #2a2a2f;
+    /* Dreamcast White Backgrounds */
+    --bg-primary: #f8f9fa;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #f0f1f3;
+    --bg-elevated: #ffffff;
+    --bg-hover: #e9ecef;
 
-    /* Text Colors */
-    --text-primary: #ffffff;
-    --text-secondary: #a1a1a6;
-    --text-tertiary: #6e6e73;
-    --text-muted: #48484a;
+    /* Text Colors - Dark on Light */
+    --text-primary: #1a1d23;
+    --text-secondary: #4a5568;
+    --text-tertiary: #718096;
+    --text-muted: #a0aec0;
 
-    /* Accent Colors */
-    --accent-gold: #d4a853;
-    --accent-gold-dim: #a68a3a;
-    --accent-gold-bright: #f0c060;
-    --accent-amber: #f5a623;
-    --accent-success: #30d158;
-    --accent-warning: #ff9f0a;
-    --accent-error: #ff453a;
-    --accent-blue: #0a84ff;
+    /* Dreamcast Accent Colors */
+    --accent-primary: #ff6b35;
+    --accent-primary-dim: #e55a28;
+    --accent-primary-bright: #ff8c5a;
+    --accent-secondary: #2d7dd2;
+    --accent-secondary-light: #4a9eff;
+    --accent-secondary-deep: #1a5fa8;
+    --accent-success: #22c55e;
+    --accent-warning: #f59e0b;
+    --accent-error: #ef4444;
 
-    /* Borders & Dividers */
-    --border-subtle: rgba(255, 255, 255, 0.06);
-    --border-default: rgba(255, 255, 255, 0.1);
-    --border-strong: rgba(255, 255, 255, 0.18);
+    /* Legacy Gold (for compatibility) */
+    --accent-gold: #ff6b35;
+    --accent-gold-dim: #e55a28;
+    --accent-gold-bright: #ff8c5a;
+    --accent-amber: #f59e0b;
+    --accent-blue: #2d7dd2;
 
-    /* Shadows */
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
-    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6);
-    --shadow-glow: 0 0 30px rgba(212, 168, 83, 0.2);
+    /* Borders & Dividers - Light Mode */
+    --border-subtle: rgba(0, 0, 0, 0.04);
+    --border-default: rgba(0, 0, 0, 0.08);
+    --border-strong: rgba(0, 0, 0, 0.12);
+
+    /* Shadows - Light Mode */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+    --shadow-glow: 0 0 30px rgba(255, 107, 53, 0.15);
 
     /* Typography */
     --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-pixel: 'Press Start 2P', cursive;
     --font-mono: 'SF Mono', 'Fira Code', 'Consolas', monospace;
 
     /* Spacing */
@@ -98,7 +107,10 @@ body {
 .app-bg {
     position: fixed;
     inset: 0;
-    background: radial-gradient(ellipse at top center, var(--bg-secondary) 0%, var(--bg-primary) 60%);
+    background:
+        radial-gradient(ellipse at 10% 10%, rgba(255, 107, 53, 0.06) 0%, transparent 50%),
+        radial-gradient(ellipse at 90% 15%, rgba(45, 125, 210, 0.06) 0%, transparent 50%),
+        linear-gradient(180deg, #ffffff 0%, #f8f9fa 50%, #f0f1f3 100%);
     z-index: -1;
 }
 
@@ -167,9 +179,10 @@ a:hover {
 }
 
 .loading-logo {
-    font-size: 48px;
-    font-weight: 800;
-    background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-amber) 100%);
+    font-family: var(--font-pixel);
+    font-size: 32px;
+    font-weight: 400;
+    background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary-dim) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -179,7 +192,7 @@ a:hover {
     width: 32px;
     height: 32px;
     border: 3px solid var(--border-default);
-    border-top-color: var(--accent-gold);
+    border-top-color: var(--accent-primary);
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
@@ -228,15 +241,16 @@ a:hover {
     border: none;
     cursor: pointer;
     transition: all var(--transition-fast);
-    background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-gold-dim) 100%);
-    color: #000;
+    background: linear-gradient(135deg, var(--accent-secondary) 0%, var(--accent-secondary-deep) 100%);
+    color: #ffffff;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    box-shadow: 0 4px 15px rgba(45, 125, 210, 0.3);
 }
 
 .dc-button:hover {
     transform: translateY(-2px);
-    box-shadow: var(--shadow-glow);
+    box-shadow: 0 6px 20px rgba(45, 125, 210, 0.4);
 }
 
 .dc-button:active {
@@ -246,13 +260,14 @@ a:hover {
 .dc-button.secondary {
     background: var(--bg-elevated);
     color: var(--text-primary);
-    border: 1px solid var(--border-default);
+    border: 1px solid var(--border-strong);
+    box-shadow: var(--shadow-sm);
 }
 
 .dc-button.secondary:hover {
     background: var(--bg-hover);
-    border-color: var(--border-strong);
-    box-shadow: none;
+    border-color: var(--accent-primary);
+    box-shadow: var(--shadow-md);
 }
 
 .dc-button.small {
@@ -321,7 +336,7 @@ a:hover {
 .dc-input, input[type="text"], input[type="email"], input[type="password"], input[type="number"], select, textarea {
     width: 100%;
     background: var(--bg-tertiary);
-    border: 1px solid var(--border-subtle);
+    border: 1px solid var(--border-default);
     border-radius: var(--radius-md);
     padding: 14px 16px;
     font-family: var(--font-primary);
@@ -332,8 +347,8 @@ a:hover {
 
 .dc-input:focus, input:focus, select:focus, textarea:focus {
     outline: none;
-    border-color: var(--accent-gold);
-    box-shadow: 0 0 0 3px rgba(212, 168, 83, 0.15);
+    border-color: var(--accent-secondary);
+    box-shadow: 0 0 0 3px rgba(45, 125, 210, 0.15);
 }
 
 .dc-input::placeholder, input::placeholder, textarea::placeholder {
@@ -350,7 +365,7 @@ a:hover {
 select {
     cursor: pointer;
     appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23a1a1a6' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%234a5568' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 12px center;
     padding-right: 36px;
@@ -410,7 +425,7 @@ select {
 
 .memory-card {
     background: var(--bg-secondary);
-    border: 1px solid var(--border-subtle);
+    border: 1px solid var(--border-default);
     border-radius: var(--radius-xl);
     padding: var(--space-xl);
     max-width: 420px;
@@ -418,6 +433,7 @@ select {
     margin: 0 auto;
     box-sizing: border-box;
     overflow: hidden;
+    box-shadow: var(--shadow-lg);
 }
 
 .memory-card.wide {
@@ -430,20 +446,22 @@ select {
 }
 
 .memory-card .header h1 {
-    font-size: 28px;
-    font-weight: 700;
+    font-family: var(--font-pixel);
+    font-size: 20px;
+    font-weight: 400;
     margin-bottom: var(--space-sm);
-    background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-amber) 100%);
+    background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary-dim) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
 
 .memory-card .header .subtitle {
-    font-size: 12px;
-    color: var(--text-tertiary);
+    font-size: 11px;
+    color: var(--accent-secondary);
     text-transform: uppercase;
     letter-spacing: 2px;
+    font-weight: 600;
 }
 
 .bevel-box {
@@ -489,21 +507,23 @@ select {
 }
 
 .title-logo h1 {
-    font-size: 42px;
-    font-weight: 800;
-    letter-spacing: -1px;
-    margin-bottom: var(--space-sm);
-    background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-gold) 100%);
+    font-family: var(--font-pixel);
+    font-size: 28px;
+    font-weight: 400;
+    letter-spacing: 1px;
+    margin-bottom: var(--space-md);
+    background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary-dim) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
 
 .title-subtitle {
-    font-size: 13px;
-    color: var(--text-tertiary);
+    font-size: 12px;
+    color: var(--accent-secondary);
     text-transform: uppercase;
-    letter-spacing: 4px;
+    letter-spacing: 3px;
+    font-weight: 600;
 }
 
 .title-buttons {
@@ -855,17 +875,19 @@ button.avatar-profile-link:active {
 }
 
 .xp-bar {
-    height: 6px;
-    background: var(--bg-elevated);
+    height: 8px;
+    background: var(--bg-tertiary);
     border-radius: var(--radius-full);
     overflow: hidden;
+    border: 1px solid var(--border-subtle);
 }
 
 .xp-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--accent-gold-dim) 0%, var(--accent-gold) 100%);
+    background: linear-gradient(90deg, var(--accent-secondary-light) 0%, var(--accent-primary) 100%);
     border-radius: var(--radius-full);
     transition: width 0.5s ease;
+    box-shadow: 0 0 10px rgba(255, 107, 53, 0.3);
 }
 
 /* Stats Grid */
@@ -946,7 +968,7 @@ button.avatar-profile-link:active {
 
 .menu-nav-btn.active {
     background: var(--bg-elevated);
-    color: var(--accent-gold);
+    color: var(--accent-primary);
 }
 
 .nav-icon {
