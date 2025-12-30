@@ -66,7 +66,8 @@ const API = {
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.error || 'Request failed');
+                const errorMsg = data.details ? `${data.error}: ${data.details}` : data.error;
+                throw new Error(errorMsg || 'Request failed');
             }
 
             return data;
