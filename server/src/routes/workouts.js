@@ -4,11 +4,12 @@ const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Get all workouts for user
+// Get all workouts for user (with exercises for sync)
 router.get('/', authenticate, async (req, res) => {
     try {
         const { limit = 20, offset = 0 } = req.query;
 
+        // Get workouts
         const result = await db.query(
             `SELECT id, name, type, duration, total_sets, total_volume, xp_earned, notes, completed_at
              FROM workouts
@@ -17,6 +18,43 @@ router.get('/', authenticate, async (req, res) => {
              LIMIT $2 OFFSET $3`,
             [req.user.id, limit, offset]
         );
+
+        // Get exercises for all workouts in one query
+        const workoutIds = result.rows.map(w => w.id);
+
+        if (workoutIds.length > 0) {
+            const exercisesResult = await db.query(
+                `SELECT we.workout_id, we.exercise_id, we.exercise_name, we.order_index,
+                        COALESCE(json_agg(
+                            json_build_object('weight', es.weight, 'reps', es.reps, 'set_number', es.set_number)
+                            ORDER BY es.set_number
+                        ) FILTER (WHERE es.id IS NOT NULL), '[]') as sets
+                 FROM workout_exercises we
+                 LEFT JOIN exercise_sets es ON es.workout_exercise_id = we.id
+                 WHERE we.workout_id = ANY($1)
+                 GROUP BY we.workout_id, we.id, we.exercise_id, we.exercise_name, we.order_index
+                 ORDER BY we.order_index`,
+                [workoutIds]
+            );
+
+            // Group exercises by workout
+            const exercisesByWorkout = {};
+            exercisesResult.rows.forEach(ex => {
+                if (!exercisesByWorkout[ex.workout_id]) {
+                    exercisesByWorkout[ex.workout_id] = [];
+                }
+                exercisesByWorkout[ex.workout_id].push({
+                    id: ex.exercise_id,
+                    name: ex.exercise_name,
+                    sets: ex.sets
+                });
+            });
+
+            // Attach exercises to workouts
+            result.rows.forEach(workout => {
+                workout.exercises = exercisesByWorkout[workout.id] || [];
+            });
+        }
 
         res.json({ workouts: result.rows });
 

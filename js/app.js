@@ -1189,6 +1189,79 @@ async function loadCharactersFromServer() {
     }
 }
 
+// Load workouts from server and merge with local history
+async function loadWorkoutsFromServer() {
+    if (!isOnlineMode || !currentUser) return;
+
+    try {
+        // Load all workouts from server (get a large batch)
+        const response = await API.getWorkouts(1000, 0);
+        const serverWorkouts = response.workouts || [];
+
+        if (serverWorkouts.length === 0) {
+            console.log('No server workouts to sync');
+            return;
+        }
+
+        // Get the current slot's workout history
+        const slotIndex = saveSlots.findIndex(slot => slot && slot.onlineUserId === currentUser.id);
+        if (slotIndex === -1) return;
+
+        const localHistory = saveSlots[slotIndex].workoutHistory || [];
+
+        // Create a map of local workouts by ID for quick lookup
+        const localWorkoutMap = new Map();
+        localHistory.forEach(w => {
+            if (w.id) localWorkoutMap.set(w.id, w);
+        });
+
+        // Merge server workouts into local history
+        let newWorkoutsAdded = 0;
+        serverWorkouts.forEach(serverWorkout => {
+            // Check if this workout exists locally
+            if (!localWorkoutMap.has(serverWorkout.id)) {
+                // Add server workout to local history
+                localHistory.push({
+                    id: serverWorkout.id,
+                    name: serverWorkout.name,
+                    type: serverWorkout.type,
+                    date: serverWorkout.completed_at || serverWorkout.date,
+                    duration: serverWorkout.duration,
+                    totalSets: serverWorkout.total_sets || 0,
+                    totalVolume: serverWorkout.total_volume || 0,
+                    xpEarned: serverWorkout.xp_earned || 0,
+                    exercises: serverWorkout.exercises || []
+                });
+                newWorkoutsAdded++;
+            }
+        });
+
+        if (newWorkoutsAdded > 0) {
+            // Sort by date (newest first)
+            localHistory.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            // Update save slot
+            saveSlots[slotIndex].workoutHistory = localHistory;
+
+            // Recalculate totals from workout history
+            const totals = localHistory.reduce((acc, w) => ({
+                workouts: acc.workouts + 1,
+                sets: acc.sets + (w.totalSets || 0),
+                volume: acc.volume + (w.totalVolume || 0)
+            }), { workouts: 0, sets: 0, volume: 0 });
+
+            saveSlots[slotIndex].totalWorkouts = totals.workouts;
+            saveSlots[slotIndex].totalSets = totals.sets;
+            saveSlots[slotIndex].totalWeight = totals.volume;
+
+            saveSaveSlots();
+            console.log(`Synced ${newWorkoutsAdded} workouts from server`);
+        }
+    } catch (error) {
+        console.warn('Failed to load workouts from server:', error);
+    }
+}
+
 function loadCustomData() {
     try {
         const savedExercises = localStorage.getItem('ironquest_exercises');
@@ -1362,6 +1435,9 @@ async function completeSignIn(result) {
 
     // Load characters from server FIRST (this ensures persistence across devices)
     await loadCharactersFromServer();
+
+    // Load workouts from server (sync workout history across devices)
+    await loadWorkoutsFromServer();
 
     // Sync server profile to local save slot
     if (currentUser && currentUser.username) {
@@ -6211,7 +6287,7 @@ async function openTeam(teamId) {
         // Load initial data
         switchTeamTab('leaderboard');
 
-        showScreen('teamDetailScreen');
+        showScreen('teamScreen');
     } catch (error) {
         showToast('FAILED TO LOAD TEAM');
         console.error('Error opening team:', error);
