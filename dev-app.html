@@ -24,15 +24,20 @@
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
-    <!-- Google Sign-In SDK -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <!-- App Configuration - Update these for your deployment -->
+    <!-- Clerk SDK -->
+    <script
+        async
+        crossorigin="anonymous"
+        data-clerk-publishable-key="pk_test_Z29yZ2VvdXMtc2FpbGZpc2gtODEuY2xlcmsuYWNjb3VudHMuZGV2JA"
+        src="https://gorgeous-sailfish-81.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
+        type="text/javascript"
+    ></script>
+    <!-- App Configuration - DEV -->
     <script>
         window.APP_CONFIG = {
-            // Google OAuth Client ID - get from Google Cloud Console
-            // Add your Vercel domain to Authorized JavaScript origins
-            GOOGLE_CLIENT_ID: '1022977955769-tjbbf5tnfhb4dhmsr6aq30f1rqs3t48v.apps.googleusercontent.com',
-            // API URL - your backend server
+            // Clerk Configuration
+            CLERK_PUBLISHABLE_KEY: 'pk_test_Z29yZ2VvdXMtc2FpbGZpc2gtODEuY2xlcmsuYWNjb3VudHMuZGV2JA',
+            // API URL - local backend server
             API_URL: 'http://localhost:3001'
         };
     </script>
@@ -73,14 +78,14 @@
                     <div class="subtitle">ENTER THE ARENA</div>
                 </div>
 
-                <!-- Google Sign-In -->
-                <div id="googleSignInSection">
+                <!-- Clerk Sign-In -->
+                <div id="clerkSignInSection">
                     <div class="bevel-box" style="text-align: center; padding: 24px;">
                         <p style="margin-bottom: 16px; color: var(--text-secondary); font-size: 0.9rem;">
                             Sign in to sync your progress across devices
                         </p>
-                        <div id="googleSignInButton" style="display: flex; justify-content: center;"></div>
-                        <div class="form-error" id="googleSignInError" style="margin-top: 12px;"></div>
+                        <div id="clerkSignInButton"></div>
+                        <div class="form-error" id="clerkSignInError" style="margin-top: 12px;"></div>
                     </div>
 
                     <!-- Role Selection for New Users -->
@@ -88,8 +93,8 @@
                         <div class="bevel-box">
                             <label class="label" style="margin-bottom: 12px;">I AM A...</label>
                             <div class="role-buttons">
-                                <button class="dc-button" onclick="completeGoogleSignIn('user')">ATHLETE</button>
-                                <button class="dc-button secondary" onclick="completeGoogleSignIn('coach')">COACH</button>
+                                <button class="dc-button" onclick="completeClerkSignIn('user')">ATHLETE</button>
+                                <button class="dc-button secondary" onclick="completeClerkSignIn('coach')">COACH</button>
                             </div>
                         </div>
                     </div>

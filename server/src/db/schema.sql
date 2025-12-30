@@ -24,11 +24,12 @@ CREATE TABLE IF NOT EXISTS users (
     total_sets INTEGER DEFAULT 0,
     total_weight BIGINT DEFAULT 0,
     achievements TEXT[] DEFAULT '{}',
-    -- Google OAuth fields
+    -- OAuth fields
     google_id VARCHAR(255) UNIQUE,
     google_email VARCHAR(255),
     google_avatar_url TEXT,
-    auth_provider VARCHAR(20) DEFAULT 'email', -- 'email', 'google'
+    clerk_id VARCHAR(255) UNIQUE, -- Clerk SSO
+    auth_provider VARCHAR(20) DEFAULT 'email', -- 'email', 'google', 'clerk'
     role VARCHAR(20) DEFAULT 'user', -- 'user', 'coach'
     last_sync_at TIMESTAMP WITH TIME ZONE, -- For offline sync
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -36,8 +37,9 @@ CREATE TABLE IF NOT EXISTS users (
     last_login TIMESTAMP WITH TIME ZONE
 );
 
--- Index for Google lookups
+-- Index for OAuth lookups
 CREATE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id);
+CREATE INDEX IF NOT EXISTS idx_users_clerk_id ON users(clerk_id);
 
 -- ============================================
 -- PERSONAL RECORDS TABLE

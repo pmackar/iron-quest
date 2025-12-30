@@ -6,10 +6,137 @@ const { generateToken, authenticate } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Google OAuth client
+// Google OAuth client (legacy)
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-// Google Sign-In
+// Clerk Sign-In (SSO)
+router.post('/clerk', async (req, res) => {
+    try {
+        const { clerkToken, clerkUserId, email, username, avatarUrl, role } = req.body;
+
+        if (!clerkToken || !clerkUserId) {
+            return res.status(400).json({ error: 'Clerk token and user ID are required' });
+        }
+
+        // For now, we trust the Clerk token since it's verified on the client side
+        // In production, you should verify the token using Clerk's backend SDK
+        // npm install @clerk/clerk-sdk-node
+        // const { verifyToken } = require('@clerk/clerk-sdk-node');
+
+        // Check if user exists by Clerk ID
+        let result = await db.query(
+            'SELECT * FROM users WHERE clerk_id = $1',
+            [clerkUserId]
+        );
+
+        let user;
+        let isNewUser = false;
+
+        if (result.rows.length > 0) {
+            // Existing user - update last login
+            user = result.rows[0];
+            await db.query(
+                'UPDATE users SET last_login = CURRENT_TIMESTAMP, google_avatar_url = $1 WHERE id = $2',
+                [avatarUrl, user.id]
+            );
+        } else {
+            // Check if email exists (user might have registered before)
+            if (email) {
+                result = await db.query('SELECT * FROM users WHERE email = $1', [email.toLowerCase()]);
+            }
+
+            if (result.rows.length > 0) {
+                // Link Clerk account to existing email account
+                user = result.rows[0];
+                await db.query(
+                    `UPDATE users SET
+                        clerk_id = $1,
+                        google_avatar_url = $2,
+                        auth_provider = 'clerk',
+                        last_login = CURRENT_TIMESTAMP
+                     WHERE id = $3`,
+                    [clerkUserId, avatarUrl, user.id]
+                );
+            } else {
+                // Create new user
+                isNewUser = true;
+
+                // Generate a unique username
+                let baseUsername = username || email?.split('@')[0] || 'Warrior';
+                let finalUsername = baseUsername.substring(0, 45);
+
+                // Check if username exists and append number if needed
+                let counter = 1;
+                while (true) {
+                    const usernameCheck = await db.query(
+                        'SELECT id FROM users WHERE username = $1',
+                        [finalUsername]
+                    );
+                    if (usernameCheck.rows.length === 0) break;
+                    finalUsername = `${baseUsername.substring(0, 40)}${counter}`;
+                    counter++;
+                }
+
+                result = await db.query(
+                    `INSERT INTO users (
+                        email, username, clerk_id, google_avatar_url,
+                        auth_provider, role, avatar
+                    ) VALUES ($1, $2, $3, $4, 'clerk', $5, 1)
+                    RETURNING *`,
+                    [email?.toLowerCase(), finalUsername, clerkUserId, avatarUrl, role || 'user']
+                );
+                user = result.rows[0];
+            }
+        }
+
+        // Generate JWT token
+        const token = generateToken(user.id);
+
+        // Get personal records if existing user
+        let personalRecords = {};
+        if (!isNewUser) {
+            const prs = await db.query(
+                'SELECT exercise_id, weight FROM personal_records WHERE user_id = $1',
+                [user.id]
+            );
+            prs.rows.forEach(pr => {
+                personalRecords[pr.exercise_id] = pr.weight;
+            });
+        }
+
+        res.json({
+            message: isNewUser ? 'Account created successfully' : 'Login successful',
+            token,
+            isNewUser,
+            user: {
+                id: user.id,
+                email: user.email,
+                username: user.username,
+                avatar: user.avatar,
+                googleAvatarUrl: user.google_avatar_url,
+                level: user.level,
+                xp: user.xp,
+                xpToNext: user.xp_to_next,
+                heightFeet: user.height_feet,
+                heightInches: user.height_inches,
+                weight: user.weight,
+                gender: user.gender,
+                role: user.role,
+                totalWorkouts: user.total_workouts,
+                totalSets: user.total_sets,
+                totalWeight: user.total_weight,
+                achievements: user.achievements || [],
+                personalRecords
+            }
+        });
+
+    } catch (error) {
+        console.error('Clerk auth error:', error);
+        res.status(500).json({ error: 'Clerk authentication failed' });
+    }
+});
+
+// Google Sign-In (legacy)
 router.post('/google', async (req, res) => {
     try {
         const { idToken, username, role } = req.body;

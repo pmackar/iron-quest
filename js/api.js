@@ -118,7 +118,7 @@ const API = {
         return response;
     },
 
-    // Google Sign-In
+    // Google Sign-In (legacy)
     async googleSignIn(idToken, options = {}) {
         const response = await this.post('/auth/google', {
             idToken,
@@ -131,7 +131,23 @@ const API = {
         return response;
     },
 
-    // Initialize Google Sign-In
+    // Clerk Sign-In (SSO)
+    async clerkSignIn(clerkToken, userData = {}) {
+        const response = await this.post('/auth/clerk', {
+            clerkToken,
+            clerkUserId: userData.clerkUserId,
+            email: userData.email,
+            username: userData.username,
+            avatarUrl: userData.avatarUrl,
+            role: userData.role || 'user'
+        });
+        if (response.token) {
+            this.setToken(response.token);
+        }
+        return response;
+    },
+
+    // Initialize Google Sign-In (legacy)
     initGoogleSignIn(buttonId, callback) {
         if (!window.google) {
             console.error('Google Sign-In SDK not loaded');
