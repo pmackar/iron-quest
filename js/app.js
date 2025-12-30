@@ -2417,15 +2417,18 @@ function updateMinimizedWorkoutBar() {
     // Update workout name
     document.getElementById('minimizedWorkoutName').textContent = currentWorkout.name;
 
-    // Calculate progress
-    const totalExercises = currentWorkout.exercises.length;
-    const completedExercises = currentWorkout.exercises.filter(ex => {
+    // Calculate total sets completed
+    let totalSetsCompleted = 0;
+    currentWorkout.exercises.forEach(ex => {
         const sets = exerciseSets[ex.id] || [];
-        return sets.length > 0;
-    }).length;
+        totalSetsCompleted += sets.length;
+    });
 
-    document.getElementById('minimizedWorkoutProgress').textContent =
-        `${completedExercises}/${totalExercises} exercises`;
+    // Update completed count
+    const completedEl = document.getElementById('minimizedWorkoutCompleted');
+    if (completedEl) {
+        completedEl.textContent = `${totalSetsCompleted} done`;
+    }
 
     // Update timer display in minimized bar
     const minimizedTimer = document.getElementById('minimizedTimerDisplay');
@@ -2438,6 +2441,77 @@ function hideMinimizedWorkoutBar() {
     workoutMinimized = false;
     document.body.classList.remove('workout-minimized');
     document.getElementById('minimizedWorkoutBar').style.display = 'none';
+}
+
+// Swipe gesture handling for workout screen
+let workoutSwipeStartY = 0;
+let workoutSwipeEndY = 0;
+let workoutSwipeActive = false;
+
+function initWorkoutSwipeGestures() {
+    const workoutScreen = document.getElementById('workoutScreen');
+    if (!workoutScreen || workoutScreen.dataset.swipeInit) return;
+
+    workoutScreen.dataset.swipeInit = 'true';
+
+    workoutScreen.addEventListener('touchstart', handleWorkoutTouchStart, { passive: true });
+    workoutScreen.addEventListener('touchmove', handleWorkoutTouchMove, { passive: true });
+    workoutScreen.addEventListener('touchend', handleWorkoutTouchEnd, { passive: true });
+
+    // Also add swipe up on minimized bar
+    const minimizedBar = document.getElementById('minimizedWorkoutBar');
+    if (minimizedBar && !minimizedBar.dataset.swipeInit) {
+        minimizedBar.dataset.swipeInit = 'true';
+        minimizedBar.addEventListener('touchstart', handleMinimizedTouchStart, { passive: true });
+        minimizedBar.addEventListener('touchmove', handleMinimizedTouchMove, { passive: true });
+        minimizedBar.addEventListener('touchend', handleMinimizedTouchEnd, { passive: true });
+    }
+}
+
+function handleWorkoutTouchStart(e) {
+    workoutSwipeStartY = e.touches[0].clientY;
+    workoutSwipeActive = true;
+}
+
+function handleWorkoutTouchMove(e) {
+    if (!workoutSwipeActive) return;
+    workoutSwipeEndY = e.touches[0].clientY;
+}
+
+function handleWorkoutTouchEnd(e) {
+    if (!workoutSwipeActive) return;
+    workoutSwipeActive = false;
+
+    const swipeDistance = workoutSwipeEndY - workoutSwipeStartY;
+    const minSwipeDistance = 80; // pixels
+
+    // Swipe down to minimize
+    if (swipeDistance > minSwipeDistance && !workoutMinimized) {
+        minimizeWorkout();
+    }
+}
+
+function handleMinimizedTouchStart(e) {
+    workoutSwipeStartY = e.touches[0].clientY;
+    workoutSwipeActive = true;
+}
+
+function handleMinimizedTouchMove(e) {
+    if (!workoutSwipeActive) return;
+    workoutSwipeEndY = e.touches[0].clientY;
+}
+
+function handleMinimizedTouchEnd(e) {
+    if (!workoutSwipeActive) return;
+    workoutSwipeActive = false;
+
+    const swipeDistance = workoutSwipeStartY - workoutSwipeEndY;
+    const minSwipeDistance = 50; // pixels
+
+    // Swipe up to expand
+    if (swipeDistance > minSwipeDistance && workoutMinimized) {
+        expandWorkout();
+    }
 }
 
 // ============================================
@@ -2461,6 +2535,8 @@ function switchMenuTab(tab) {
         renderHistory();
     } else if (tab === 'stats') {
         renderStats();
+    } else if (tab === 'exercises') {
+        renderExerciseLibrary();
     } else if (tab === 'share') {
         renderShareTab();
     } else if (tab === 'teams') {
@@ -2470,6 +2546,94 @@ function switchMenuTab(tab) {
     } else if (tab === 'coach') {
         loadCoachTab();
     }
+}
+
+function renderExerciseLibrary() {
+    const container = document.getElementById('exerciseLibraryGallery');
+    if (!container) return;
+
+    // Combine all exercises and get last performed info
+    const workoutHistory = gameState.workoutHistory || [];
+    const allExercisesList = [
+        ...allExercises.map(ex => ({ ...ex, isCustom: false })),
+        ...customExercises.map(ex => ({ ...ex, isCustom: true }))
+    ];
+
+    // Get last performed data for each exercise
+    const exerciseData = allExercisesList.map(ex => {
+        let lastPerformed = null;
+        let lastSet = null;
+
+        // Search through workout history for this exercise
+        for (const workout of workoutHistory) {
+            if (!workout.exercises) continue;
+            const exerciseEntry = workout.exercises.find(e => e.id === ex.id);
+            if (exerciseEntry && exerciseEntry.sets?.length > 0) {
+                if (!lastPerformed || new Date(workout.date) > new Date(lastPerformed)) {
+                    lastPerformed = workout.date;
+                    lastSet = exerciseEntry.sets[exerciseEntry.sets.length - 1];
+                }
+            }
+        }
+
+        return {
+            ...ex,
+            lastPerformed,
+            lastSet
+        };
+    });
+
+    // Sort: recently performed first, then alphabetically
+    exerciseData.sort((a, b) => {
+        if (a.lastPerformed && !b.lastPerformed) return -1;
+        if (!a.lastPerformed && b.lastPerformed) return 1;
+        if (a.lastPerformed && b.lastPerformed) {
+            return new Date(b.lastPerformed) - new Date(a.lastPerformed);
+        }
+        return a.name.localeCompare(b.name);
+    });
+
+    // Render as gallery
+    container.innerHTML = `
+        <div class="exercise-gallery">
+            ${exerciseData.map(ex => {
+                const lastDateText = ex.lastPerformed
+                    ? formatRelativeDate(ex.lastPerformed)
+                    : 'Never';
+                const lastSetText = ex.lastSet
+                    ? `${ex.lastSet.weight}lbs × ${ex.lastSet.reps}`
+                    : '—';
+                const equipmentType = getEquipmentType(ex.equipment);
+
+                return `
+                    <div class="exercise-card" onclick="openExerciseHistory('${ex.id}')">
+                        <div class="exercise-card-header">
+                            <span class="exercise-card-name">${ex.name}</span>
+                            ${ex.isCustom ? '<span class="custom-badge">★</span>' : ''}
+                        </div>
+                        <div class="exercise-card-details">
+                            <div class="exercise-card-row">
+                                <span class="detail-label">Body</span>
+                                <span class="detail-value">${capitalizeFirst(ex.muscle || 'other')}</span>
+                            </div>
+                            <div class="exercise-card-row">
+                                <span class="detail-label">Type</span>
+                                <span class="detail-value">${equipmentType}</span>
+                            </div>
+                            <div class="exercise-card-row">
+                                <span class="detail-label">Last</span>
+                                <span class="detail-value">${lastDateText}</span>
+                            </div>
+                            <div class="exercise-card-row">
+                                <span class="detail-label">Set</span>
+                                <span class="detail-value highlight">${lastSetText}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
 }
 
 function updateMenuStats() {
@@ -2710,7 +2874,30 @@ function isThisMonth(date) {
 // WORKOUT SYSTEM
 // ============================================
 
+// Pending workout to start after confirmation
+let pendingWorkoutType = null;
+
 function startWorkout(type) {
+    // Store the workout type and show confirmation modal
+    pendingWorkoutType = type;
+    const workout = workouts[type];
+
+    document.getElementById('workoutStartTitle').textContent = workout.name;
+    document.getElementById('workoutStartDesc').textContent = `${workout.exercises.length} exercises`;
+    document.getElementById('workoutStartModal').classList.add('active');
+}
+
+function closeWorkoutStartModal() {
+    document.getElementById('workoutStartModal').classList.remove('active');
+    pendingWorkoutType = null;
+}
+
+function confirmStartWorkout() {
+    if (!pendingWorkoutType) return;
+
+    const type = pendingWorkoutType;
+    closeWorkoutStartModal();
+
     currentWorkout = { ...workouts[type] };
     exerciseSets = {};
     workoutStartTime = new Date();
@@ -2726,6 +2913,9 @@ function startWorkout(type) {
     renderExercises();
     updateWorkoutXP();
     showScreen('workoutScreen');
+
+    // Initialize swipe gesture for workout screen
+    initWorkoutSwipeGestures();
 }
 
 function renderExercises() {
@@ -6332,7 +6522,7 @@ async function createChallenge() {
     }
 }
 
-function copyInviteCode() {
+function copyTeamInviteCode() {
     const code = document.getElementById('teamInviteCode').textContent;
     navigator.clipboard.writeText(code).then(() => {
         showToast('CODE COPIED!');
