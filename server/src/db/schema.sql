@@ -9,7 +9,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- ============================================
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    email VARCHAR(255) UNIQUE NOT NULL,
+    email VARCHAR(255) UNIQUE, -- Nullable for Clerk SSO users without email
     password_hash VARCHAR(255), -- Nullable for Google OAuth users
     username VARCHAR(50) UNIQUE NOT NULL,
     avatar INTEGER DEFAULT 1,
