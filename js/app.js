@@ -2818,6 +2818,89 @@ function startWorkout(type) {
     showScreen('workoutScreen');
 }
 
+function startEmptyWorkout() {
+    currentWorkout = {
+        name: 'CUSTOM WORKOUT',
+        exercises: []
+    };
+    exerciseSets = {};
+    workoutStartTime = new Date();
+    supersets = [];
+    supersetMode = false;
+    supersetSelections = [];
+
+    document.getElementById('workoutTitle').textContent = currentWorkout.name;
+    renderExercises();
+    updateWorkoutXP();
+    showScreen('workoutScreen');
+}
+
+function addExerciseToWorkout(exerciseId) {
+    // Find exercise from all available exercises
+    const allExercises = getAllExercises();
+    const exercise = allExercises.find(ex => ex.id === exerciseId);
+
+    if (!exercise || !currentWorkout) return;
+
+    // Check if already in workout
+    if (currentWorkout.exercises.some(ex => ex.id === exerciseId)) {
+        showToast('ALREADY IN WORKOUT');
+        return;
+    }
+
+    // Add to current workout
+    currentWorkout.exercises.push({
+        id: exercise.id,
+        name: exercise.name,
+        targetSets: 3
+    });
+    exerciseSets[exercise.id] = [];
+
+    renderExercises();
+    closeAddExerciseToWorkoutModal();
+    showToast('EXERCISE ADDED');
+}
+
+function openAddExerciseToWorkoutModal() {
+    const allExercises = getAllExercises();
+    const modal = document.getElementById('addExerciseToWorkoutModal');
+    const list = document.getElementById('addExerciseList');
+
+    // Filter out exercises already in workout
+    const currentIds = currentWorkout.exercises.map(ex => ex.id);
+    const available = allExercises.filter(ex => !currentIds.includes(ex.id));
+
+    list.innerHTML = available.map(ex => `
+        <div class="exercise-select-item" onclick="addExerciseToWorkout('${ex.id}')">
+            <span class="exercise-name">${ex.name}</span>
+            <span class="exercise-bodypart">${ex.bodypart || ''}</span>
+        </div>
+    `).join('');
+
+    if (available.length === 0) {
+        list.innerHTML = '<p style="text-align: center; color: var(--text-muted);">No more exercises available</p>';
+    }
+
+    modal.classList.add('active');
+}
+
+function closeAddExerciseToWorkoutModal() {
+    document.getElementById('addExerciseToWorkoutModal').classList.remove('active');
+    document.getElementById('exerciseSearchInput').value = '';
+}
+
+function filterExerciseList() {
+    const query = document.getElementById('exerciseSearchInput').value.toLowerCase();
+    const items = document.querySelectorAll('#addExerciseList .exercise-select-item');
+
+    items.forEach(item => {
+        const name = item.querySelector('.exercise-name').textContent.toLowerCase();
+        const bodypart = item.querySelector('.exercise-bodypart').textContent.toLowerCase();
+        const matches = name.includes(query) || bodypart.includes(query);
+        item.style.display = matches ? 'flex' : 'none';
+    });
+}
+
 function renderExercises() {
     const list = document.getElementById('exerciseList');
 

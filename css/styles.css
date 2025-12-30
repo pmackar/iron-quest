@@ -89,6 +89,13 @@
 html {
     font-size: 16px;
     -webkit-text-size-adjust: 100%;
+    overflow-x: hidden;
+}
+
+html, body {
+    width: 100%;
+    max-width: 100vw;
+    position: relative;
 }
 
 body {
@@ -1195,6 +1202,74 @@ button.avatar-profile-link:active {
 .more-workouts-btn:hover {
     background: var(--bg-hover);
     color: var(--accent-primary);
+}
+
+.start-empty-workout-btn {
+    width: 100%;
+    margin-top: var(--space-sm);
+    padding: var(--space-md);
+    background: var(--bg-tertiary);
+    border: 2px dashed var(--accent-gold);
+    border-radius: var(--radius-md);
+    color: var(--accent-gold);
+    font-family: var(--font-primary);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+}
+
+.start-empty-workout-btn:hover {
+    background: var(--accent-gold);
+    color: #000;
+}
+
+.start-empty-workout-btn .empty-icon {
+    font-size: 16px;
+}
+
+/* Exercise Select Modal */
+.exercise-search-container {
+    margin-bottom: var(--space-md);
+}
+
+.exercise-select-list {
+    max-height: 300px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.exercise-select-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-sm) var(--space-md);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.exercise-select-item:hover {
+    background: var(--bg-hover);
+    border-left: 3px solid var(--accent-gold);
+}
+
+.exercise-select-item .exercise-name {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.exercise-select-item .exercise-bodypart {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
 }
 
 /* Exercise Gallery */

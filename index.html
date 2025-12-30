@@ -387,6 +387,9 @@
                         <button class="more-workouts-btn" id="moreWorkoutsBtn" style="display: none;" onclick="openAllWorkoutsModal()">
                             + MORE WORKOUTS
                         </button>
+                        <button class="start-empty-workout-btn" onclick="startEmptyWorkout()">
+                            <span class="empty-icon">✏️</span> START EMPTY WORKOUT
+                        </button>
                     </div>
                 </div>
 
@@ -651,7 +654,8 @@
                 <textarea id="workoutNotes" class="workout-notes-input hidden" placeholder="Add workout notes..."></textarea>
             </div>
 
-            <button class="dc-button mt-lg" onclick="finishWorkout()">FINISH WORKOUT</button>
+            <button class="dc-button secondary mt-lg" onclick="openAddExerciseToWorkoutModal()">+ ADD EXERCISE</button>
+            <button class="dc-button mt-md" onclick="finishWorkout()">FINISH WORKOUT</button>
         </div>
     </div>
 
@@ -1871,6 +1875,22 @@
             <div class="modal-buttons">
                 <button class="dc-button secondary" onclick="closeAssignCampaignModal()">CANCEL</button>
                 <button class="dc-button" onclick="submitAssignCampaign()" id="submitAssignCampaignBtn" disabled>ASSIGN CAMPAIGN</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Exercise to Workout Modal -->
+    <div class="modal" id="addExerciseToWorkoutModal">
+        <div class="modal-content">
+            <h2>ADD EXERCISE</h2>
+            <div class="exercise-search-container">
+                <input type="text" id="exerciseSearchInput" class="dc-input" placeholder="Search exercises..." oninput="filterExerciseList()">
+            </div>
+            <div class="exercise-select-list" id="addExerciseList">
+                <!-- Populated by JS -->
+            </div>
+            <div class="modal-buttons">
+                <button class="dc-button secondary" onclick="closeAddExerciseToWorkoutModal()">CANCEL</button>
             </div>
         </div>
     </div>
