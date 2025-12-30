@@ -499,7 +499,10 @@ router.get('/me', authenticate, async (req, res) => {
 // Update user profile
 router.put('/me', authenticate, async (req, res) => {
     try {
-        const { username, avatar, heightFeet, heightInches, weight, gender } = req.body;
+        const {
+            username, avatar, heightFeet, heightInches, weight, gender,
+            level, xp, xpToNext, totalWorkouts, totalSets, totalWeight, achievements
+        } = req.body;
 
         const result = await db.query(
             `UPDATE users SET
@@ -508,13 +511,38 @@ router.put('/me', authenticate, async (req, res) => {
                 height_feet = COALESCE($3, height_feet),
                 height_inches = COALESCE($4, height_inches),
                 weight = COALESCE($5, weight),
-                gender = COALESCE($6, gender)
-             WHERE id = $7
-             RETURNING id, email, username, avatar, level, xp`,
-            [username, avatar, heightFeet, heightInches, weight, gender, req.user.id]
+                gender = COALESCE($6, gender),
+                level = COALESCE($7, level),
+                xp = COALESCE($8, xp),
+                xp_to_next = COALESCE($9, xp_to_next),
+                total_workouts = COALESCE($10, total_workouts),
+                total_sets = COALESCE($11, total_sets),
+                total_weight = COALESCE($12, total_weight),
+                achievements = COALESCE($13, achievements)
+             WHERE id = $14
+             RETURNING id, email, username, avatar, level, xp, xp_to_next,
+                       total_workouts, total_sets, total_weight, achievements`,
+            [username, avatar, heightFeet, heightInches, weight, gender,
+             level, xp, xpToNext, totalWorkouts, totalSets, totalWeight,
+             achievements ? JSON.stringify(achievements) : null, req.user.id]
         );
 
-        res.json({ user: result.rows[0] });
+        const user = result.rows[0];
+        res.json({
+            user: {
+                id: user.id,
+                email: user.email,
+                username: user.username,
+                avatar: user.avatar,
+                level: user.level,
+                xp: user.xp,
+                xpToNext: user.xp_to_next,
+                totalWorkouts: user.total_workouts,
+                totalSets: user.total_sets,
+                totalWeight: user.total_weight,
+                achievements: user.achievements
+            }
+        });
 
     } catch (error) {
         console.error('Update profile error:', error);

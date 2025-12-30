@@ -1764,7 +1764,14 @@ function startGame() {
             heightFeet: heightFeet,
             heightInches: heightInches,
             weight: weight,
-            gender: gender
+            gender: gender,
+            level: gameState.level,
+            xp: gameState.xp,
+            xpToNext: gameState.xpToNext,
+            totalWorkouts: gameState.totalWorkouts,
+            totalSets: gameState.totalSets,
+            totalWeight: gameState.totalWeight,
+            achievements: gameState.achievements
         }).catch(err => console.error('Failed to sync profile:', err));
     }
 
@@ -3801,6 +3808,17 @@ async function finishWorkout() {
                 totalVolume: totalVolume,
                 xpEarned: xpEarned + bonusXP,
                 exercises: exerciseData
+            });
+
+            // Sync profile stats to server
+            await API.updateProfile({
+                level: gameState.level,
+                xp: gameState.xp,
+                xpToNext: gameState.xpToNext,
+                totalWorkouts: gameState.totalWorkouts,
+                totalSets: gameState.totalSets,
+                totalWeight: gameState.totalWeight,
+                achievements: gameState.achievements
             });
 
             // Notify team via socket
