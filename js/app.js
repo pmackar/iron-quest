@@ -1040,29 +1040,50 @@ async function initClerkSignIn() {
     try {
         await window.Clerk.load();
 
-        // Check if already signed in
+        const signInButton = document.getElementById('clerkSignInButton');
+
+        // Check if already signed in - show continue option instead of auto-login
         if (window.Clerk.user) {
-            handleClerkUserLoaded();
+            const userName = window.Clerk.user.firstName || window.Clerk.user.username || 'Warrior';
+            if (signInButton) {
+                signInButton.innerHTML = `
+                    <button class="dc-button" onclick="handleClerkUserLoaded()" style="width: 100%; margin-bottom: 12px;">
+                        CONTINUE AS ${userName.toUpperCase()}
+                    </button>
+                    <button class="dc-button secondary" onclick="switchClerkAccount()" style="width: 100%;">
+                        SWITCH ACCOUNT
+                    </button>
+                `;
+            }
+        } else {
+            // Mount sign-in button for new users
+            if (signInButton) {
+                signInButton.innerHTML = `
+                    <button class="dc-button" onclick="openClerkSignIn()" style="width: 100%;">
+                        SIGN IN / SIGN UP
+                    </button>
+                `;
+            }
         }
 
-        // Listen for auth state changes
+        // Listen for auth state changes (for after signing in)
         window.Clerk.addListener(({ user }) => {
-            if (user) {
+            if (user && !window.Clerk._listenerTriggeredOnce) {
+                window.Clerk._listenerTriggeredOnce = true;
                 handleClerkUserLoaded();
             }
         });
-
-        // Mount sign-in button
-        const signInButton = document.getElementById('clerkSignInButton');
-        if (signInButton) {
-            signInButton.innerHTML = `
-                <button class="dc-button" onclick="openClerkSignIn()" style="width: 100%;">
-                    SIGN IN / SIGN UP
-                </button>
-            `;
-        }
     } catch (error) {
         console.error('Clerk init error:', error);
+    }
+}
+
+function switchClerkAccount() {
+    if (window.Clerk) {
+        window.Clerk.signOut().then(() => {
+            window.Clerk._listenerTriggeredOnce = false;
+            openClerkSignIn();
+        });
     }
 }
 
