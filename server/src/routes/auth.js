@@ -168,6 +168,10 @@ router.post('/google', async (req, res) => {
         console.error('[Google] FATAL: JWT_SECRET not configured');
         return res.status(500).json({ error: 'Server configuration error', details: 'JWT_SECRET not configured' });
     }
+    if (!process.env.DATABASE_URL) {
+        console.error('[Google] FATAL: DATABASE_URL not configured');
+        return res.status(500).json({ error: 'Server configuration error', details: 'DATABASE_URL not configured' });
+    }
 
     try {
         const { idToken, username, role } = req.body;
@@ -193,18 +197,22 @@ router.post('/google', async (req, res) => {
         }
 
         const { sub: googleId, email, name, picture } = payload;
+        console.log('[Google] User info:', { googleId, email, name });
 
         // Check if user exists by Google ID
+        console.log('[Google] Step 1: Querying by google_id');
         let result = await db.query(
             'SELECT * FROM users WHERE google_id = $1',
             [googleId]
         );
+        console.log('[Google] Step 2: Found', result.rows.length, 'existing users');
 
         let user;
         let isNewUser = false;
 
         if (result.rows.length > 0) {
             // Existing user - update last login and return
+            console.log('[Google] Existing user found, updating last login');
             user = result.rows[0];
             await db.query(
                 'UPDATE users SET last_login = CURRENT_TIMESTAMP, google_avatar_url = $1 WHERE id = $2',
@@ -212,6 +220,7 @@ router.post('/google', async (req, res) => {
             );
         } else {
             // Check if email exists (user might have registered with email before)
+            console.log('[Google] Step 3: Checking email');
             result = await db.query('SELECT * FROM users WHERE email = $1', [email.toLowerCase()]);
 
             if (result.rows.length > 0) {
@@ -230,10 +239,12 @@ router.post('/google', async (req, res) => {
             } else {
                 // Create new user
                 isNewUser = true;
+                console.log('[Google] Step 4: Creating new user');
 
                 // Generate a unique username from Google name or email
                 let baseUsername = username || name?.replace(/\s+/g, '') || email.split('@')[0];
                 let finalUsername = baseUsername.substring(0, 45);
+                console.log('[Google] Username:', finalUsername);
 
                 // Check if username exists and append number if needed
                 let counter = 1;
@@ -247,6 +258,7 @@ router.post('/google', async (req, res) => {
                     counter++;
                 }
 
+                console.log('[Google] Step 5: Inserting user into DB');
                 result = await db.query(
                     `INSERT INTO users (
                         email, username, google_id, google_email, google_avatar_url,
@@ -256,11 +268,14 @@ router.post('/google', async (req, res) => {
                     [email.toLowerCase(), finalUsername, googleId, email, picture, role || 'user']
                 );
                 user = result.rows[0];
+                console.log('[Google] Step 6: User created with id:', user.id);
             }
         }
 
+        console.log('[Google] Step 7: Generating JWT token');
         // Generate JWT token
         const token = generateToken(user.id);
+        console.log('[Google] Step 8: Success!');
 
         // Get personal records if existing user
         let personalRecords = {};
