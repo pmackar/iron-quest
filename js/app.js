@@ -2417,18 +2417,15 @@ function updateMinimizedWorkoutBar() {
     // Update workout name
     document.getElementById('minimizedWorkoutName').textContent = currentWorkout.name;
 
-    // Calculate total sets completed
-    let totalSetsCompleted = 0;
-    currentWorkout.exercises.forEach(ex => {
+    // Calculate progress
+    const totalExercises = currentWorkout.exercises.length;
+    const completedExercises = currentWorkout.exercises.filter(ex => {
         const sets = exerciseSets[ex.id] || [];
-        totalSetsCompleted += sets.length;
-    });
+        return sets.length > 0;
+    }).length;
 
-    // Update completed count
-    const completedEl = document.getElementById('minimizedWorkoutCompleted');
-    if (completedEl) {
-        completedEl.textContent = `${totalSetsCompleted} done`;
-    }
+    document.getElementById('minimizedWorkoutProgress').textContent =
+        `${completedExercises}/${totalExercises} exercises`;
 
     // Update timer display in minimized bar
     const minimizedTimer = document.getElementById('minimizedTimerDisplay');
@@ -2441,77 +2438,6 @@ function hideMinimizedWorkoutBar() {
     workoutMinimized = false;
     document.body.classList.remove('workout-minimized');
     document.getElementById('minimizedWorkoutBar').style.display = 'none';
-}
-
-// Swipe gesture handling for workout screen
-let workoutSwipeStartY = 0;
-let workoutSwipeEndY = 0;
-let workoutSwipeActive = false;
-
-function initWorkoutSwipeGestures() {
-    const workoutScreen = document.getElementById('workoutScreen');
-    if (!workoutScreen || workoutScreen.dataset.swipeInit) return;
-
-    workoutScreen.dataset.swipeInit = 'true';
-
-    workoutScreen.addEventListener('touchstart', handleWorkoutTouchStart, { passive: true });
-    workoutScreen.addEventListener('touchmove', handleWorkoutTouchMove, { passive: true });
-    workoutScreen.addEventListener('touchend', handleWorkoutTouchEnd, { passive: true });
-
-    // Also add swipe up on minimized bar
-    const minimizedBar = document.getElementById('minimizedWorkoutBar');
-    if (minimizedBar && !minimizedBar.dataset.swipeInit) {
-        minimizedBar.dataset.swipeInit = 'true';
-        minimizedBar.addEventListener('touchstart', handleMinimizedTouchStart, { passive: true });
-        minimizedBar.addEventListener('touchmove', handleMinimizedTouchMove, { passive: true });
-        minimizedBar.addEventListener('touchend', handleMinimizedTouchEnd, { passive: true });
-    }
-}
-
-function handleWorkoutTouchStart(e) {
-    workoutSwipeStartY = e.touches[0].clientY;
-    workoutSwipeActive = true;
-}
-
-function handleWorkoutTouchMove(e) {
-    if (!workoutSwipeActive) return;
-    workoutSwipeEndY = e.touches[0].clientY;
-}
-
-function handleWorkoutTouchEnd(e) {
-    if (!workoutSwipeActive) return;
-    workoutSwipeActive = false;
-
-    const swipeDistance = workoutSwipeEndY - workoutSwipeStartY;
-    const minSwipeDistance = 80; // pixels
-
-    // Swipe down to minimize
-    if (swipeDistance > minSwipeDistance && !workoutMinimized) {
-        minimizeWorkout();
-    }
-}
-
-function handleMinimizedTouchStart(e) {
-    workoutSwipeStartY = e.touches[0].clientY;
-    workoutSwipeActive = true;
-}
-
-function handleMinimizedTouchMove(e) {
-    if (!workoutSwipeActive) return;
-    workoutSwipeEndY = e.touches[0].clientY;
-}
-
-function handleMinimizedTouchEnd(e) {
-    if (!workoutSwipeActive) return;
-    workoutSwipeActive = false;
-
-    const swipeDistance = workoutSwipeStartY - workoutSwipeEndY;
-    const minSwipeDistance = 50; // pixels
-
-    // Swipe up to expand
-    if (swipeDistance > minSwipeDistance && workoutMinimized) {
-        expandWorkout();
-    }
 }
 
 // ============================================
@@ -2874,30 +2800,7 @@ function isThisMonth(date) {
 // WORKOUT SYSTEM
 // ============================================
 
-// Pending workout to start after confirmation
-let pendingWorkoutType = null;
-
 function startWorkout(type) {
-    // Store the workout type and show confirmation modal
-    pendingWorkoutType = type;
-    const workout = workouts[type];
-
-    document.getElementById('workoutStartTitle').textContent = workout.name;
-    document.getElementById('workoutStartDesc').textContent = `${workout.exercises.length} exercises`;
-    document.getElementById('workoutStartModal').classList.add('active');
-}
-
-function closeWorkoutStartModal() {
-    document.getElementById('workoutStartModal').classList.remove('active');
-    pendingWorkoutType = null;
-}
-
-function confirmStartWorkout() {
-    if (!pendingWorkoutType) return;
-
-    const type = pendingWorkoutType;
-    closeWorkoutStartModal();
-
     currentWorkout = { ...workouts[type] };
     exerciseSets = {};
     workoutStartTime = new Date();
@@ -2913,9 +2816,6 @@ function confirmStartWorkout() {
     renderExercises();
     updateWorkoutXP();
     showScreen('workoutScreen');
-
-    // Initialize swipe gesture for workout screen
-    initWorkoutSwipeGestures();
 }
 
 function renderExercises() {

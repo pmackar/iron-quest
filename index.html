@@ -1875,20 +1875,6 @@
         </div>
     </div>
 
-    <!-- Workout Start Confirmation Modal -->
-    <div class="modal" id="workoutStartModal">
-        <div class="modal-content workout-start-confirm">
-            <div class="workout-start-icon">🏋️</div>
-            <h3 id="workoutStartTitle">PUSH DAY</h3>
-            <p class="workout-start-desc" id="workoutStartDesc">6 exercises</p>
-            <div class="workout-start-actions">
-                <button class="dc-button secondary" onclick="closeWorkoutStartModal()">CANCEL</button>
-                <button class="dc-button" onclick="confirmStartWorkout()">START</button>
-            </div>
-            <p class="workout-start-hint">Swipe down to explore while working out</p>
-        </div>
-    </div>
-
     <!-- Toast Notification -->
     <div class="toast" id="toast">SAVED!</div>
 
@@ -1896,9 +1882,14 @@
     <!-- Minimized Workout Bar (appears at bottom when workout is minimized) -->
     <div class="minimized-workout-bar" id="minimizedWorkoutBar" style="display: none;">
         <div class="minimized-workout-content" onclick="expandWorkout()">
-            <span class="minimized-workout-name" id="minimizedWorkoutName">PUSH DAY</span>
-            <span class="minimized-workout-timer" id="minimizedTimerDisplay">0:00</span>
-            <span class="minimized-workout-completed" id="minimizedWorkoutCompleted">0 done</span>
+            <div class="minimized-workout-info">
+                <span class="minimized-workout-name" id="minimizedWorkoutName">PUSH DAY</span>
+                <span class="minimized-workout-progress" id="minimizedWorkoutProgress">0/6 exercises</span>
+            </div>
+            <div class="minimized-workout-actions">
+                <span class="minimized-workout-timer" id="minimizedTimerDisplay">0:00</span>
+                <button class="minimized-expand-btn">↑</button>
+            </div>
         </div>
     </div>
 
