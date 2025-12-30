@@ -12,6 +12,13 @@ const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 // Clerk Sign-In (SSO)
 router.post('/clerk', async (req, res) => {
     console.log('[Clerk] Auth request received');
+
+    // Check for required environment variables
+    if (!process.env.JWT_SECRET) {
+        console.error('[Clerk] FATAL: JWT_SECRET not configured');
+        return res.status(500).json({ error: 'Server configuration error', details: 'JWT_SECRET not configured' });
+    }
+
     try {
         const { clerkToken, clerkUserId, email, username, avatarUrl, role } = req.body;
         console.log('[Clerk] Parsed body:', { clerkUserId, email, username, role });
