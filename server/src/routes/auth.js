@@ -140,9 +140,10 @@ router.post('/clerk', async (req, res) => {
 
     } catch (error) {
         console.error('Clerk auth error:', error);
+        const errorDetails = error ? (error.message || error.toString() || JSON.stringify(error)) : 'Error was null/undefined';
         res.status(500).json({
             error: 'Clerk authentication failed',
-            details: error.message || error.toString() || 'Unknown error'
+            details: errorDetails || 'Could not extract error details'
         });
     }
 });
