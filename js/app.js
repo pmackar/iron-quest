@@ -6116,15 +6116,30 @@ async function loadTeams() {
 }
 
 async function openTeam(teamId) {
+    if (!teamId) {
+        showToast('INVALID TEAM');
+        return;
+    }
+
     try {
         const response = await API.getTeam(teamId);
+
+        if (!response || !response.team) {
+            showToast('TEAM NOT FOUND');
+            return;
+        }
+
         currentTeam = response.team;
 
-        // Join the team's socket room
-        API.joinTeamRoom(teamId);
+        // Join the team's socket room (optional - don't fail if socket not connected)
+        try {
+            API.joinTeamRoom(teamId);
+        } catch (e) {
+            console.warn('Could not join team room:', e);
+        }
 
         // Update team header
-        document.getElementById('teamDetailName').textContent = currentTeam.name;
+        document.getElementById('teamDetailName').textContent = currentTeam.name || 'Team';
         document.getElementById('teamDetailAvatar').textContent = currentTeam.avatar || '⚔️';
         document.getElementById('teamInviteCode').textContent = currentTeam.invite_code || 'N/A';
 
@@ -6181,10 +6196,10 @@ async function loadLeaderboard() {
             container.innerHTML = '<div class="empty-hint">No rankings yet</div>';
         } else {
             container.innerHTML = leaderboard.map((entry, i) => `
-                <div class="leaderboard-item ${entry.user_id === currentUser?.id ? 'current-user' : ''}">
+                <div class="leaderboard-item ${entry.id === currentUser?.id ? 'current-user' : ''}">
                     <span class="rank">${i + 1}</span>
                     <span class="name">${escapeHtml(entry.username)}</span>
-                    <span class="score">${formatNumber(entry.total_xp || 0)} XP</span>
+                    <span class="score">${formatNumber(entry.xp || 0)} XP</span>
                 </div>
             `).join('');
         }
