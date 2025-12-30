@@ -6545,3 +6545,977 @@ body.workout-minimized .screen {
 .mb-md {
     margin-bottom: var(--space-md);
 }
+
+/* ============================================
+   CAMPAIGNS TAB
+   ============================================ */
+
+.campaigns-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-lg);
+}
+
+.campaigns-header h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.campaigns-section {
+    margin-bottom: var(--space-lg);
+}
+
+.campaigns-section-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: var(--space-sm);
+}
+
+.campaigns-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding: var(--space-sm) 0;
+}
+
+.campaigns-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+/* Campaign Card */
+.campaign-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.campaign-card:hover {
+    border-color: var(--accent-primary);
+    box-shadow: var(--shadow-md);
+}
+
+.campaign-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--space-sm);
+}
+
+.campaign-card-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.campaign-card-type {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+}
+
+.campaign-card-type.team {
+    background: var(--accent-secondary);
+    color: white;
+}
+
+.campaign-card-deadline {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: var(--space-md);
+}
+
+.campaign-card-progress {
+    margin-bottom: var(--space-sm);
+}
+
+.campaign-progress-bar {
+    height: 8px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.campaign-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-primary), var(--accent-primary-bright));
+    border-radius: var(--radius-full);
+    transition: width var(--transition-normal);
+}
+
+.campaign-card-stats {
+    display: flex;
+    gap: var(--space-lg);
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.campaign-stat {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+}
+
+.campaign-stat-value {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* ============================================
+   CAMPAIGN WIZARD MODAL
+   ============================================ */
+
+.campaign-wizard {
+    max-width: 420px;
+}
+
+.wizard-progress {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: var(--space-xl);
+}
+
+.wizard-step {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--bg-tertiary);
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all var(--transition-fast);
+}
+
+.wizard-step.active {
+    background: var(--accent-primary);
+    color: white;
+}
+
+.wizard-step.completed {
+    background: var(--accent-success);
+    color: white;
+}
+
+.wizard-line {
+    width: 40px;
+    height: 2px;
+    background: var(--bg-tertiary);
+}
+
+.wizard-panel {
+    display: none;
+}
+
+.wizard-panel.active {
+    display: block;
+}
+
+.wizard-subtitle {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 13px;
+    margin-bottom: var(--space-lg);
+}
+
+.wizard-buttons {
+    display: flex;
+    gap: var(--space-md);
+    margin-top: var(--space-xl);
+}
+
+.wizard-buttons .dc-button {
+    flex: 1;
+}
+
+/* Campaign Type Selector */
+.campaign-type-selector {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-md);
+}
+
+.type-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--space-lg);
+    background: var(--bg-tertiary);
+    border: 2px solid transparent;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.type-btn:hover {
+    background: var(--bg-hover);
+}
+
+.type-btn.active {
+    border-color: var(--accent-primary);
+    background: rgba(255, 107, 53, 0.1);
+}
+
+.type-icon {
+    font-size: 28px;
+    margin-bottom: var(--space-sm);
+}
+
+.type-label {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.type-desc {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: var(--space-xs);
+}
+
+.team-select-group {
+    margin-top: var(--space-md);
+}
+
+/* Campaign Goals List (Wizard) */
+.campaign-goals-list {
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+    min-height: 120px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.empty-goals-hint {
+    text-align: center;
+    color: var(--text-muted);
+    padding: var(--space-xl);
+}
+
+.goal-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-secondary);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--space-sm);
+}
+
+.goal-item:last-child {
+    margin-bottom: 0;
+}
+
+.goal-item-info {
+    flex: 1;
+}
+
+.goal-item-exercise {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.goal-item-target {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.goal-item-remove {
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: var(--bg-tertiary);
+    color: var(--text-muted);
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.goal-item-remove:hover {
+    background: var(--accent-error);
+    color: white;
+}
+
+/* Add Goal Section */
+.add-goal-section {
+    margin-top: var(--space-md);
+}
+
+.add-goal-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-md);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--accent-primary);
+    transition: all var(--transition-fast);
+}
+
+.add-goal-header:hover {
+    background: var(--bg-hover);
+}
+
+.add-goal-icon {
+    font-size: 18px;
+}
+
+.add-goal-form {
+    background: var(--bg-tertiary);
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    margin-top: var(--space-sm);
+}
+
+.goal-target-inputs {
+    display: flex;
+    gap: var(--space-md);
+}
+
+.goal-target-inputs .input-group {
+    flex: 1;
+}
+
+/* Campaign Review */
+.campaign-review {
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    padding: var(--space-lg);
+}
+
+.review-section {
+    margin-bottom: var(--space-md);
+}
+
+.review-section:last-child {
+    margin-bottom: 0;
+}
+
+.review-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: var(--space-xs);
+}
+
+.review-value {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.review-goals {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    margin-top: var(--space-sm);
+}
+
+.review-goal {
+    background: var(--bg-secondary);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+}
+
+.review-goal-exercise {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.review-goal-target {
+    color: var(--text-secondary);
+}
+
+/* ============================================
+   CAMPAIGN DETAIL MODAL
+   ============================================ */
+
+.campaign-detail {
+    max-width: 500px;
+}
+
+.campaign-detail-header {
+    text-align: center;
+    margin-bottom: var(--space-lg);
+}
+
+.campaign-detail-type {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: var(--radius-full);
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    margin-bottom: var(--space-sm);
+}
+
+.campaign-detail-type.team {
+    background: var(--accent-secondary);
+    color: white;
+}
+
+.campaign-detail-header h2 {
+    margin-bottom: var(--space-sm);
+}
+
+.campaign-detail-meta {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-lg);
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.campaign-days-left {
+    color: var(--accent-primary);
+    font-weight: 600;
+}
+
+/* Progress Ring */
+.campaign-progress-overview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xl);
+    padding: var(--space-lg);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-lg);
+}
+
+.progress-ring-container {
+    position: relative;
+    width: 100px;
+    height: 100px;
+}
+
+.progress-ring {
+    transform: rotate(-90deg);
+}
+
+.progress-ring-bg {
+    fill: none;
+    stroke: var(--bg-primary);
+    stroke-width: 8;
+}
+
+.progress-ring-fill {
+    fill: none;
+    stroke: var(--accent-primary);
+    stroke-width: 8;
+    stroke-linecap: round;
+    stroke-dasharray: 283;
+    stroke-dashoffset: 283;
+    transition: stroke-dashoffset var(--transition-slow);
+}
+
+.progress-ring-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.progress-stats {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.progress-stat {
+    text-align: center;
+}
+
+.progress-stat .stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.progress-stat .stat-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+/* Campaign Goals Detail */
+.campaign-goals-detail {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.goal-detail-card {
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+}
+
+.goal-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--space-md);
+}
+
+.goal-detail-exercise {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.goal-detail-type {
+    font-size: 10px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.goal-detail-status {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+}
+
+.goal-detail-status.achieved {
+    background: var(--accent-success);
+    color: white;
+}
+
+.goal-detail-progress {
+    margin-bottom: var(--space-sm);
+}
+
+.goal-progress-bar {
+    height: 10px;
+    background: var(--bg-primary);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.goal-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-primary), var(--accent-primary-bright));
+    border-radius: var(--radius-full);
+    transition: width var(--transition-normal);
+}
+
+.goal-progress-fill.achieved {
+    background: var(--accent-success);
+}
+
+.goal-detail-values {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.goal-current {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.goal-target {
+    color: var(--text-muted);
+}
+
+/* ============================================
+   COACH DASHBOARD
+   ============================================ */
+
+.coach-header,
+.my-coaches-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-lg);
+}
+
+.coach-header h3,
+.my-coaches-header h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.section-subtitle {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: var(--space-sm);
+}
+
+/* Client Cards */
+.coach-clients-list,
+.my-coaches-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.client-card,
+.coach-card {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.client-card:hover,
+.coach-card:hover {
+    border-color: var(--accent-primary);
+    box-shadow: var(--shadow-md);
+}
+
+.client-card-avatar,
+.coach-card-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--bg-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.client-card-info,
+.coach-card-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.client-card-name,
+.coach-card-name {
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.client-card-meta,
+.coach-card-meta {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+.client-card-stats {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+}
+
+.client-card-stat {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.client-card-stat-value {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.client-card-status {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    background: var(--bg-tertiary);
+    color: var(--text-muted);
+}
+
+.client-card-status.active {
+    background: var(--accent-success);
+    color: white;
+}
+
+.client-card-status.pending {
+    background: var(--accent-warning);
+    color: white;
+}
+
+/* Coach Invitations */
+.coach-invitations-section {
+    margin-bottom: var(--space-lg);
+}
+
+.coach-invitations-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.invitation-card {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    background: var(--bg-secondary);
+    border: 2px solid var(--accent-primary);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+}
+
+.invitation-info {
+    flex: 1;
+}
+
+.invitation-coach-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.invitation-date {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.invitation-actions {
+    display: flex;
+    gap: var(--space-sm);
+}
+
+.invitation-btn {
+    padding: 6px 12px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.invitation-btn.accept {
+    background: var(--accent-success);
+    color: white;
+}
+
+.invitation-btn.decline {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+}
+
+.invitation-btn:hover {
+    opacity: 0.9;
+}
+
+/* Client Detail Modal */
+.client-detail {
+    max-width: 600px;
+}
+
+.client-detail-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+    margin-bottom: var(--space-lg);
+}
+
+.client-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--bg-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+}
+
+.client-info h2 {
+    margin-bottom: var(--space-xs);
+}
+
+.client-meta {
+    display: flex;
+    gap: var(--space-md);
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.client-level {
+    color: var(--accent-primary);
+    font-weight: 600;
+}
+
+.client-stats-overview {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-md);
+    padding: var(--space-lg);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-lg);
+}
+
+.stat-box {
+    text-align: center;
+}
+
+.stat-box .stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.stat-box .stat-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+/* Client Detail Tabs */
+.client-detail-tabs {
+    display: flex;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+    border-bottom: 1px solid var(--border-default);
+    padding-bottom: var(--space-sm);
+}
+
+.client-tab-btn {
+    padding: 8px 16px;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.client-tab-btn:hover {
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+}
+
+.client-tab-btn.active {
+    color: var(--accent-primary);
+    background: rgba(255, 107, 53, 0.1);
+}
+
+.client-tab-content {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* Client Workout List */
+.client-workout-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-sm) var(--space-md);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--space-sm);
+}
+
+.client-workout-name {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.client-workout-date {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.client-workout-stats {
+    text-align: right;
+}
+
+.client-workout-volume {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.client-workout-sets {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+/* Client PR List */
+.client-pr-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-sm) var(--space-md);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--space-sm);
+}
+
+.client-pr-exercise {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.client-pr-weight {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--accent-primary);
+}
+
+.client-pr-date {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+/* Modal Description */
+.modal-description {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 13px;
+    margin-bottom: var(--space-lg);
+}

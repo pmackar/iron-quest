@@ -1199,20 +1199,28 @@ function handleLogout() {
 function updateOnlineUI() {
     const onlineBtn = document.getElementById('goOnlineBtn');
     const teamsTab = document.querySelector('.menu-nav-btn[data-tab="teams"]');
+    const campaignsTab = document.querySelector('.menu-nav-btn[data-tab="campaigns"]');
+    const coachTab = document.querySelector('.menu-nav-btn[data-tab="coach"]');
     const menuFooter = document.querySelector('.menu-footer');
 
     if (isOnlineMode && currentUser) {
         if (onlineBtn) onlineBtn.style.display = 'none';
         if (teamsTab) teamsTab.style.display = 'block';
+        if (campaignsTab) campaignsTab.style.display = 'block';
+        if (coachTab) coachTab.style.display = 'block';
         if (menuFooter) {
+            const roleLabel = currentUser.role === 'coach' ? ' (Coach)' : '';
             menuFooter.innerHTML = `
-                <span class="online-status">ONLINE: ${currentUser.username}</span>
+                <span class="online-status">ONLINE: ${currentUser.username}${roleLabel}</span>
                 <button class="logout-btn" onclick="handleLogout()">LOGOUT</button>
             `;
         }
     } else {
         if (onlineBtn) onlineBtn.style.display = 'block';
         if (teamsTab) teamsTab.style.display = 'none';
+        // Keep campaigns visible in offline mode for testing
+        // if (campaignsTab) campaignsTab.style.display = 'none';
+        if (coachTab) coachTab.style.display = 'none';
         if (menuFooter) {
             menuFooter.innerHTML = '';
         }
@@ -2108,6 +2116,10 @@ function switchMenuTab(tab) {
         renderShareTab();
     } else if (tab === 'teams') {
         loadTeams();
+    } else if (tab === 'campaigns') {
+        loadCampaigns();
+    } else if (tab === 'coach') {
+        loadCoachTab();
     }
 }
 
@@ -3484,6 +3496,9 @@ async function finishWorkout() {
 
             // Notify team via socket
             API.notifyWorkoutCompleted(currentWorkout.name, xpEarned + bonusXP, totalVolume);
+
+            // Update campaign progress based on workout
+            await updateCampaignProgressFromWorkout(exerciseData);
         } catch (error) {
             console.error('Failed to save workout to server:', error);
         }
@@ -5715,6 +5730,1190 @@ function getTimeAgo(date) {
     if (seconds < 604800) return Math.floor(seconds / 86400) + 'd ago';
 
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+// ============================================
+// CAMPAIGNS
+// ============================================
+
+let campaignsData = { personal: [], team: [] };
+let campaignWizardState = {
+    type: 'personal',
+    teamId: null,
+    title: '',
+    description: '',
+    targetDate: '',
+    goals: []
+};
+let currentCampaignId = null;
+
+async function loadCampaigns() {
+    if (!isOnlineMode) {
+        // Show offline message
+        campaignsData = { personal: [], team: [] };
+        renderCampaigns();
+        return;
+    }
+
+    try {
+        campaignsData = await API.getCampaigns();
+        renderCampaigns();
+    } catch (error) {
+        console.error('Failed to load campaigns:', error);
+        campaignsData = { personal: [], team: [] };
+        renderCampaigns();
+    }
+}
+
+function renderCampaigns() {
+    const activeList = document.getElementById('activeCampaignsList');
+    const completedList = document.getElementById('completedCampaignsList');
+
+    const allCampaigns = [...(campaignsData.personal || []), ...(campaignsData.team || [])];
+    const activeCampaigns = allCampaigns.filter(c => !c.isCompleted);
+    const completedCampaigns = allCampaigns.filter(c => c.isCompleted);
+
+    // Render active campaigns
+    if (activeCampaigns.length === 0) {
+        activeList.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">🎯</div>
+                <p>No active campaigns. Create one to track your goals!</p>
+            </div>
+        `;
+    } else {
+        activeList.innerHTML = activeCampaigns.map(campaign => renderCampaignCard(campaign)).join('');
+    }
+
+    // Render completed campaigns
+    if (completedCampaigns.length === 0) {
+        completedList.innerHTML = '<p class="text-muted text-center">No completed campaigns yet</p>';
+    } else {
+        completedList.innerHTML = completedCampaigns.map(campaign => renderCampaignCard(campaign)).join('');
+    }
+}
+
+function renderCampaignCard(campaign) {
+    const goals = campaign.goals || [];
+    const completedGoals = goals.filter(g => g.isAchieved).length;
+    const totalGoals = goals.length;
+    const progressPercent = totalGoals > 0 ? Math.round((completedGoals / totalGoals) * 100) : 0;
+
+    const targetDate = new Date(campaign.targetDate);
+    const today = new Date();
+    const daysLeft = Math.ceil((targetDate - today) / (1000 * 60 * 60 * 24));
+
+    return `
+        <div class="campaign-card" onclick="openCampaignDetail('${campaign.id}')">
+            <div class="campaign-card-header">
+                <div class="campaign-card-title">${campaign.title}</div>
+                <span class="campaign-card-type ${campaign.campaignType}">${campaign.campaignType}</span>
+            </div>
+            <div class="campaign-card-deadline">
+                ${campaign.isCompleted ? 'Completed!' : (daysLeft > 0 ? `${daysLeft} days left` : 'Overdue')}
+            </div>
+            <div class="campaign-card-progress">
+                <div class="campaign-progress-bar">
+                    <div class="campaign-progress-fill" style="width: ${progressPercent}%"></div>
+                </div>
+            </div>
+            <div class="campaign-card-stats">
+                <div class="campaign-stat">
+                    <span class="campaign-stat-value">${completedGoals}/${totalGoals}</span>
+                    <span>goals</span>
+                </div>
+                <div class="campaign-stat">
+                    <span class="campaign-stat-value">${progressPercent}%</span>
+                    <span>complete</span>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function toggleCampaignsSection(section) {
+    const icon = document.getElementById(`${section}CampaignsIcon`);
+    const list = document.getElementById(`${section}CampaignsList`);
+
+    if (list.classList.contains('hidden')) {
+        list.classList.remove('hidden');
+        icon.textContent = '▼';
+    } else {
+        list.classList.add('hidden');
+        icon.textContent = '▶';
+    }
+}
+
+// Campaign Creator Wizard
+function openCreateCampaignModal() {
+    try {
+        // Reset wizard state
+        campaignWizardState = {
+            type: 'personal',
+            teamId: null,
+            title: '',
+            description: '',
+            targetDate: '',
+            goals: []
+        };
+
+        // Reset UI
+        document.getElementById('campaignTitle').value = '';
+        document.getElementById('campaignDescription').value = '';
+        document.getElementById('campaignTargetDate').value = '';
+        document.getElementById('campaignGoalsList').innerHTML = '<div class="empty-goals-hint"><p>No goals added yet</p></div>';
+        document.getElementById('addGoalForm').classList.add('hidden');
+        document.getElementById('toStep3Btn').disabled = true;
+
+        // Reset wizard steps
+        document.querySelectorAll('.wizard-step').forEach((step, i) => {
+            step.classList.toggle('active', i === 0);
+            step.classList.remove('completed');
+        });
+        document.querySelectorAll('.wizard-panel').forEach((panel, i) => {
+            panel.classList.toggle('active', i === 0);
+        });
+
+        // Reset type selection
+        document.querySelectorAll('.type-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.type === 'personal');
+        });
+        document.getElementById('campaignTeamSelect').classList.add('hidden');
+
+        // Populate team dropdown if user has teams
+        populateTeamDropdown();
+
+        // Populate exercise dropdown
+        populateGoalExerciseDropdown();
+
+        // Set default target date to 30 days from now
+        const defaultDate = new Date();
+        defaultDate.setDate(defaultDate.getDate() + 30);
+        document.getElementById('campaignTargetDate').value = defaultDate.toISOString().split('T')[0];
+
+        document.getElementById('createCampaignModal').classList.add('active');
+    } catch (error) {
+        console.error('Error opening campaign modal:', error);
+        alert('Error: ' + error.message);
+    }
+}
+
+function closeCreateCampaignModal() {
+    document.getElementById('createCampaignModal').classList.remove('active');
+}
+
+function selectCampaignType(type) {
+    campaignWizardState.type = type;
+    document.querySelectorAll('.type-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.type === type);
+    });
+
+    const teamSelect = document.getElementById('campaignTeamSelect');
+    if (type === 'team') {
+        teamSelect.classList.remove('hidden');
+    } else {
+        teamSelect.classList.add('hidden');
+        campaignWizardState.teamId = null;
+    }
+}
+
+function populateTeamDropdown() {
+    const select = document.getElementById('campaignTeamId');
+    select.innerHTML = '<option value="">Select a team...</option>';
+
+    if (teamsData && teamsData.length > 0) {
+        teamsData.forEach(team => {
+            select.innerHTML += `<option value="${team.id}">${team.name}</option>`;
+        });
+    }
+}
+
+function getAllExercises() {
+    // Combine built-in exercises with custom exercises
+    return [...allExercises, ...customExercises.map(ex => ({ ...ex, isCustom: true }))];
+}
+
+function populateGoalExerciseDropdown() {
+    const select = document.getElementById('goalExerciseSelect');
+    select.innerHTML = '<option value="">Select exercise...</option>';
+
+    // Get all exercises
+    const exercises = getAllExercises();
+    exercises.forEach(ex => {
+        select.innerHTML += `<option value="${ex.id}" data-name="${ex.name}">${ex.name}</option>`;
+    });
+}
+
+function nextCampaignStep(step) {
+    if (step === 2) {
+        // Validate step 1
+        const title = document.getElementById('campaignTitle').value.trim();
+        const targetDate = document.getElementById('campaignTargetDate').value;
+
+        if (!title) {
+            showToast('ENTER A TITLE');
+            return;
+        }
+        if (!targetDate) {
+            showToast('SELECT A DATE');
+            return;
+        }
+
+        if (campaignWizardState.type === 'team') {
+            const teamId = document.getElementById('campaignTeamId').value;
+            if (!teamId) {
+                showToast('SELECT A TEAM');
+                return;
+            }
+            campaignWizardState.teamId = teamId;
+        }
+
+        campaignWizardState.title = title;
+        campaignWizardState.description = document.getElementById('campaignDescription').value.trim();
+        campaignWizardState.targetDate = targetDate;
+    }
+
+    if (step === 3) {
+        // Validate step 2
+        if (campaignWizardState.goals.length === 0) {
+            showToast('ADD AT LEAST ONE GOAL');
+            return;
+        }
+
+        // Populate review
+        populateCampaignReview();
+    }
+
+    // Update wizard steps
+    document.querySelectorAll('.wizard-step').forEach((stepEl, i) => {
+        if (i < step - 1) {
+            stepEl.classList.add('completed');
+            stepEl.classList.remove('active');
+        } else if (i === step - 1) {
+            stepEl.classList.add('active');
+            stepEl.classList.remove('completed');
+        } else {
+            stepEl.classList.remove('active', 'completed');
+        }
+    });
+
+    // Show correct panel
+    document.querySelectorAll('.wizard-panel').forEach((panel, i) => {
+        panel.classList.toggle('active', i === step - 1);
+    });
+}
+
+function prevCampaignStep(step) {
+    document.querySelectorAll('.wizard-step').forEach((stepEl, i) => {
+        if (i < step - 1) {
+            stepEl.classList.add('completed');
+            stepEl.classList.remove('active');
+        } else if (i === step - 1) {
+            stepEl.classList.add('active');
+            stepEl.classList.remove('completed');
+        } else {
+            stepEl.classList.remove('active', 'completed');
+        }
+    });
+
+    document.querySelectorAll('.wizard-panel').forEach((panel, i) => {
+        panel.classList.toggle('active', i === step - 1);
+    });
+}
+
+function toggleAddGoalForm() {
+    const form = document.getElementById('addGoalForm');
+    form.classList.toggle('hidden');
+}
+
+function updateGoalTypeOptions() {
+    // Reset target inputs when exercise changes
+    updateGoalTargetInput();
+}
+
+function updateGoalTargetInput() {
+    const goalType = document.getElementById('goalTypeSelect').value;
+
+    document.getElementById('targetWeightGroup').classList.toggle('hidden', goalType === 'tonnage');
+    document.getElementById('targetRepsGroup').classList.toggle('hidden', goalType !== 'reps');
+    document.getElementById('targetTonnageGroup').classList.toggle('hidden', goalType !== 'tonnage');
+}
+
+function addCampaignGoal() {
+    const exerciseSelect = document.getElementById('goalExerciseSelect');
+    const exerciseId = exerciseSelect.value;
+    const exerciseName = exerciseSelect.options[exerciseSelect.selectedIndex]?.dataset?.name || exerciseSelect.options[exerciseSelect.selectedIndex]?.text;
+    const goalType = document.getElementById('goalTypeSelect').value;
+    const targetWeight = parseInt(document.getElementById('goalTargetWeight').value) || 0;
+    const targetReps = parseInt(document.getElementById('goalTargetReps').value) || 0;
+    const targetTonnage = parseInt(document.getElementById('goalTargetTonnage').value) || 0;
+
+    if (!exerciseId) {
+        showToast('SELECT AN EXERCISE');
+        return;
+    }
+
+    // Validate based on goal type
+    if (goalType === '1rm' && targetWeight <= 0) {
+        showToast('ENTER TARGET WEIGHT');
+        return;
+    }
+    if (goalType === 'reps' && (targetWeight <= 0 || targetReps <= 0)) {
+        showToast('ENTER WEIGHT AND REPS');
+        return;
+    }
+    if (goalType === 'tonnage' && targetTonnage <= 0) {
+        showToast('ENTER TARGET TONNAGE');
+        return;
+    }
+
+    // Add goal to wizard state
+    const goal = {
+        exerciseId,
+        exerciseName,
+        goalType,
+        targetWeight: goalType !== 'tonnage' ? targetWeight : null,
+        targetReps: goalType === 'reps' ? targetReps : null,
+        targetTonnage: goalType === 'tonnage' ? targetTonnage : null
+    };
+
+    campaignWizardState.goals.push(goal);
+
+    // Render goals list
+    renderWizardGoalsList();
+
+    // Reset form
+    document.getElementById('goalExerciseSelect').value = '';
+    document.getElementById('goalTargetWeight').value = '';
+    document.getElementById('goalTargetReps').value = '';
+    document.getElementById('goalTargetTonnage').value = '';
+    document.getElementById('addGoalForm').classList.add('hidden');
+
+    // Enable next button
+    document.getElementById('toStep3Btn').disabled = false;
+}
+
+function renderWizardGoalsList() {
+    const list = document.getElementById('campaignGoalsList');
+
+    if (campaignWizardState.goals.length === 0) {
+        list.innerHTML = '<div class="empty-goals-hint"><p>No goals added yet</p></div>';
+        document.getElementById('toStep3Btn').disabled = true;
+        return;
+    }
+
+    list.innerHTML = campaignWizardState.goals.map((goal, index) => {
+        let targetText = '';
+        if (goal.goalType === '1rm') {
+            targetText = `1RM: ${goal.targetWeight} lbs`;
+        } else if (goal.goalType === 'reps') {
+            targetText = `${goal.targetWeight} lbs × ${goal.targetReps} reps`;
+        } else if (goal.goalType === 'tonnage') {
+            targetText = `${goal.targetTonnage.toLocaleString()} lbs total`;
+        }
+
+        return `
+            <div class="goal-item">
+                <div class="goal-item-info">
+                    <div class="goal-item-exercise">${goal.exerciseName}</div>
+                    <div class="goal-item-target">${targetText}</div>
+                </div>
+                <button class="goal-item-remove" onclick="removeCampaignGoal(${index})">×</button>
+            </div>
+        `;
+    }).join('');
+}
+
+function removeCampaignGoal(index) {
+    campaignWizardState.goals.splice(index, 1);
+    renderWizardGoalsList();
+}
+
+function populateCampaignReview() {
+    document.getElementById('reviewTitle').textContent = campaignWizardState.title;
+    document.getElementById('reviewType').textContent = campaignWizardState.type === 'personal' ? 'Personal' : 'Team';
+
+    const targetDate = new Date(campaignWizardState.targetDate);
+    document.getElementById('reviewDate').textContent = targetDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+    const goalsHtml = campaignWizardState.goals.map(goal => {
+        let targetText = '';
+        if (goal.goalType === '1rm') {
+            targetText = `1RM: ${goal.targetWeight} lbs`;
+        } else if (goal.goalType === 'reps') {
+            targetText = `${goal.targetWeight} lbs × ${goal.targetReps} reps`;
+        } else if (goal.goalType === 'tonnage') {
+            targetText = `${goal.targetTonnage.toLocaleString()} lbs total`;
+        }
+
+        return `
+            <div class="review-goal">
+                <span class="review-goal-exercise">${goal.exerciseName}</span>
+                <span class="review-goal-target"> - ${targetText}</span>
+            </div>
+        `;
+    }).join('');
+
+    document.getElementById('reviewGoals').innerHTML = goalsHtml;
+}
+
+async function createCampaign() {
+    try {
+        const campaignData = {
+            title: campaignWizardState.title,
+            description: campaignWizardState.description,
+            campaignType: campaignWizardState.type,
+            teamId: campaignWizardState.teamId,
+            targetDate: campaignWizardState.targetDate,
+            goals: campaignWizardState.goals
+        };
+
+        await API.createCampaign(campaignData);
+        closeCreateCampaignModal();
+        showToast('CAMPAIGN CREATED!');
+        loadCampaigns();
+    } catch (error) {
+        showToast(error.message || 'FAILED TO CREATE');
+    }
+}
+
+async function openCampaignDetail(campaignId) {
+    currentCampaignId = campaignId;
+
+    try {
+        const response = await API.getCampaign(campaignId);
+        const campaign = response.campaign;
+
+        // Update header
+        document.getElementById('campaignDetailTitle').textContent = campaign.title;
+        document.getElementById('campaignDetailType').textContent = campaign.campaignType.toUpperCase();
+        document.getElementById('campaignDetailType').classList.toggle('team', campaign.campaignType === 'team');
+
+        const targetDate = new Date(campaign.targetDate);
+        document.getElementById('campaignDetailDeadline').textContent = `Target: ${targetDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+
+        const today = new Date();
+        const daysLeft = Math.ceil((targetDate - today) / (1000 * 60 * 60 * 24));
+        document.getElementById('campaignDetailDaysLeft').textContent = campaign.isCompleted ? 'Complete!' : (daysLeft > 0 ? `${daysLeft} days left` : 'Overdue');
+
+        // Update progress
+        const goals = campaign.goals || [];
+        const completedGoals = goals.filter(g => g.isAchieved).length;
+        const totalGoals = goals.length;
+        const progressPercent = totalGoals > 0 ? Math.round((completedGoals / totalGoals) * 100) : 0;
+
+        document.getElementById('campaignGoalsComplete').textContent = completedGoals;
+        document.getElementById('campaignGoalsTotal').textContent = totalGoals;
+        document.getElementById('campaignProgressPercent').textContent = `${progressPercent}%`;
+
+        // Update progress ring
+        const circumference = 2 * Math.PI * 45;
+        const offset = circumference - (progressPercent / 100) * circumference;
+        document.getElementById('campaignProgressRing').style.strokeDashoffset = offset;
+
+        // Render goals detail
+        const goalsDetailHtml = goals.map(goal => {
+            let currentText = '';
+            let targetText = '';
+            let progressPercent = 0;
+
+            if (goal.goalType === '1rm') {
+                currentText = `${goal.currentValue || 0} lbs`;
+                targetText = `${goal.targetWeight} lbs`;
+                progressPercent = goal.targetWeight > 0 ? Math.min(100, Math.round(((goal.currentValue || 0) / goal.targetWeight) * 100)) : 0;
+            } else if (goal.goalType === 'reps') {
+                currentText = `${goal.currentValue || 0} reps`;
+                targetText = `${goal.targetReps} reps @ ${goal.targetWeight} lbs`;
+                progressPercent = goal.targetReps > 0 ? Math.min(100, Math.round(((goal.currentValue || 0) / goal.targetReps) * 100)) : 0;
+            } else if (goal.goalType === 'tonnage') {
+                currentText = `${(goal.currentValue || 0).toLocaleString()} lbs`;
+                targetText = `${goal.targetTonnage.toLocaleString()} lbs`;
+                progressPercent = goal.targetTonnage > 0 ? Math.min(100, Math.round(((goal.currentValue || 0) / goal.targetTonnage) * 100)) : 0;
+            }
+
+            return `
+                <div class="goal-detail-card">
+                    <div class="goal-detail-header">
+                        <div>
+                            <div class="goal-detail-exercise">${goal.exerciseName}</div>
+                            <div class="goal-detail-type">${goal.goalType === '1rm' ? '1 Rep Max' : goal.goalType === 'reps' ? 'Reps at Weight' : 'Total Tonnage'}</div>
+                        </div>
+                        <span class="goal-detail-status ${goal.isAchieved ? 'achieved' : ''}">${goal.isAchieved ? 'ACHIEVED' : 'In Progress'}</span>
+                    </div>
+                    <div class="goal-detail-progress">
+                        <div class="goal-progress-bar">
+                            <div class="goal-progress-fill ${goal.isAchieved ? 'achieved' : ''}" style="width: ${progressPercent}%"></div>
+                        </div>
+                    </div>
+                    <div class="goal-detail-values">
+                        <span class="goal-current">${currentText}</span>
+                        <span class="goal-target">Goal: ${targetText}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        document.getElementById('campaignGoalsDetail').innerHTML = goalsDetailHtml;
+
+        // Show/hide delete button based on ownership
+        document.getElementById('deleteCampaignBtn').style.display = campaign.creatorId === (gameState?.onlineUserId) ? 'block' : 'none';
+
+        document.getElementById('campaignDetailModal').classList.add('active');
+    } catch (error) {
+        showToast('FAILED TO LOAD');
+    }
+}
+
+function closeCampaignDetailModal() {
+    document.getElementById('campaignDetailModal').classList.remove('active');
+    currentCampaignId = null;
+}
+
+async function deleteCampaign() {
+    if (!currentCampaignId) return;
+
+    if (!confirm('Delete this campaign?')) return;
+
+    try {
+        await API.deleteCampaign(currentCampaignId);
+        closeCampaignDetailModal();
+        showToast('CAMPAIGN DELETED');
+        loadCampaigns();
+    } catch (error) {
+        showToast('FAILED TO DELETE');
+    }
+}
+
+// ============================================
+// COACH MODE
+// ============================================
+
+let coachClientsData = [];
+let myCoachesData = [];
+let coachInvitationsData = [];
+let currentClientId = null;
+let currentClientData = null;
+let assignCampaignGoals = [];
+
+async function loadCoachTab() {
+    if (!isOnlineMode) return;
+
+    // Check if user is a coach
+    const isCoach = currentUser?.role === 'coach';
+
+    // Show appropriate section
+    document.getElementById('coachDashboard').style.display = isCoach ? 'block' : 'none';
+    document.getElementById('myCoachesSection').style.display = isCoach ? 'none' : 'block';
+
+    if (isCoach) {
+        await loadCoachClients();
+    } else {
+        await loadMyCoaches();
+        await loadCoachInvitations();
+    }
+}
+
+async function loadCoachClients() {
+    try {
+        const response = await API.getCoachClients();
+        coachClientsData = response.clients || [];
+        renderCoachClients();
+    } catch (error) {
+        console.error('Failed to load clients:', error);
+    }
+}
+
+function renderCoachClients() {
+    const list = document.getElementById('coachClientsList');
+
+    if (coachClientsData.length === 0) {
+        list.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">🏋️</div>
+                <p>No clients yet. Invite athletes to start coaching!</p>
+            </div>
+        `;
+        return;
+    }
+
+    list.innerHTML = coachClientsData.map(client => {
+        const lastWorkoutText = client.lastWorkout
+            ? `Last: ${getTimeAgo(new Date(client.lastWorkout))}`
+            : 'No workouts yet';
+
+        return `
+            <div class="client-card" onclick="openClientDetail('${client.clientId}')">
+                <div class="client-card-avatar">${getAvatarEmoji(client.avatar)}</div>
+                <div class="client-card-info">
+                    <div class="client-card-name">${client.username}</div>
+                    <div class="client-card-meta">Level ${client.level} • ${client.totalWorkouts} workouts</div>
+                </div>
+                <div class="client-card-stats">
+                    <span class="client-card-status ${client.status}">${client.status}</span>
+                    <div class="client-card-stat">${lastWorkoutText}</div>
+                    <div class="client-card-stat">
+                        <span class="client-card-stat-value">${client.recentWorkouts}</span> this week
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+async function loadMyCoaches() {
+    try {
+        const response = await API.getMyCoaches();
+        myCoachesData = response.coaches || [];
+        renderMyCoaches();
+    } catch (error) {
+        console.error('Failed to load coaches:', error);
+    }
+}
+
+function renderMyCoaches() {
+    const list = document.getElementById('myCoachesList');
+
+    if (myCoachesData.length === 0) {
+        list.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">👤</div>
+                <p>No coaches connected. Ask your coach to send you an invitation!</p>
+            </div>
+        `;
+        return;
+    }
+
+    list.innerHTML = myCoachesData.map(coach => `
+        <div class="coach-card">
+            <div class="coach-card-avatar">${getAvatarEmoji(coach.avatar)}</div>
+            <div class="coach-card-info">
+                <div class="coach-card-name">${coach.username}</div>
+                <div class="coach-card-meta">Connected ${getTimeAgo(new Date(coach.connectedAt))}</div>
+            </div>
+            <button class="dc-button warning small" onclick="event.stopPropagation(); disconnectCoach('${coach.coachId}')">
+                Disconnect
+            </button>
+        </div>
+    `).join('');
+}
+
+async function loadCoachInvitations() {
+    try {
+        const response = await API.getCoachInvitations();
+        coachInvitationsData = response.invitations || [];
+        renderCoachInvitations();
+    } catch (error) {
+        console.error('Failed to load invitations:', error);
+    }
+}
+
+function renderCoachInvitations() {
+    const section = document.getElementById('coachInvitationsSection');
+    const list = document.getElementById('coachInvitationsList');
+
+    if (coachInvitationsData.length === 0) {
+        section.style.display = 'none';
+        return;
+    }
+
+    section.style.display = 'block';
+    list.innerHTML = coachInvitationsData.map(inv => `
+        <div class="invitation-card">
+            <div class="invitation-info">
+                <div class="invitation-coach-name">${inv.coachUsername} wants to coach you</div>
+                <div class="invitation-date">Sent ${getTimeAgo(new Date(inv.invitedAt))}</div>
+            </div>
+            <div class="invitation-actions">
+                <button class="invitation-btn accept" onclick="acceptInvitation('${inv.id}')">Accept</button>
+                <button class="invitation-btn decline" onclick="declineInvitation('${inv.id}')">Decline</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function acceptInvitation(inviteId) {
+    try {
+        await API.acceptCoachInvitation(inviteId);
+        showToast('COACH CONNECTED!');
+        loadCoachInvitations();
+        loadMyCoaches();
+    } catch (error) {
+        showToast('FAILED TO ACCEPT');
+    }
+}
+
+async function declineInvitation(inviteId) {
+    try {
+        await API.declineCoachInvitation(inviteId);
+        showToast('INVITATION DECLINED');
+        loadCoachInvitations();
+    } catch (error) {
+        showToast('FAILED TO DECLINE');
+    }
+}
+
+async function disconnectCoach(coachId) {
+    if (!confirm('Disconnect from this coach?')) return;
+
+    try {
+        await API.disconnectFromCoach(coachId);
+        showToast('DISCONNECTED');
+        loadMyCoaches();
+    } catch (error) {
+        showToast('FAILED TO DISCONNECT');
+    }
+}
+
+// Invite Client Modal
+function openInviteClientModal() {
+    document.getElementById('inviteClientEmail').value = '';
+    document.getElementById('inviteClientError').textContent = '';
+    document.getElementById('inviteClientModal').classList.add('active');
+}
+
+function closeInviteClientModal() {
+    document.getElementById('inviteClientModal').classList.remove('active');
+}
+
+async function sendClientInvite() {
+    const email = document.getElementById('inviteClientEmail').value.trim();
+    const errorEl = document.getElementById('inviteClientError');
+
+    if (!email) {
+        errorEl.textContent = 'Please enter an email address';
+        return;
+    }
+
+    try {
+        const response = await API.inviteClient(email);
+        closeInviteClientModal();
+        showToast(`INVITED ${response.clientUsername}!`);
+        loadCoachClients();
+    } catch (error) {
+        errorEl.textContent = error.message || 'Failed to send invitation';
+    }
+}
+
+// Client Detail Modal
+async function openClientDetail(clientId) {
+    currentClientId = clientId;
+
+    try {
+        // Load client details
+        const [detailResponse, statsResponse] = await Promise.all([
+            API.getClientDetail(clientId),
+            API.getClientStats(clientId)
+        ]);
+
+        currentClientData = {
+            ...detailResponse.client,
+            stats: statsResponse
+        };
+
+        // Update header
+        document.getElementById('clientDetailName').textContent = currentClientData.username;
+        document.getElementById('clientDetailAvatar').textContent = getAvatarEmoji(currentClientData.avatar);
+        document.getElementById('clientDetailLevel').textContent = `Level ${currentClientData.level}`;
+        document.getElementById('clientDetailJoined').textContent = `Joined: ${new Date(currentClientData.joinedAt).toLocaleDateString()}`;
+
+        // Update stats
+        document.getElementById('clientTotalWorkouts').textContent = currentClientData.totalWorkouts || 0;
+        document.getElementById('clientWeeklyWorkouts').textContent = currentClientData.stats.weeklyStats?.workouts || 0;
+        document.getElementById('clientTotalVolume').textContent = formatNumber(currentClientData.totalWeight || 0);
+
+        // Load workouts tab by default
+        switchClientTab('workouts');
+
+        document.getElementById('clientDetailModal').classList.add('active');
+    } catch (error) {
+        showToast('FAILED TO LOAD CLIENT');
+    }
+}
+
+function closeClientDetailModal() {
+    document.getElementById('clientDetailModal').classList.remove('active');
+    currentClientId = null;
+    currentClientData = null;
+}
+
+async function switchClientTab(tab) {
+    document.querySelectorAll('.client-tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tab);
+    });
+
+    const content = document.getElementById('clientTabContent');
+
+    if (tab === 'workouts') {
+        try {
+            const response = await API.getClientWorkouts(currentClientId);
+            const workouts = response.workouts || [];
+
+            if (workouts.length === 0) {
+                content.innerHTML = '<p class="text-muted text-center">No workouts yet</p>';
+            } else {
+                content.innerHTML = workouts.map(w => `
+                    <div class="client-workout-item">
+                        <div>
+                            <div class="client-workout-name">${w.name}</div>
+                            <div class="client-workout-date">${new Date(w.completedAt).toLocaleDateString()}</div>
+                        </div>
+                        <div class="client-workout-stats">
+                            <div class="client-workout-volume">${formatNumber(w.totalVolume)} lbs</div>
+                            <div class="client-workout-sets">${w.totalSets} sets</div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        } catch (error) {
+            content.innerHTML = '<p class="text-muted text-center">Failed to load workouts</p>';
+        }
+    } else if (tab === 'prs') {
+        const prs = currentClientData?.stats?.personalRecords || [];
+
+        if (prs.length === 0) {
+            content.innerHTML = '<p class="text-muted text-center">No personal records yet</p>';
+        } else {
+            content.innerHTML = prs.map(pr => `
+                <div class="client-pr-item">
+                    <div>
+                        <div class="client-pr-exercise">${getExerciseName(pr.exerciseId)}</div>
+                        <div class="client-pr-date">${new Date(pr.achievedAt).toLocaleDateString()}</div>
+                    </div>
+                    <div class="client-pr-weight">${pr.weight} lbs</div>
+                </div>
+            `).join('');
+        }
+    } else if (tab === 'campaigns') {
+        try {
+            const response = await API.getClientCampaigns(currentClientId);
+            const campaigns = response.campaigns || [];
+
+            if (campaigns.length === 0) {
+                content.innerHTML = '<p class="text-muted text-center">No campaigns yet</p>';
+            } else {
+                content.innerHTML = campaigns.map(c => {
+                    const goals = c.goals || [];
+                    const completed = goals.filter(g => g.isAchieved).length;
+                    const percent = goals.length > 0 ? Math.round((completed / goals.length) * 100) : 0;
+
+                    return `
+                        <div class="campaign-card" style="cursor: default;">
+                            <div class="campaign-card-header">
+                                <div class="campaign-card-title">${c.title}</div>
+                                <span class="campaign-card-type">${c.isCompleted ? 'Completed' : 'Active'}</span>
+                            </div>
+                            <div class="campaign-card-progress">
+                                <div class="campaign-progress-bar">
+                                    <div class="campaign-progress-fill" style="width: ${percent}%"></div>
+                                </div>
+                            </div>
+                            <div class="campaign-card-stats">
+                                <span>${completed}/${goals.length} goals</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        } catch (error) {
+            content.innerHTML = '<p class="text-muted text-center">Failed to load campaigns</p>';
+        }
+    }
+}
+
+async function removeClient() {
+    if (!currentClientId) return;
+    if (!confirm('Remove this client?')) return;
+
+    try {
+        await API.removeClient(currentClientId);
+        closeClientDetailModal();
+        showToast('CLIENT REMOVED');
+        loadCoachClients();
+    } catch (error) {
+        showToast('FAILED TO REMOVE');
+    }
+}
+
+// Assign Campaign Modal
+function assignCampaignToClient() {
+    if (!currentClientId || !currentClientData) return;
+
+    assignCampaignGoals = [];
+
+    document.getElementById('assignCampaignClientName').textContent = currentClientData.username;
+    document.getElementById('assignCampaignTitle').value = '';
+    document.getElementById('assignCampaignDescription').value = '';
+
+    const defaultDate = new Date();
+    defaultDate.setDate(defaultDate.getDate() + 30);
+    document.getElementById('assignCampaignTargetDate').value = defaultDate.toISOString().split('T')[0];
+
+    document.getElementById('assignCampaignGoalsList').innerHTML = '<div class="empty-goals-hint"><p>No goals added yet</p></div>';
+    document.getElementById('assignGoalForm').classList.add('hidden');
+    document.getElementById('submitAssignCampaignBtn').disabled = true;
+
+    // Populate exercise dropdown
+    const select = document.getElementById('assignGoalExerciseSelect');
+    select.innerHTML = '<option value="">Select exercise...</option>';
+    getAllExercises().forEach(ex => {
+        select.innerHTML += `<option value="${ex.id}" data-name="${ex.name}">${ex.name}</option>`;
+    });
+
+    closeClientDetailModal();
+    document.getElementById('assignCampaignModal').classList.add('active');
+}
+
+function closeAssignCampaignModal() {
+    document.getElementById('assignCampaignModal').classList.remove('active');
+}
+
+function toggleAssignGoalForm() {
+    document.getElementById('assignGoalForm').classList.toggle('hidden');
+}
+
+function updateAssignGoalTargetInput() {
+    const goalType = document.getElementById('assignGoalTypeSelect').value;
+
+    document.getElementById('assignTargetWeightGroup').classList.toggle('hidden', goalType === 'tonnage');
+    document.getElementById('assignTargetRepsGroup').classList.toggle('hidden', goalType !== 'reps');
+    document.getElementById('assignTargetTonnageGroup').classList.toggle('hidden', goalType !== 'tonnage');
+}
+
+function addAssignCampaignGoal() {
+    const exerciseSelect = document.getElementById('assignGoalExerciseSelect');
+    const exerciseId = exerciseSelect.value;
+    const exerciseName = exerciseSelect.options[exerciseSelect.selectedIndex]?.text;
+    const goalType = document.getElementById('assignGoalTypeSelect').value;
+    const targetWeight = parseInt(document.getElementById('assignGoalTargetWeight').value) || 0;
+    const targetReps = parseInt(document.getElementById('assignGoalTargetReps').value) || 0;
+    const targetTonnage = parseInt(document.getElementById('assignGoalTargetTonnage').value) || 0;
+
+    if (!exerciseId) {
+        showToast('SELECT AN EXERCISE');
+        return;
+    }
+
+    if (goalType === '1rm' && targetWeight <= 0) {
+        showToast('ENTER TARGET WEIGHT');
+        return;
+    }
+    if (goalType === 'reps' && (targetWeight <= 0 || targetReps <= 0)) {
+        showToast('ENTER WEIGHT AND REPS');
+        return;
+    }
+    if (goalType === 'tonnage' && targetTonnage <= 0) {
+        showToast('ENTER TARGET TONNAGE');
+        return;
+    }
+
+    assignCampaignGoals.push({
+        exerciseId,
+        exerciseName,
+        goalType,
+        targetWeight: goalType !== 'tonnage' ? targetWeight : null,
+        targetReps: goalType === 'reps' ? targetReps : null,
+        targetTonnage: goalType === 'tonnage' ? targetTonnage : null
+    });
+
+    renderAssignCampaignGoals();
+
+    // Reset form
+    document.getElementById('assignGoalExerciseSelect').value = '';
+    document.getElementById('assignGoalTargetWeight').value = '';
+    document.getElementById('assignGoalTargetReps').value = '';
+    document.getElementById('assignGoalTargetTonnage').value = '';
+    document.getElementById('assignGoalForm').classList.add('hidden');
+
+    document.getElementById('submitAssignCampaignBtn').disabled = false;
+}
+
+function renderAssignCampaignGoals() {
+    const list = document.getElementById('assignCampaignGoalsList');
+
+    if (assignCampaignGoals.length === 0) {
+        list.innerHTML = '<div class="empty-goals-hint"><p>No goals added yet</p></div>';
+        document.getElementById('submitAssignCampaignBtn').disabled = true;
+        return;
+    }
+
+    list.innerHTML = assignCampaignGoals.map((goal, index) => {
+        let targetText = '';
+        if (goal.goalType === '1rm') {
+            targetText = `1RM: ${goal.targetWeight} lbs`;
+        } else if (goal.goalType === 'reps') {
+            targetText = `${goal.targetWeight} lbs × ${goal.targetReps} reps`;
+        } else if (goal.goalType === 'tonnage') {
+            targetText = `${goal.targetTonnage.toLocaleString()} lbs total`;
+        }
+
+        return `
+            <div class="goal-item">
+                <div class="goal-item-info">
+                    <div class="goal-item-exercise">${goal.exerciseName}</div>
+                    <div class="goal-item-target">${targetText}</div>
+                </div>
+                <button class="goal-item-remove" onclick="removeAssignCampaignGoal(${index})">×</button>
+            </div>
+        `;
+    }).join('');
+}
+
+function removeAssignCampaignGoal(index) {
+    assignCampaignGoals.splice(index, 1);
+    renderAssignCampaignGoals();
+}
+
+async function submitAssignCampaign() {
+    const title = document.getElementById('assignCampaignTitle').value.trim();
+    const description = document.getElementById('assignCampaignDescription').value.trim();
+    const targetDate = document.getElementById('assignCampaignTargetDate').value;
+
+    if (!title) {
+        showToast('ENTER A TITLE');
+        return;
+    }
+
+    if (!targetDate) {
+        showToast('SELECT A DATE');
+        return;
+    }
+
+    if (assignCampaignGoals.length === 0) {
+        showToast('ADD AT LEAST ONE GOAL');
+        return;
+    }
+
+    try {
+        await API.assignCampaignToClient(currentClientId, {
+            title,
+            description,
+            targetDate,
+            goals: assignCampaignGoals
+        });
+
+        closeAssignCampaignModal();
+        showToast('CAMPAIGN ASSIGNED!');
+    } catch (error) {
+        showToast(error.message || 'FAILED TO ASSIGN');
+    }
+}
+
+function getAvatarEmoji(avatarId) {
+    const avatars = ['🧔', '👨', '👩', '🧑', '👴', '👵', '🦸', '🦹', '🧙', '🏋️'];
+    return avatars[avatarId - 1] || '👤';
+}
+
+function getExerciseName(exerciseId) {
+    const exercises = getAllExercises();
+    const ex = exercises.find(e => e.id === exerciseId);
+    return ex ? ex.name : exerciseId;
+}
+
+// Update campaign progress based on workout data
+async function updateCampaignProgressFromWorkout(exerciseData) {
+    if (!isOnlineMode || !campaignsData) return;
+
+    const allCampaigns = [...(campaignsData.personal || []), ...(campaignsData.team || [])];
+    const activeCampaigns = allCampaigns.filter(c => !c.isCompleted);
+
+    if (activeCampaigns.length === 0) return;
+
+    // Create a map of exercises in this workout with their max weight, reps, and volume
+    const workoutExercises = {};
+    exerciseData.forEach(ex => {
+        let maxWeight = 0;
+        let maxRepsAtWeight = 0;
+        let totalVolume = 0;
+
+        ex.sets.forEach(set => {
+            const weight = set.weight || 0;
+            const reps = set.reps || 0;
+
+            // Track max weight (for 1RM goals)
+            if (weight > maxWeight) {
+                maxWeight = weight;
+                maxRepsAtWeight = reps;
+            }
+
+            // Track max reps at a given weight
+            if (weight >= maxWeight && reps > maxRepsAtWeight) {
+                maxRepsAtWeight = reps;
+            }
+
+            // Accumulate volume (for tonnage goals)
+            totalVolume += calculateVolume(ex.id, weight, reps);
+        });
+
+        workoutExercises[ex.id] = {
+            maxWeight,
+            maxRepsAtWeight,
+            totalVolume,
+            estimated1RM: maxWeight > 0 && maxRepsAtWeight > 0 ? Math.round(maxWeight * (1 + maxRepsAtWeight / 30)) : 0
+        };
+    });
+
+    // Check each campaign's goals
+    for (const campaign of activeCampaigns) {
+        if (!campaign.goals) continue;
+
+        for (const goal of campaign.goals) {
+            if (goal.isAchieved) continue;
+
+            const exerciseData = workoutExercises[goal.exerciseId];
+            if (!exerciseData) continue;
+
+            let currentValue = goal.currentValue || 0;
+            let newValue = currentValue;
+            let isAchieved = false;
+
+            if (goal.goalType === '1rm') {
+                // For 1RM, use the estimated 1RM or actual weight lifted
+                const best1RM = Math.max(exerciseData.maxWeight, exerciseData.estimated1RM);
+                if (best1RM > currentValue) {
+                    newValue = best1RM;
+                }
+                if (newValue >= goal.targetWeight) {
+                    isAchieved = true;
+                }
+            } else if (goal.goalType === 'reps') {
+                // For reps at weight, check if they hit target weight with enough reps
+                if (exerciseData.maxWeight >= goal.targetWeight) {
+                    // They lifted at or above target weight, check reps
+                    if (exerciseData.maxRepsAtWeight > currentValue) {
+                        newValue = exerciseData.maxRepsAtWeight;
+                    }
+                }
+                if (newValue >= goal.targetReps) {
+                    isAchieved = true;
+                }
+            } else if (goal.goalType === 'tonnage') {
+                // For tonnage, add to cumulative total
+                newValue = currentValue + exerciseData.totalVolume;
+                if (newValue >= goal.targetTonnage) {
+                    isAchieved = true;
+                }
+            }
+
+            // Update progress if changed
+            if (newValue !== currentValue || isAchieved) {
+                try {
+                    await API.updateCampaignGoalProgress(campaign.id, goal.id, {
+                        currentValue: newValue,
+                        isAchieved
+                    });
+
+                    if (isAchieved) {
+                        showToast(`GOAL ACHIEVED: ${goal.exerciseName}!`);
+                    }
+                } catch (error) {
+                    console.error('Failed to update campaign progress:', error);
+                }
+            }
+        }
+    }
+
+    // Refresh campaigns data
+    loadCampaigns();
 }
 
 // ============================================

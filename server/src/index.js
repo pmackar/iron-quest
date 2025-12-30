@@ -17,6 +17,8 @@ const workoutRoutes = require('./routes/workouts');
 const teamRoutes = require('./routes/teams');
 const chatRoutes = require('./routes/chat');
 const syncRoutes = require('./routes/sync');
+const campaignsRoutes = require('./routes/campaigns');
+const coachRoutes = require('./routes/coach');
 
 // Import socket handler
 const { initializeSocket } = require('./socket/handler');
@@ -74,6 +76,8 @@ app.use('/api/workouts', workoutRoutes);
 app.use('/api/teams', teamRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/sync', syncRoutes);
+app.use('/api/campaigns', campaignsRoutes);
+app.use('/api/coach', coachRoutes);
 
 // API documentation
 app.get('/api', (req, res) => {
@@ -103,6 +107,31 @@ app.get('/api', (req, res) => {
                 'GET /api/teams/:id/leaderboard': 'Get team leaderboard',
                 'GET /api/teams/:id/activity': 'Get team activity feed',
                 'POST /api/teams/:id/challenges': 'Create team challenge'
+            },
+            campaigns: {
+                'GET /api/campaigns': 'Get user campaigns (personal + team)',
+                'GET /api/campaigns/:id': 'Get single campaign with goals',
+                'POST /api/campaigns': 'Create new campaign',
+                'PUT /api/campaigns/:id': 'Update campaign',
+                'DELETE /api/campaigns/:id': 'Delete campaign',
+                'POST /api/campaigns/:id/goals': 'Add goal to campaign',
+                'PUT /api/campaigns/:id/goals/:goalId/progress': 'Update goal progress',
+                'DELETE /api/campaigns/:id/goals/:goalId': 'Remove goal from campaign'
+            },
+            coach: {
+                'GET /api/coach/clients': 'Get coach clients list',
+                'GET /api/coach/clients/:id': 'Get client details',
+                'GET /api/coach/clients/:id/workouts': 'Get client workout history',
+                'GET /api/coach/clients/:id/stats': 'Get client stats and PRs',
+                'GET /api/coach/clients/:id/campaigns': 'Get client campaigns',
+                'POST /api/coach/invite': 'Invite client by email',
+                'GET /api/coach/invitations': 'Get pending invitations (for clients)',
+                'POST /api/coach/invitations/:id/accept': 'Accept coach invitation',
+                'POST /api/coach/invitations/:id/decline': 'Decline coach invitation',
+                'GET /api/coach/my-coaches': 'Get list of user coaches',
+                'DELETE /api/coach/clients/:id': 'Remove client',
+                'DELETE /api/coach/my-coaches/:id': 'Disconnect from coach',
+                'POST /api/coach/clients/:id/assign-campaign': 'Assign campaign to client'
             }
         },
         socketEvents: {

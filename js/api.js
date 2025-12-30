@@ -250,6 +250,98 @@ const API = {
     },
 
     // ============================================
+    // CAMPAIGNS
+    // ============================================
+
+    async getCampaigns() {
+        return this.get('/campaigns');
+    },
+
+    async getCampaign(id) {
+        return this.get(`/campaigns/${id}`);
+    },
+
+    async createCampaign(campaignData) {
+        return this.post('/campaigns', campaignData);
+    },
+
+    async updateCampaign(id, updates) {
+        return this.put(`/campaigns/${id}`, updates);
+    },
+
+    async deleteCampaign(id) {
+        return this.delete(`/campaigns/${id}`);
+    },
+
+    async addCampaignGoal(campaignId, goalData) {
+        return this.post(`/campaigns/${campaignId}/goals`, goalData);
+    },
+
+    async updateCampaignGoalProgress(campaignId, goalId, progressData) {
+        return this.put(`/campaigns/${campaignId}/goals/${goalId}/progress`, progressData);
+    },
+
+    async removeCampaignGoal(campaignId, goalId) {
+        return this.delete(`/campaigns/${campaignId}/goals/${goalId}`);
+    },
+
+    // ============================================
+    // COACH
+    // ============================================
+
+    async getCoachClients() {
+        return this.get('/coach/clients');
+    },
+
+    async getClientDetail(clientId) {
+        return this.get(`/coach/clients/${clientId}`);
+    },
+
+    async getClientWorkouts(clientId, limit = 20, offset = 0) {
+        return this.get(`/coach/clients/${clientId}/workouts?limit=${limit}&offset=${offset}`);
+    },
+
+    async getClientStats(clientId) {
+        return this.get(`/coach/clients/${clientId}/stats`);
+    },
+
+    async getClientCampaigns(clientId) {
+        return this.get(`/coach/clients/${clientId}/campaigns`);
+    },
+
+    async inviteClient(email) {
+        return this.post('/coach/invite', { email });
+    },
+
+    async getCoachInvitations() {
+        return this.get('/coach/invitations');
+    },
+
+    async acceptCoachInvitation(inviteId) {
+        return this.post(`/coach/invitations/${inviteId}/accept`);
+    },
+
+    async declineCoachInvitation(inviteId) {
+        return this.post(`/coach/invitations/${inviteId}/decline`);
+    },
+
+    async getMyCoaches() {
+        return this.get('/coach/my-coaches');
+    },
+
+    async removeClient(clientId) {
+        return this.delete(`/coach/clients/${clientId}`);
+    },
+
+    async disconnectFromCoach(coachId) {
+        return this.delete(`/coach/my-coaches/${coachId}`);
+    },
+
+    async assignCampaignToClient(clientId, campaignData) {
+        return this.post(`/coach/clients/${clientId}/assign-campaign`, campaignData);
+    },
+
+    // ============================================
     // SOCKET.IO
     // ============================================
 

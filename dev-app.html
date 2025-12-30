@@ -3,13 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IRON QUEST - Workout Tracker</title>
+    <title>IRON QUEST [DEV] - Workout Tracker</title>
+    <style>
+        .dev-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(90deg, #ff6b35, #e55a28);
+            color: white;
+            text-align: center;
+            padding: 4px 8px;
+            font-size: 11px;
+            font-weight: 600;
+            z-index: 99999;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        body { padding-top: 24px !important; }
+    </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
     <!-- Google Sign-In SDK -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
+    <!-- Dev Branch Banner -->
+    <div class="dev-banner">DEV BRANCH - Phase 4: Coach Mode</div>
+
     <!-- App Background -->
     <div class="app-bg"></div>
 
@@ -312,7 +333,7 @@
                     <span class="nav-icon">📊</span>
                     Stats
                 </button>
-                <button class="menu-nav-btn" data-tab="campaigns" onclick="switchMenuTab('campaigns')" id="campaignsTabBtn" style="display: none;">
+                <button class="menu-nav-btn" data-tab="campaigns" onclick="switchMenuTab('campaigns')" id="campaignsTabBtn">
                     <span class="nav-icon">🎯</span>
                     Campaigns
                 </button>
@@ -323,6 +344,10 @@
                 <button class="menu-nav-btn" data-tab="share" onclick="switchMenuTab('share')">
                     <span class="nav-icon">📤</span>
                     Share
+                </button>
+                <button class="menu-nav-btn" data-tab="coach" onclick="switchMenuTab('coach')" id="coachTabBtn" style="display: none;">
+                    <span class="nav-icon">🏋️</span>
+                    Coach
                 </button>
             </div>
 
@@ -515,6 +540,45 @@
                         <span class="collapse-icon" id="completedCampaignsIcon">▶</span>
                     </div>
                     <div class="campaigns-list hidden" id="completedCampaignsList"></div>
+                </div>
+            </div>
+
+            <!-- Coach Tab (Coaches & Clients) -->
+            <div class="menu-tab-content" id="tab-coach">
+                <!-- Coach View (for coaches) -->
+                <div id="coachDashboard" style="display: none;">
+                    <div class="coach-header">
+                        <h3>COACH DASHBOARD</h3>
+                        <button class="dc-button small" onclick="openInviteClientModal()">INVITE CLIENT</button>
+                    </div>
+
+                    <div class="coach-clients-list" id="coachClientsList">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🏋️</div>
+                            <p>No clients yet. Invite athletes to start coaching!</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Client View (for athletes) -->
+                <div id="myCoachesSection">
+                    <div class="my-coaches-header">
+                        <h3>MY COACHES</h3>
+                    </div>
+
+                    <!-- Pending Invitations -->
+                    <div class="coach-invitations-section" id="coachInvitationsSection" style="display: none;">
+                        <h4 class="section-subtitle">PENDING INVITATIONS</h4>
+                        <div class="coach-invitations-list" id="coachInvitationsList"></div>
+                    </div>
+
+                    <!-- Active Coaches -->
+                    <div class="my-coaches-list" id="myCoachesList">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">👤</div>
+                            <p>No coaches connected. Ask your coach to send you an invitation!</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1638,6 +1702,152 @@
             <div class="modal-buttons">
                 <button class="dc-button warning small" onclick="deleteCampaign()" id="deleteCampaignBtn">DELETE</button>
                 <button class="dc-button secondary" onclick="closeCampaignDetailModal()">CLOSE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invite Client Modal -->
+    <div class="modal-overlay" id="inviteClientModal">
+        <div class="modal-content">
+            <button class="modal-close-btn" onclick="closeInviteClientModal()">✕</button>
+            <h2>INVITE CLIENT</h2>
+            <p class="modal-description">Enter your client's email address to send them an invitation.</p>
+
+            <div class="input-group">
+                <label>CLIENT EMAIL</label>
+                <input type="email" id="inviteClientEmail" class="dc-input" placeholder="client@example.com">
+            </div>
+
+            <div id="inviteClientError" class="error-message"></div>
+
+            <div class="modal-buttons">
+                <button class="dc-button secondary" onclick="closeInviteClientModal()">CANCEL</button>
+                <button class="dc-button" onclick="sendClientInvite()">SEND INVITE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Client Detail Modal (Coach View) -->
+    <div class="modal-overlay" id="clientDetailModal">
+        <div class="modal-content wide client-detail">
+            <button class="modal-close-btn" onclick="closeClientDetailModal()">✕</button>
+
+            <div class="client-detail-header">
+                <div class="client-avatar" id="clientDetailAvatar">👤</div>
+                <div class="client-info">
+                    <h2 id="clientDetailName">Client Name</h2>
+                    <div class="client-meta">
+                        <span class="client-level" id="clientDetailLevel">Level 1</span>
+                        <span class="client-joined" id="clientDetailJoined">Joined: --</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Client Stats Overview -->
+            <div class="client-stats-overview">
+                <div class="stat-box">
+                    <div class="stat-value" id="clientTotalWorkouts">0</div>
+                    <div class="stat-label">Workouts</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="clientWeeklyWorkouts">0</div>
+                    <div class="stat-label">This Week</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="clientTotalVolume">0</div>
+                    <div class="stat-label">Total Lbs</div>
+                </div>
+            </div>
+
+            <!-- Client Detail Tabs -->
+            <div class="client-detail-tabs">
+                <button class="client-tab-btn active" data-tab="workouts" onclick="switchClientTab('workouts')">Workouts</button>
+                <button class="client-tab-btn" data-tab="prs" onclick="switchClientTab('prs')">PRs</button>
+                <button class="client-tab-btn" data-tab="campaigns" onclick="switchClientTab('campaigns')">Campaigns</button>
+            </div>
+
+            <div class="client-tab-content" id="clientTabContent">
+                <!-- Dynamic content loaded here -->
+            </div>
+
+            <div class="modal-buttons">
+                <button class="dc-button secondary small" onclick="assignCampaignToClient()">ASSIGN CAMPAIGN</button>
+                <button class="dc-button warning small" onclick="removeClient()">REMOVE CLIENT</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assign Campaign Modal -->
+    <div class="modal-overlay" id="assignCampaignModal">
+        <div class="modal-content campaign-wizard">
+            <button class="modal-close-btn" onclick="closeAssignCampaignModal()">✕</button>
+
+            <h2>ASSIGN CAMPAIGN</h2>
+            <p class="wizard-subtitle">Create a campaign for <span id="assignCampaignClientName">your client</span></p>
+
+            <div class="input-group">
+                <label>CAMPAIGN TITLE</label>
+                <input type="text" id="assignCampaignTitle" class="dc-input" placeholder="e.g., Road to 225 Bench" maxlength="50">
+            </div>
+            <div class="input-group">
+                <label>DESCRIPTION (optional)</label>
+                <textarea id="assignCampaignDescription" class="dc-input" placeholder="What's the goal?" maxlength="200" rows="2"></textarea>
+            </div>
+            <div class="input-group">
+                <label>TARGET DATE</label>
+                <input type="date" id="assignCampaignTargetDate" class="dc-input">
+            </div>
+
+            <div class="campaigns-section">
+                <h4 class="campaigns-section-title">GOALS</h4>
+                <div class="campaign-goals-list" id="assignCampaignGoalsList">
+                    <div class="empty-goals-hint">
+                        <p>No goals added yet</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="add-goal-section">
+                <div class="add-goal-header" onclick="toggleAssignGoalForm()">
+                    <span class="add-goal-icon">+</span>
+                    <span>ADD GOAL</span>
+                </div>
+                <div class="add-goal-form hidden" id="assignGoalForm">
+                    <div class="input-group">
+                        <label>EXERCISE</label>
+                        <select id="assignGoalExerciseSelect" class="dc-input">
+                            <option value="">Select exercise...</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>GOAL TYPE</label>
+                        <select id="assignGoalTypeSelect" class="dc-input" onchange="updateAssignGoalTargetInput()">
+                            <option value="1rm">1 Rep Max</option>
+                            <option value="reps">Reps at Weight</option>
+                            <option value="tonnage">Total Tonnage</option>
+                        </select>
+                    </div>
+                    <div class="goal-target-inputs" id="assignGoalTargetInputs">
+                        <div class="input-group" id="assignTargetWeightGroup">
+                            <label>TARGET WEIGHT (lbs)</label>
+                            <input type="number" id="assignGoalTargetWeight" class="dc-input" placeholder="225" min="1">
+                        </div>
+                        <div class="input-group hidden" id="assignTargetRepsGroup">
+                            <label>TARGET REPS</label>
+                            <input type="number" id="assignGoalTargetReps" class="dc-input" placeholder="10" min="1">
+                        </div>
+                        <div class="input-group hidden" id="assignTargetTonnageGroup">
+                            <label>TARGET TONNAGE (lbs)</label>
+                            <input type="number" id="assignGoalTargetTonnage" class="dc-input" placeholder="50000" min="1">
+                        </div>
+                    </div>
+                    <button class="dc-button small" onclick="addAssignCampaignGoal()">ADD GOAL</button>
+                </div>
+            </div>
+
+            <div class="modal-buttons">
+                <button class="dc-button secondary" onclick="closeAssignCampaignModal()">CANCEL</button>
+                <button class="dc-button" onclick="submitAssignCampaign()" id="submitAssignCampaignBtn" disabled>ASSIGN CAMPAIGN</button>
             </div>
         </div>
     </div>
