@@ -1140,6 +1140,52 @@ function saveCurrentCharacter() {
     if (currentSlotIndex !== null && gameState) {
         saveSlots[currentSlotIndex] = { ...gameState };
         saveSaveSlots();
+
+        // Sync to server if online
+        if (isOnlineMode && currentUser) {
+            syncCharacterToServer(currentSlotIndex, gameState);
+        }
+    }
+}
+
+// Sync character to server (non-blocking)
+async function syncCharacterToServer(slotIndex, characterData) {
+    try {
+        await API.saveCharacter(slotIndex, characterData);
+        console.log('Character synced to server:', slotIndex);
+    } catch (error) {
+        console.warn('Failed to sync character to server:', error);
+        // Character is still saved locally, will sync on next opportunity
+    }
+}
+
+// Load characters from server and merge with local
+async function loadCharactersFromServer() {
+    if (!isOnlineMode || !currentUser) return;
+
+    try {
+        const response = await API.getCharacters();
+        const serverSlots = response.characters || [];
+
+        // Merge server characters into local slots
+        serverSlots.forEach((serverChar, index) => {
+            if (serverChar && serverChar.onlineUserId === currentUser.id) {
+                // Server character exists for this user
+                const localChar = saveSlots[index];
+
+                // Use server version if local doesn't exist or server is newer
+                if (!localChar || !localChar.onlineUserId ||
+                    (serverChar._savedAt && localChar._savedAt && serverChar._savedAt > localChar._savedAt)) {
+                    saveSlots[index] = serverChar;
+                }
+            }
+        });
+
+        saveSaveSlots();
+        renderCharacterSlots();
+        console.log('Characters loaded from server');
+    } catch (error) {
+        console.warn('Failed to load characters from server:', error);
     }
 }
 
@@ -1306,13 +1352,16 @@ async function completeGoogleSignIn(role) {
     }
 }
 
-function completeSignIn(result) {
+async function completeSignIn(result) {
     currentUser = result.user;
     isOnlineMode = true;
 
     // Connect socket for real-time updates
     API.connectSocket();
     setupSocketListeners();
+
+    // Load characters from server FIRST (this ensures persistence across devices)
+    await loadCharactersFromServer();
 
     // Sync server profile to local save slot
     if (currentUser && currentUser.username) {
@@ -1347,6 +1396,9 @@ function completeSignIn(result) {
             testCompletedAt: existingSlot.testCompletedAt || null
         };
         saveSaveSlots();
+
+        // Also sync this to server immediately
+        syncCharacterToServer(slotIndex, saveSlots[slotIndex]);
 
         // If user has completed profile, auto-select and go to menu
         if (currentUser.totalWorkouts > 0 || saveSlots[slotIndex].testCompletedAt) {
@@ -1732,8 +1784,17 @@ function createNewCharacter(index) {
     showScreen('createScreen');
 }
 
-function deleteCharacter(index) {
+async function deleteCharacter(index) {
     if (confirm('Delete this character? This cannot be undone.')) {
+        // Delete from server if online
+        if (isOnlineMode && currentUser) {
+            try {
+                await API.deleteCharacter(index);
+            } catch (error) {
+                console.warn('Failed to delete character from server:', error);
+            }
+        }
+
         saveSlots[index] = null;
         saveSaveSlots();
         renderCharacterSlots();
@@ -1792,8 +1853,12 @@ function startGame() {
     updateMenuStats();
     renderCustomLists();
 
-    // Sync profile to server if online
+    // Sync profile AND character to server if online
     if (isOnlineMode && currentUser) {
+        // Save character to server immediately
+        syncCharacterToServer(currentSlotIndex, gameState);
+
+        // Also update profile
         API.updateProfile({
             username: gameState.name,
             avatar: typeof avatarId === 'number' ? avatarId : 1,

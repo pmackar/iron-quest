@@ -30,6 +30,7 @@ async function initDatabase() {
         console.log('  - activity_feed');
         console.log('  - team_messages');
         console.log('  - coach_shares');
+        console.log('  - characters');
 
     } catch (error) {
         console.error('Error initializing database:', error.message);

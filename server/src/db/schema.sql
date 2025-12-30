@@ -217,6 +217,19 @@ CREATE TABLE IF NOT EXISTS coach_shares (
 );
 
 -- ============================================
+-- CHARACTERS TABLE (Game Save Slots)
+-- ============================================
+CREATE TABLE IF NOT EXISTS characters (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    slot_index INTEGER NOT NULL CHECK (slot_index >= 0 AND slot_index < 4),
+    character_data JSONB NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, slot_index)
+);
+
+-- ============================================
 -- INDEXES
 -- ============================================
 CREATE INDEX IF NOT EXISTS idx_workouts_user_id ON workouts(user_id);
@@ -227,6 +240,7 @@ CREATE INDEX IF NOT EXISTS idx_team_members_team_id ON team_members(team_id);
 CREATE INDEX IF NOT EXISTS idx_team_members_user_id ON team_members(user_id);
 CREATE INDEX IF NOT EXISTS idx_activity_feed_team_id ON activity_feed(team_id);
 CREATE INDEX IF NOT EXISTS idx_activity_feed_user_id ON activity_feed(user_id);
+CREATE INDEX IF NOT EXISTS idx_characters_user_id ON characters(user_id);
 CREATE INDEX IF NOT EXISTS idx_activity_feed_created_at ON activity_feed(created_at);
 CREATE INDEX IF NOT EXISTS idx_team_messages_team_id ON team_messages(team_id);
 CREATE INDEX IF NOT EXISTS idx_personal_records_user_id ON personal_records(user_id);

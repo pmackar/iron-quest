@@ -308,6 +308,22 @@ const API = {
     },
 
     // ============================================
+    // CHARACTERS (Save Slots)
+    // ============================================
+
+    async getCharacters() {
+        return this.get('/characters');
+    },
+
+    async saveCharacter(slotIndex, characterData) {
+        return this.put(`/characters/${slotIndex}`, { characterData });
+    },
+
+    async deleteCharacter(slotIndex) {
+        return this.delete(`/characters/${slotIndex}`);
+    },
+
+    // ============================================
     // COACH
     // ============================================
 

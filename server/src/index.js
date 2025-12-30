@@ -19,6 +19,7 @@ const chatRoutes = require('./routes/chat');
 const syncRoutes = require('./routes/sync');
 const campaignsRoutes = require('./routes/campaigns');
 const coachRoutes = require('./routes/coach');
+const charactersRoutes = require('./routes/characters');
 
 // Import socket handler
 const { initializeSocket } = require('./socket/handler');
@@ -105,6 +106,7 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/sync', syncRoutes);
 app.use('/api/campaigns', campaignsRoutes);
 app.use('/api/coach', coachRoutes);
+app.use('/api/characters', charactersRoutes);
 
 // API documentation
 app.get('/api', (req, res) => {
