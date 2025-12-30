@@ -5026,41 +5026,53 @@ body.workout-minimized .screen {
     width: 100%;
 }
 
+/* Muscle Filter Tabs - Modern Chip Design */
 .muscle-tabs {
     display: flex;
-    gap: var(--space-xs);
-    padding: 0 var(--space-md) var(--space-md);
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md) var(--space-md);
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.muscle-tabs::-webkit-scrollbar {
+    display: none;
 }
 
 .muscle-tab {
-    padding: 6px 12px;
-    background: var(--bg-elevated);
-    border: 1px solid var(--border-subtle);
+    padding: 10px 18px;
+    background: var(--bg-tertiary);
+    border: none;
     border-radius: var(--radius-full);
-    color: var(--text-tertiary);
+    color: var(--text-secondary);
     font-family: var(--font-primary);
-    font-size: 11px;
-    font-weight: 500;
+    font-size: 13px;
+    font-weight: 600;
     cursor: pointer;
     transition: var(--transition-fast);
     white-space: nowrap;
+    flex-shrink: 0;
+    min-width: max-content;
 }
 
 .muscle-tab:hover {
-    color: var(--text-secondary);
+    background: var(--bg-hover);
+    color: var(--text-primary);
 }
 
 .muscle-tab.active {
     background: var(--accent-gold);
-    border-color: var(--accent-gold);
     color: #000;
+    box-shadow: 0 2px 8px rgba(212, 168, 83, 0.3);
 }
 
 .exercise-browser {
     flex: 1;
     overflow-y: auto;
-    padding: var(--space-md);
+    padding: 0;
+    -webkit-overflow-scrolling: touch;
 }
 
 .exercise-browser-item {
@@ -5096,10 +5108,10 @@ body.workout-minimized .screen {
     flex-direction: column;
 }
 
-/* Collapsible Your Workout Section */
+/* Collapsible Your Workout Section - Enhanced */
 .builder-selected.collapsible {
-    border-top: 1px solid var(--border-subtle);
-    background: var(--bg-tertiary);
+    border-top: 2px solid var(--border-default);
+    background: linear-gradient(180deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
 }
 
 .builder-selected.collapsible .selected-header {
@@ -5112,6 +5124,10 @@ body.workout-minimized .screen {
     background: var(--bg-hover);
 }
 
+.builder-selected.collapsible .selected-header:active {
+    background: var(--bg-elevated);
+}
+
 .builder-selected.collapsible.collapsed .selected-exercises-list {
     display: none;
 }
@@ -5120,8 +5136,9 @@ body.workout-minimized .screen {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: var(--space-md);
+    padding: var(--space-md) var(--space-lg);
     border-bottom: 1px solid var(--border-subtle);
+    min-height: 52px;
 }
 
 .selected-header-left {
@@ -5131,28 +5148,38 @@ body.workout-minimized .screen {
 }
 
 .selected-header-left .collapse-icon {
-    font-size: 10px;
+    font-size: 12px;
     color: var(--text-muted);
     transition: transform 0.2s ease;
 }
 
+.builder-selected.collapsible.collapsed .collapse-icon {
+    transform: rotate(-90deg);
+}
+
 .selected-header-left span:last-child {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
     text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .selected-header span:first-child {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
     text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .exercise-count {
-    font-size: 11px;
-    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent-gold);
+    background: rgba(212, 168, 83, 0.15);
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
 }
 
 .selected-exercises-list {
@@ -5160,6 +5187,7 @@ body.workout-minimized .screen {
     overflow-y: auto;
     padding: var(--space-md);
     max-height: 200px;
+    -webkit-overflow-scrolling: touch;
 }
 
 .empty-workout-hint {
@@ -5168,8 +5196,10 @@ body.workout-minimized .screen {
     align-items: center;
     justify-content: center;
     height: 100%;
+    min-height: 100px;
     color: var(--text-muted);
     text-align: center;
+    padding: var(--space-lg);
 }
 
 .hint-icon {
@@ -5246,7 +5276,7 @@ body.workout-minimized .screen {
     flex: 0 0 auto;
 }
 
-/* Exercise Browser Table Header */
+/* Exercise Browser Table - Clean Modern Design */
 .exercise-browser-table {
     display: flex;
     flex-direction: column;
@@ -5256,16 +5286,19 @@ body.workout-minimized .screen {
 
 .exercise-browser-header {
     display: grid;
-    grid-template-columns: 1fr 50px 60px 36px;
-    gap: var(--space-sm);
-    padding: var(--space-sm) var(--space-md);
-    background: var(--bg-elevated);
-    font-size: 10px;
+    grid-template-columns: 1fr 55px 55px 40px;
+    gap: var(--space-xs);
+    padding: var(--space-md) var(--space-md) var(--space-sm);
+    font-size: 11px;
     font-weight: 600;
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.5px;
     border-bottom: 1px solid var(--border-subtle);
+    position: sticky;
+    top: 0;
+    background: var(--bg-secondary);
+    z-index: 1;
 }
 
 .ex-browse-col-name {
@@ -5274,23 +5307,25 @@ body.workout-minimized .screen {
 
 .ex-browse-col-pr,
 .ex-browse-col-last {
-    text-align: right;
+    text-align: center;
 }
 
-/* Exercise Browser Rows */
+/* Exercise Browser Rows - Card Style */
 .browser-exercise-row {
     display: grid;
-    grid-template-columns: 1fr 50px 60px 36px;
-    gap: var(--space-sm);
+    grid-template-columns: 1fr 55px 55px 40px;
+    gap: var(--space-xs);
     align-items: center;
-    padding: var(--space-sm) var(--space-md);
+    padding: var(--space-md);
     border-bottom: 1px solid var(--border-subtle);
     cursor: pointer;
     transition: var(--transition-fast);
+    min-height: 52px;
 }
 
-.browser-exercise-row:last-child {
-    border-bottom: none;
+.browser-exercise-row:active {
+    background: var(--bg-hover);
+    transform: scale(0.99);
 }
 
 .browser-exercise-row:hover {
@@ -5298,7 +5333,9 @@ body.workout-minimized .screen {
 }
 
 .browser-exercise-row.selected {
-    background: rgba(212, 168, 83, 0.1);
+    background: rgba(212, 168, 83, 0.08);
+    border-left: 3px solid var(--accent-gold);
+    padding-left: calc(var(--space-md) - 3px);
 }
 
 .browser-exercise-row .ex-browse-col-name {
@@ -5309,7 +5346,8 @@ body.workout-minimized .screen {
 }
 
 .browser-exercise-row .exercise-name-text {
-    font-size: 13px;
+    font-size: 14px;
+    font-weight: 500;
     color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;
@@ -5317,26 +5355,39 @@ body.workout-minimized .screen {
 }
 
 .browser-exercise-row .ex-browse-col-pr {
-    font-size: 12px;
-    font-weight: 600;
+    font-size: 13px;
+    font-weight: 700;
     color: var(--accent-gold);
-    text-align: right;
+    text-align: center;
 }
 
 .browser-exercise-row .ex-browse-col-last {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--text-tertiary);
-    text-align: right;
+    text-align: center;
 }
 
 .browser-exercise-row .ex-browse-col-action {
-    text-align: center;
-    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    background: var(--bg-tertiary);
+    font-size: 16px;
     color: var(--text-muted);
+    transition: var(--transition-fast);
+}
+
+.browser-exercise-row:hover .ex-browse-col-action {
+    background: var(--accent-gold);
+    color: #000;
 }
 
 .browser-exercise-row.selected .ex-browse-col-action {
-    color: var(--accent-success);
+    background: var(--accent-success);
+    color: #fff;
 }
 
 /* Calculator Tools Row */
@@ -5955,6 +6006,48 @@ body.workout-minimized .screen {
         height: auto;
         max-height: 250px;
         overflow-y: auto;
+    }
+
+    /* Muscle Tabs - Mobile Optimized */
+    .muscle-tabs {
+        padding: var(--space-sm) var(--space-md);
+        gap: var(--space-xs);
+    }
+
+    .muscle-tab {
+        padding: 8px 14px;
+        font-size: 12px;
+    }
+
+    /* Exercise Browser Mobile */
+    .exercise-browser-header {
+        grid-template-columns: 1fr 50px 50px 36px;
+        padding: var(--space-sm) var(--space-md);
+        font-size: 10px;
+    }
+
+    .browser-exercise-row {
+        grid-template-columns: 1fr 50px 50px 36px;
+        padding: var(--space-sm) var(--space-md);
+        min-height: 48px;
+    }
+
+    .browser-exercise-row .exercise-name-text {
+        font-size: 13px;
+    }
+
+    .browser-exercise-row .ex-browse-col-pr {
+        font-size: 12px;
+    }
+
+    .browser-exercise-row .ex-browse-col-last {
+        font-size: 11px;
+    }
+
+    .browser-exercise-row .ex-browse-col-action {
+        width: 28px;
+        height: 28px;
+        font-size: 14px;
     }
 
     /* Navigation */
