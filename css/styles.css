@@ -197,6 +197,9 @@ a:hover {
     min-height: 100vh;
     padding: var(--space-md);
     animation: fadeIn 0.3s ease;
+    overflow-x: hidden;
+    max-width: 100vw;
+    box-sizing: border-box;
 }
 
 .screen.active {
@@ -411,7 +414,10 @@ select {
     border-radius: var(--radius-xl);
     padding: var(--space-xl);
     max-width: 420px;
+    width: 100%;
     margin: 0 auto;
+    box-sizing: border-box;
+    overflow: hidden;
 }
 
 .memory-card.wide {
@@ -765,6 +771,7 @@ select {
 
 .inline-inputs {
     display: flex;
+    flex-wrap: wrap;
     gap: var(--space-sm);
 }
 
@@ -1766,14 +1773,15 @@ button.avatar-profile-link:active {
 }
 
 .primary-input {
-    width: 80px;
-    height: 56px;
+    width: 90px;
+    height: 60px;
     background: var(--bg-elevated);
     border: 2px solid var(--border-default);
     border-radius: var(--radius-md);
     color: var(--text-primary);
     font-family: var(--font-primary);
-    font-size: 24px;
+    font-size: 26px;
+    min-width: 80px;
     font-weight: 700;
     text-align: center;
     transition: var(--transition-fast);
@@ -5867,6 +5875,26 @@ body.workout-minimized .screen {
         max-width: 100%;
     }
 
+    /* Avatar grid - 3 columns on phones */
+    .avatar-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-xs);
+    }
+
+    .avatar-option {
+        min-width: 0;
+    }
+
+    /* Stack height/weight inputs */
+    .inline-inputs {
+        flex-direction: column;
+        gap: var(--space-md);
+    }
+
+    .inline-inputs .input-with-unit {
+        width: 100%;
+    }
+
     .stats-grid {
         grid-template-columns: repeat(3, 1fr);
     }
@@ -5943,16 +5971,32 @@ body.workout-minimized .screen {
         font-size: 16px;
     }
 
-    /* Primary Inputs */
+    /* Primary Inputs - Keep readable on mobile */
+    .primary-inputs {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
     .primary-input {
+        width: 85px;
+        height: 56px;
+        font-size: 24px;
+        min-width: 75px;
+    }
+
+    .primary-input-group.rpe .primary-input,
+    .primary-select {
         width: 70px;
-        height: 52px;
-        font-size: 20px;
+        min-width: 60px;
     }
 
     .primary-select {
-        height: 52px;
-        font-size: 16px;
+        height: 56px;
+        font-size: 18px;
+    }
+
+    .primary-input-group label {
+        font-size: 9px;
     }
 
     /* Input Labels */
@@ -6047,11 +6091,29 @@ body.workout-minimized .screen {
         grid-template-columns: 1fr;
     }
 
-    /* Smaller inputs */
+    /* Primary inputs - stack RPE below on small phones */
+    .primary-inputs {
+        flex-wrap: wrap;
+        gap: var(--space-sm);
+    }
+
     .primary-input {
-        width: 60px;
-        height: 48px;
-        font-size: 18px;
+        width: 80px;
+        height: 54px;
+        font-size: 22px;
+        min-width: 70px;
+    }
+
+    .primary-input-group.rpe {
+        width: 100%;
+        flex-direction: row;
+        justify-content: center;
+        margin-top: var(--space-xs);
+    }
+
+    .primary-input-group.rpe .primary-input,
+    .primary-select {
+        width: 80px;
     }
 
     /* Avatar Grid */
@@ -6155,11 +6217,17 @@ body.workout-minimized .screen {
         grid-template-columns: repeat(2, 1fr);
     }
 
-    /* Even smaller inputs */
+    /* Primary inputs - still readable on tiny screens */
     .primary-input {
-        width: 55px;
-        height: 44px;
-        font-size: 16px;
+        width: 75px;
+        height: 50px;
+        font-size: 20px;
+        min-width: 65px;
+    }
+
+    .primary-input-group.rpe .primary-input,
+    .primary-select {
+        width: 70px;
     }
 
     /* Modal tighter */
