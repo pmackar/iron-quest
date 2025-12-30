@@ -5751,9 +5751,112 @@ body.workout-minimized .screen {
 }
 
 /* ============================================
-   RESPONSIVE
+   RESPONSIVE - Mobile Optimized
    ============================================ */
 
+/* Tablet & Large Phone (768px) */
+@media (max-width: 768px) {
+    /* Touch Target Improvements */
+    .dc-button.small {
+        min-height: 44px;
+        padding: 12px 20px;
+    }
+
+    .back-button {
+        min-height: 44px;
+        padding: 12px 18px;
+    }
+
+    .icon-button {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    .menu-nav-btn {
+        min-height: 48px;
+        padding: var(--space-sm) var(--space-md);
+    }
+
+    /* Typography Scaling */
+    h1 {
+        font-size: 28px;
+    }
+
+    h2 {
+        font-size: 18px;
+    }
+
+    .stat-value {
+        font-size: 22px;
+    }
+
+    .stat-label {
+        font-size: 11px;
+    }
+
+    /* Grid Adjustments */
+    .stats-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: var(--space-sm);
+    }
+
+    /* Modal Improvements */
+    .modal-content {
+        max-width: 95vw;
+        padding: var(--space-lg);
+    }
+
+    .modal-content.wide {
+        max-width: 95vw;
+    }
+
+    /* Table Responsive - Card View */
+    .history-table-header,
+    .pr-table-header {
+        display: none;
+    }
+
+    .history-table-row,
+    .pr-table-row {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-xs);
+        padding: var(--space-md);
+        border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .history-table-row > span:first-child,
+    .pr-table-row > span:first-child {
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    /* Improve scrolling on touch */
+    .exercise-table-body,
+    .history-table-body,
+    .program-table-body,
+    .chat-messages {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Form Row Stacking */
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: var(--space-md);
+    }
+
+    /* Player Bar Adjustments */
+    .player-bar {
+        gap: var(--space-sm);
+    }
+
+    .player-avatar-small {
+        width: 50px;
+        height: 50px;
+    }
+}
+
+/* Standard Phone (600px) */
 @media (max-width: 600px) {
     .memory-card {
         padding: var(--space-lg);
@@ -5778,8 +5881,22 @@ body.workout-minimized .screen {
 
     .modal-content {
         margin: var(--space-sm);
-        max-height: calc(100vh - var(--space-lg));
+        max-height: calc(100vh - 32px);
         border-radius: var(--radius-lg);
+        padding: var(--space-md);
+    }
+
+    .modal-content h2 {
+        font-size: 16px;
+    }
+
+    .modal-buttons {
+        flex-direction: column;
+        gap: var(--space-sm);
+    }
+
+    .modal-buttons .dc-button {
+        width: 100%;
     }
 
     .set-inputs {
@@ -5807,26 +5924,293 @@ body.workout-minimized .screen {
 
     .builder-selected {
         width: 100%;
-        height: 200px;
-    }
-}
-
-@media (max-width: 400px) {
-    h1 {
-        font-size: 26px;
+        height: auto;
+        max-height: 250px;
+        overflow-y: auto;
     }
 
-    .title-logo h1 {
-        font-size: 32px;
+    /* Navigation */
+    .menu-nav {
+        gap: 2px;
     }
 
-    .stat-value {
+    .menu-nav-btn {
+        padding: var(--space-sm) var(--space-xs);
+        font-size: 10px;
+    }
+
+    .nav-icon {
+        font-size: 16px;
+    }
+
+    /* Primary Inputs */
+    .primary-input {
+        width: 70px;
+        height: 52px;
         font-size: 20px;
     }
 
-    .avatar-grid {
-        grid-template-columns: repeat(4, 1fr);
+    .primary-select {
+        height: 52px;
+        font-size: 16px;
+    }
+
+    /* Input Labels */
+    .input-group label {
+        font-size: 11px;
+    }
+
+    /* Team Leaderboard */
+    .leaderboard-item {
+        padding: var(--space-sm);
         gap: var(--space-sm);
+    }
+
+    .leaderboard-name {
+        font-size: 13px;
+    }
+
+    /* Activity Feed */
+    .activity-item {
+        padding: var(--space-sm);
+    }
+
+    /* Chat */
+    .chat-input-row {
+        gap: var(--space-sm);
+    }
+
+    .chat-input-row input {
+        font-size: 14px;
+    }
+
+    /* Profile Header Stack */
+    .profile-header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: var(--space-md);
+    }
+
+    .profile-header .text-right {
+        text-align: center;
+    }
+
+    /* Exercise Row */
+    .exercise-row {
+        padding: var(--space-sm);
+    }
+
+    .exercise-name {
+        font-size: 14px;
+    }
+
+    /* Workout Summary */
+    .workout-summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    /* Icon Picker */
+    .icon-picker-dropdown {
+        max-width: 280px;
+    }
+
+    .icon-grid {
+        grid-template-columns: repeat(6, 1fr);
+    }
+}
+
+/* Small Phone (480px) */
+@media (max-width: 480px) {
+    h1 {
+        font-size: 24px;
+    }
+
+    .title-logo h1 {
+        font-size: 28px;
+    }
+
+    .stat-value {
+        font-size: 18px;
+    }
+
+    .stat-label {
+        font-size: 10px;
+    }
+
+    /* Stack stats to 2 columns */
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .summary-stats {
+        grid-template-columns: 1fr;
+    }
+
+    /* Smaller inputs */
+    .primary-input {
+        width: 60px;
+        height: 48px;
+        font-size: 18px;
+    }
+
+    /* Avatar Grid */
+    .avatar-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-sm);
+    }
+
+    /* Player Bar Stack */
+    .player-bar {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+    }
+
+    .player-info {
+        align-items: center;
+    }
+
+    .player-stats {
+        justify-content: center;
+    }
+
+    /* Cards Padding */
+    .memory-card {
+        padding: var(--space-md);
+    }
+
+    /* Buttons Full Width */
+    .dc-button {
+        width: 100%;
+    }
+
+    .dc-button.small {
+        width: auto;
+    }
+
+    /* Set Row */
+    .set-row {
+        gap: var(--space-xs);
+    }
+
+    .set-number {
+        min-width: 24px;
+        font-size: 12px;
+    }
+
+    /* Exercise Header */
+    .current-exercise-header h3 {
+        font-size: 16px;
+    }
+
+    /* Rest Timer */
+    .rest-timer {
+        padding: var(--space-md);
+    }
+
+    .rest-time {
+        font-size: 36px;
+    }
+
+    /* Team Card */
+    .team-card {
+        padding: var(--space-md);
+    }
+
+    /* Navigation smaller */
+    .menu-nav-btn {
+        padding: var(--space-xs) 2px;
+        font-size: 9px;
+    }
+
+    .nav-icon {
+        font-size: 14px;
+    }
+}
+
+/* Extra Small Phone (400px) */
+@media (max-width: 400px) {
+    h1 {
+        font-size: 22px;
+    }
+
+    .title-logo h1 {
+        font-size: 26px;
+    }
+
+    body {
+        font-size: 13px;
+    }
+
+    .stat-value {
+        font-size: 16px;
+    }
+
+    .stat-label {
+        font-size: 9px;
+    }
+
+    .avatar-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    /* Even smaller inputs */
+    .primary-input {
+        width: 55px;
+        height: 44px;
+        font-size: 16px;
+    }
+
+    /* Modal tighter */
+    .modal-content {
+        padding: var(--space-sm);
+    }
+
+    .modal-header {
+        padding: var(--space-sm);
+    }
+
+    .modal-body {
+        padding: var(--space-sm);
+    }
+
+    /* Hide less important elements */
+    .menu-nav-btn span {
+        display: none;
+    }
+
+    .menu-nav-btn {
+        padding: var(--space-sm);
+    }
+
+    .nav-icon {
+        font-size: 18px;
+    }
+}
+
+/* Landscape Orientation */
+@media (max-height: 500px) and (orientation: landscape) {
+    .modal-content {
+        max-height: 95vh;
+        overflow-y: auto;
+    }
+
+    .workout-builder {
+        max-height: 95vh;
+    }
+
+    .builder-selected {
+        height: 150px;
+    }
+
+    /* Reduce vertical spacing */
+    .memory-card {
+        padding: var(--space-sm) var(--space-md);
+    }
+
+    .screen-content {
+        padding: var(--space-sm);
     }
 }
 
