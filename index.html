@@ -10,35 +10,30 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* Modern Dark Palette */
-            --bg-deep: #0a0a0f;
-            --bg-dark: #12121a;
-            --bg-card: #1a1a24;
-            --surface: #22222e;
+            /* Dreamcast White Palette */
+            --bg-white: #f8f9fa;
+            --bg-light: #ffffff;
+            --bg-card: #ffffff;
+            --surface: #f0f1f3;
 
-            /* Accent Colors */
-            --gold: #f0c674;
-            --gold-bright: #ffd93d;
-            --gold-dim: #c9a04d;
-            --neon-green: #4ade80;
-            --neon-blue: #60a5fa;
-            --neon-purple: #a78bfa;
-
-            /* Dreamcast Palette */
+            /* Dreamcast Core Colors */
             --dc-orange: #ff6b35;
             --dc-orange-bright: #ff8c5a;
-            --dc-blue: #4a9eff;
-            --dc-blue-deep: #2d7dd2;
+            --dc-orange-dark: #e55a28;
+            --dc-blue: #2d7dd2;
+            --dc-blue-light: #4a9eff;
+            --dc-blue-deep: #1a5fa8;
+            --dc-grey: #8c939a;
 
-            /* Glass Effects */
-            --glass-bg: rgba(255, 255, 255, 0.06);
-            --glass-border: rgba(255, 255, 255, 0.12);
-            --glass-highlight: rgba(255, 255, 255, 0.2);
+            /* Glass Effects - Light Mode */
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(0, 0, 0, 0.08);
+            --glass-highlight: rgba(255, 255, 255, 0.9);
 
-            /* Text - Higher Contrast */
-            --text-primary: #ffffff;
-            --text-secondary: rgba(255, 255, 255, 0.85);
-            --text-muted: rgba(255, 255, 255, 0.6);
+            /* Text - Dark on Light */
+            --text-primary: #1a1d23;
+            --text-secondary: #4a5568;
+            --text-muted: #718096;
         }
 
         * {
@@ -53,7 +48,7 @@
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg-deep);
+            background: var(--bg-white);
             color: var(--text-primary);
             overflow-x: hidden;
             line-height: 1.6;
@@ -74,21 +69,21 @@
             z-index: -1;
             overflow: hidden;
             background:
-                radial-gradient(ellipse at 15% 15%, rgba(255, 107, 53, 0.08) 0%, transparent 45%),
-                radial-gradient(ellipse at 85% 20%, rgba(74, 158, 255, 0.07) 0%, transparent 45%),
-                radial-gradient(ellipse at 80% 80%, rgba(74, 222, 128, 0.05) 0%, transparent 50%),
-                radial-gradient(ellipse at 50% 50%, rgba(240, 198, 116, 0.03) 0%, transparent 60%),
-                linear-gradient(180deg, var(--bg-deep) 0%, #0d0d14 50%, var(--bg-dark) 100%);
+                radial-gradient(ellipse at 10% 10%, rgba(255, 107, 53, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 90% 15%, rgba(45, 125, 210, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 85% 85%, rgba(255, 107, 53, 0.05) 0%, transparent 50%),
+                radial-gradient(ellipse at 15% 80%, rgba(45, 125, 210, 0.05) 0%, transparent 50%),
+                linear-gradient(180deg, #ffffff 0%, #f8f9fa 50%, #f0f1f3 100%);
         }
 
         /* Dreamcast Swirl */
         .dc-swirl {
             position: absolute;
-            width: 400px;
-            height: 400px;
+            width: 500px;
+            height: 500px;
             top: 5%;
-            right: -100px;
-            opacity: 0.06;
+            right: -150px;
+            opacity: 0.15;
             animation: swirlSpin 30s linear infinite;
             pointer-events: none;
         }
@@ -99,13 +94,13 @@
         }
 
         .dc-swirl-2 {
-            width: 300px;
-            height: 300px;
+            width: 350px;
+            height: 350px;
             top: auto;
             bottom: 10%;
             right: auto;
-            left: -80px;
-            opacity: 0.04;
+            left: -100px;
+            opacity: 0.1;
             animation-duration: 40s;
             animation-direction: reverse;
         }
@@ -163,6 +158,7 @@
             border-radius: 20px;
             position: relative;
             overflow: hidden;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
         }
 
         .glass::before {
@@ -186,15 +182,15 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: rgba(10, 10, 15, 0.8);
+            background: rgba(255, 255, 255, 0.9);
             backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--glass-border);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
         }
 
         .logo {
             font-family: 'Press Start 2P', cursive;
             font-size: 14px;
-            background: linear-gradient(135deg, var(--gold-bright) 0%, var(--gold) 50%, var(--gold-dim) 100%);
+            background: linear-gradient(135deg, var(--dc-orange) 0%, var(--dc-orange-dark) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -203,21 +199,21 @@
 
         .nav-cta {
             padding: 12px 24px;
-            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dim) 100%);
+            background: linear-gradient(135deg, var(--dc-orange) 0%, var(--dc-orange-dark) 100%);
             border: none;
             border-radius: 12px;
-            color: var(--bg-deep);
+            color: #ffffff;
             font-weight: 700;
             font-size: 13px;
             cursor: pointer;
             transition: all 0.3s ease;
             text-decoration: none;
-            box-shadow: 0 4px 20px rgba(240, 198, 116, 0.25);
+            box-shadow: 0 4px 20px rgba(255, 107, 53, 0.3);
         }
 
         .nav-cta:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 25px rgba(240, 198, 116, 0.35);
+            box-shadow: 0 6px 25px rgba(255, 107, 53, 0.4);
         }
 
         /* Hero Section */
@@ -241,12 +237,12 @@
             align-items: center;
             gap: 8px;
             padding: 8px 18px;
-            background: rgba(240, 198, 116, 0.1);
-            border: 1px solid rgba(240, 198, 116, 0.3);
+            background: rgba(255, 107, 53, 0.1);
+            border: 1px solid rgba(255, 107, 53, 0.3);
             border-radius: 50px;
             font-size: 11px;
             font-weight: 600;
-            color: var(--gold);
+            color: var(--dc-orange);
             margin-bottom: 24px;
             letter-spacing: 1.5px;
             text-transform: uppercase;
@@ -256,10 +252,10 @@
             content: '';
             width: 6px;
             height: 6px;
-            background: var(--neon-green);
+            background: var(--dc-orange);
             border-radius: 50%;
             animation: pulse 2s ease-in-out infinite;
-            box-shadow: 0 0 10px var(--neon-green);
+            box-shadow: 0 0 10px var(--dc-orange);
         }
 
         @keyframes pulse {
@@ -274,10 +270,11 @@
             line-height: 1.1;
             margin-bottom: 24px;
             letter-spacing: -1px;
+            color: var(--text-primary);
         }
 
         h1 span {
-            background: linear-gradient(135deg, var(--gold-bright) 0%, var(--gold) 50%, var(--neon-green) 100%);
+            background: linear-gradient(135deg, var(--dc-orange) 0%, var(--dc-orange-dark) 50%, var(--dc-blue) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -297,21 +294,21 @@
             align-items: center;
             gap: 10px;
             padding: 18px 36px;
-            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dim) 100%);
+            background: linear-gradient(135deg, var(--dc-blue) 0%, var(--dc-blue-deep) 100%);
             border: none;
             border-radius: 14px;
-            color: var(--bg-deep);
+            color: #ffffff;
             font-weight: 700;
             font-size: 16px;
             cursor: pointer;
             transition: all 0.3s ease;
             text-decoration: none;
-            box-shadow: 0 8px 30px rgba(240, 198, 116, 0.3);
+            box-shadow: 0 8px 30px rgba(45, 125, 210, 0.35);
         }
 
         .hero-cta:hover {
             transform: translateY(-3px);
-            box-shadow: 0 12px 40px rgba(240, 198, 116, 0.4);
+            box-shadow: 0 12px 40px rgba(45, 125, 210, 0.45);
         }
 
         .hero-cta svg {
@@ -339,7 +336,7 @@
         .hero-stat-value {
             font-family: 'Press Start 2P', cursive;
             font-size: 20px;
-            color: var(--gold);
+            color: var(--dc-orange);
             margin-bottom: 8px;
         }
 
@@ -372,13 +369,12 @@
             height: 500px;
             background: linear-gradient(180deg, #1e1e28 0%, #14141c 100%);
             border-radius: 32px;
-            border: 2px solid var(--surface);
+            border: 3px solid #2d2d3a;
             padding: 8px;
             position: relative;
             box-shadow:
-                0 25px 80px rgba(0, 0, 0, 0.5),
-                0 0 0 1px rgba(255, 255, 255, 0.05),
-                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+                0 25px 80px rgba(0, 0, 0, 0.2),
+                0 0 0 1px rgba(0, 0, 0, 0.1);
             transform: perspective(1000px) rotateY(-5deg);
             transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
         }
@@ -386,9 +382,9 @@
         .mockup-phone:hover {
             transform: perspective(1000px) rotateY(0deg) translateY(-10px);
             box-shadow:
-                0 35px 100px rgba(0, 0, 0, 0.6),
-                0 0 0 1px rgba(255, 255, 255, 0.08),
-                0 0 60px rgba(240, 198, 116, 0.1);
+                0 35px 100px rgba(0, 0, 0, 0.25),
+                0 0 0 1px rgba(0, 0, 0, 0.1),
+                0 0 60px rgba(255, 107, 53, 0.15);
         }
 
         .mockup-phone:nth-child(2) {
@@ -443,18 +439,18 @@
             font-weight: 700;
             font-size: 14px;
             margin-bottom: 8px;
-            color: var(--text-primary);
+            color: #ffffff;
         }
 
         .mockup-screen .screen-desc {
             font-size: 12px;
-            color: var(--text-muted);
+            color: rgba(255, 255, 255, 0.6);
         }
 
         /* Section Divider */
         .section-divider {
             height: 1px;
-            background: linear-gradient(90deg, transparent, var(--glass-border), transparent);
+            background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.1), transparent);
             margin: 40px 0;
         }
 
@@ -513,8 +509,8 @@
 
         .feature-card:hover {
             transform: translateY(-4px);
-            border-color: rgba(240, 198, 116, 0.2);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border-color: rgba(255, 107, 53, 0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
         }
 
         .feature-icon {
@@ -540,7 +536,7 @@
             font-size: 17px;
             font-weight: 700;
             margin-bottom: 10px;
-            color: var(--text-primary);
+            color: var(--dc-blue-deep);
         }
 
         .feature-desc {
@@ -553,7 +549,7 @@
         /* Gamification Section */
         .gamification {
             padding: 100px 40px;
-            background: linear-gradient(180deg, transparent 0%, rgba(240, 198, 116, 0.02) 50%, transparent 100%);
+            background: linear-gradient(180deg, transparent 0%, rgba(45, 125, 210, 0.03) 50%, transparent 100%);
         }
 
         .gamification-content {
@@ -573,7 +569,7 @@
         }
 
         .gamification-text h2 span {
-            color: var(--gold);
+            color: var(--dc-orange);
         }
 
         .gamification-text p {
@@ -586,6 +582,8 @@
 
         .xp-preview {
             padding: 28px;
+            background: linear-gradient(135deg, #1a1d23 0%, #2d3748 100%);
+            border: none;
         }
 
         .xp-header {
@@ -598,18 +596,18 @@
         .xp-level {
             font-family: 'Press Start 2P', cursive;
             font-size: 10px;
-            color: var(--gold);
+            color: var(--dc-orange);
         }
 
         .xp-amount {
             font-size: 13px;
-            color: var(--text-secondary);
+            color: rgba(255, 255, 255, 0.7);
             font-weight: 500;
         }
 
         .xp-bar {
             height: 12px;
-            background: var(--surface);
+            background: rgba(255, 255, 255, 0.1);
             border-radius: 6px;
             overflow: hidden;
             margin-bottom: 24px;
@@ -618,7 +616,7 @@
         .xp-fill {
             height: 100%;
             width: 68%;
-            background: linear-gradient(90deg, var(--dc-blue) 0%, var(--dc-orange) 60%, var(--gold) 100%);
+            background: linear-gradient(90deg, var(--dc-blue-light) 0%, var(--dc-orange) 100%);
             border-radius: 6px;
             position: relative;
             animation: xpPulse 3s ease-in-out infinite;
@@ -638,20 +636,20 @@
         .xp-stat {
             text-align: center;
             padding: 16px 8px;
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 12px;
         }
 
         .xp-stat-value {
             font-family: 'Press Start 2P', cursive;
             font-size: 12px;
-            color: var(--gold);
+            color: var(--dc-orange);
         }
 
         .xp-stat-label {
             font-size: 10px;
-            color: var(--text-muted);
+            color: rgba(255, 255, 255, 0.6);
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-top: 6px;
@@ -698,7 +696,7 @@
             height: 16px;
             background: var(--dc-orange);
             border-radius: 50%;
-            border: 3px solid var(--bg-deep);
+            border: 3px solid var(--bg-white);
             box-shadow: 0 0 0 2px var(--dc-orange), 0 0 15px rgba(255, 107, 53, 0.3);
             transition: all 0.3s ease;
         }
@@ -708,18 +706,18 @@
         }
 
         .roadmap-dot.upcoming {
-            background: var(--bg-card);
-            box-shadow: 0 0 0 2px var(--dc-blue), 0 0 15px rgba(74, 158, 255, 0.2);
+            background: var(--bg-white);
+            box-shadow: 0 0 0 2px var(--dc-blue), 0 0 15px rgba(45, 125, 210, 0.2);
         }
 
         .roadmap-item:hover .roadmap-dot.upcoming {
-            box-shadow: 0 0 0 2px var(--dc-blue), 0 0 25px rgba(74, 158, 255, 0.4);
+            box-shadow: 0 0 0 2px var(--dc-blue), 0 0 25px rgba(45, 125, 210, 0.4);
         }
 
         .roadmap-phase {
             font-family: 'Press Start 2P', cursive;
             font-size: 8px;
-            color: var(--text-muted);
+            color: var(--dc-grey);
             text-transform: uppercase;
             margin-bottom: 6px;
             letter-spacing: 1px;
@@ -729,6 +727,7 @@
             font-size: 17px;
             font-weight: 700;
             margin-bottom: 8px;
+            color: var(--text-primary);
         }
 
         .roadmap-desc {
@@ -772,13 +771,14 @@
             padding: 50px;
             text-align: center;
             border-color: rgba(255, 107, 53, 0.2);
-            box-shadow: 0 0 60px rgba(255, 107, 53, 0.05);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.06);
         }
 
         .cta-card h2 {
             font-size: clamp(24px, 4vw, 32px);
             font-weight: 800;
             margin-bottom: 14px;
+            color: var(--text-primary);
         }
 
         .cta-card p {
@@ -793,7 +793,8 @@
         footer {
             padding: 30px 40px;
             text-align: center;
-            border-top: 1px solid var(--glass-border);
+            border-top: 1px solid rgba(0, 0, 0, 0.06);
+            background: var(--bg-white);
         }
 
         footer p {
@@ -802,7 +803,7 @@
         }
 
         footer span {
-            color: var(--gold);
+            color: var(--dc-orange);
             font-weight: 600;
         }
 

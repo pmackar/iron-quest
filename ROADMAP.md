@@ -4,9 +4,8 @@
 **Foundation for individual profiles**
 
 ### Features
-- [ ] Character selection screen (up to 4 saved characters)
+- [ ] Character Creation Screen
 - [ ] Individual save slots with unique names, avatars, stats
-- [ ] Character switching from main menu
 - [ ] Delete/reset character option
 - [ ] Character-specific achievements and PRs
 
@@ -176,7 +175,7 @@ GET    /coach/:code
 | 2. Workout History | Medium | High | ★★★★★ |
 | 3. Stats & Analytics | Medium | High | ★★★★☆ |
 | 4. Coach Sharing | High | Medium | ★★★☆☆ |
-| 5. Teams & Social | High | High | ★★★☆☆ |
+| 5. Teams & Social | High | Medium | ★★★☆☆ |
 | 6. Backend | High | Required | ★★★★★ |
 
 ---
