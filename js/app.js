@@ -1120,6 +1120,54 @@ function completeSignIn(result) {
     API.connectSocket();
     setupSocketListeners();
 
+    // Sync server profile to local save slot
+    if (currentUser && currentUser.username) {
+        // Find existing slot with matching user or first empty slot
+        let slotIndex = saveSlots.findIndex(slot => slot && slot.onlineUserId === currentUser.id);
+        if (slotIndex === -1) {
+            slotIndex = saveSlots.findIndex(slot => !slot);
+        }
+        if (slotIndex === -1) slotIndex = 0; // Overwrite first slot if all full
+
+        // Create or update the save slot with server data
+        const existingSlot = saveSlots[slotIndex] || {};
+        saveSlots[slotIndex] = {
+            ...existingSlot,
+            onlineUserId: currentUser.id,
+            name: currentUser.username,
+            playerName: currentUser.username,
+            avatar: currentUser.avatar || 1,
+            heightFeet: currentUser.heightFeet || existingSlot.heightFeet || 0,
+            heightInches: currentUser.heightInches || existingSlot.heightInches || 0,
+            weight: currentUser.weight || existingSlot.weight || 0,
+            gender: currentUser.gender || existingSlot.gender || '',
+            level: currentUser.level || 1,
+            xp: currentUser.xp || 0,
+            xpToNext: currentUser.xpToNext || 100,
+            totalWorkouts: currentUser.totalWorkouts || 0,
+            totalSets: currentUser.totalSets || 0,
+            totalWeight: parseInt(currentUser.totalWeight) || 0,
+            achievements: currentUser.achievements || [],
+            personalRecords: currentUser.personalRecords || {},
+            workoutHistory: existingSlot.workoutHistory || [],
+            testCompletedAt: existingSlot.testCompletedAt || null
+        };
+        saveSaveSlots();
+
+        // If user has completed profile, auto-select and go to menu
+        if (currentUser.totalWorkouts > 0 || saveSlots[slotIndex].testCompletedAt) {
+            currentSlotIndex = slotIndex;
+            gameState = { ...saveSlots[slotIndex] };
+            updateMenuStats();
+            renderCustomLists();
+            updateOnlineUI();
+            showToast('LOGGED IN!');
+            hideAuthForms();
+            showScreen('menuScreen');
+            return;
+        }
+    }
+
     updateOnlineUI();
     showToast(result.isNewUser ? 'WELCOME, WARRIOR!' : 'LOGGED IN!');
     hideAuthForms();
@@ -1505,6 +1553,18 @@ function startGame() {
     saveSaveSlots();
     updateMenuStats();
     renderCustomLists();
+
+    // Sync profile to server if online
+    if (isOnlineMode && currentUser) {
+        API.updateProfile({
+            username: gameState.name,
+            avatar: typeof avatarId === 'number' ? avatarId : 1,
+            heightFeet: heightFeet,
+            heightInches: heightInches,
+            weight: weight,
+            gender: gender
+        }).catch(err => console.error('Failed to sync profile:', err));
+    }
 
     // Go to strength test for new characters
     renderStrengthTest();
