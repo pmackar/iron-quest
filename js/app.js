@@ -2912,8 +2912,11 @@ function applyWeightSuggestion(exerciseId) {
         weightInput.value = lastSet.weight;
         repsInput.value = lastSet.reps;
     } else if (hasPreviousSets) {
-        // Use last set values from history
-        for (const workout of gameState.workoutHistory) {
+        // Use last set values from history (iterate in reverse to get most recent)
+        const sortedHistory = [...(gameState.workoutHistory || [])].sort((a, b) =>
+            new Date(b.date) - new Date(a.date)
+        );
+        for (const workout of sortedHistory) {
             const exerciseEntry = workout.exercises?.find(ex => ex.id === exerciseId);
             if (exerciseEntry && exerciseEntry.sets?.length > 0) {
                 const lastSet = exerciseEntry.sets[exerciseEntry.sets.length - 1];
