@@ -1051,6 +1051,14 @@ button.avatar-profile-link:active {
 
 .nav-icon {
     font-size: 18px;
+    display: block;
+    text-align: center;
+}
+
+.nav-label {
+    font-size: 11px;
+    text-align: center;
+    line-height: 1.2;
 }
 
 .menu-tab-content {
@@ -1120,6 +1128,185 @@ button.avatar-profile-link:active {
 .workout-card p {
     font-size: 12px;
     color: var(--text-tertiary);
+}
+
+/* Workout Gallery (3x3 grid) */
+.workout-gallery {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-sm);
+    max-height: none;
+}
+
+.workout-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xs);
+    padding: var(--space-md);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: var(--transition-fast);
+    min-height: 80px;
+}
+
+.workout-tile:hover {
+    background: var(--bg-hover);
+    border-color: var(--border-default);
+    transform: scale(1.02);
+}
+
+.workout-tile .tile-icon {
+    font-size: 28px;
+}
+
+.workout-tile .tile-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.workout-tile.push { border-left: 3px solid #ff6b6b; }
+.workout-tile.pull { border-left: 3px solid #4ecdc4; }
+.workout-tile.legs { border-left: 3px solid #a855f7; }
+.workout-tile.custom { border-left: 3px solid var(--accent-primary); }
+
+.more-workouts-btn {
+    width: 100%;
+    margin-top: var(--space-sm);
+    padding: var(--space-sm);
+    background: var(--bg-elevated);
+    border: 1px dashed var(--border-default);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    font-family: var(--font-primary);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.more-workouts-btn:hover {
+    background: var(--bg-hover);
+    color: var(--accent-primary);
+}
+
+/* Exercise Gallery */
+.exercise-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: var(--space-sm);
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.exercise-card {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: var(--space-sm);
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.exercise-card:hover {
+    background: var(--bg-hover);
+    border-color: var(--border-default);
+}
+
+.exercise-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--space-xs);
+}
+
+.exercise-card-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.custom-badge {
+    color: var(--accent-primary);
+    font-size: 10px;
+}
+
+.exercise-card-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.exercise-card-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+}
+
+.exercise-card-row .detail-label {
+    color: var(--text-tertiary);
+}
+
+.exercise-card-row .detail-value {
+    color: var(--text-secondary);
+}
+
+.exercise-card-row .detail-value.highlight {
+    color: var(--accent-primary);
+    font-weight: 500;
+}
+
+/* Exercise History Modal */
+.history-entry {
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    padding: var(--space-sm);
+    margin-bottom: var(--space-sm);
+}
+
+.history-entry-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: var(--space-xs);
+}
+
+.history-date {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.history-workout {
+    font-size: 11px;
+    color: var(--text-tertiary);
+}
+
+.history-sets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+}
+
+.history-set {
+    font-size: 11px;
+    padding: 2px 6px;
+    background: var(--bg-elevated);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+}
+
+.history-set.best {
+    background: var(--accent-primary);
+    color: var(--bg-primary);
+    font-weight: 600;
 }
 
 /* Custom Sections */
@@ -6442,7 +6629,7 @@ body.workout-minimized .screen {
     }
 
     /* Navigation icons only on tiny screens - 4 per row */
-    .menu-nav-btn span:not(.nav-icon) {
+    .nav-label {
         display: none;
     }
 
@@ -6453,7 +6640,7 @@ body.workout-minimized .screen {
     }
 
     .nav-icon {
-        font-size: 18px;
+        font-size: 20px;
     }
 }
 

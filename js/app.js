@@ -1651,26 +1651,60 @@ function renderCharacterSlots() {
         console.warn('characterSlots container not found');
         return;
     }
-    container.innerHTML = saveSlots.map((slot, index) => {
-        if (slot) {
-            return `
-                <div class="character-slot" onclick="selectCharacter(${index})">
-                    <button class="delete-btn" onclick="event.stopPropagation(); deleteCharacter(${index})">×</button>
-                    <div class="slot-avatar">${getAvatarHTML(slot.avatar, slot.customAvatar)}</div>
-                    <div class="slot-name">${slot.playerName}</div>
-                    <div class="slot-level">LEVEL ${slot.level}</div>
-                    <div class="slot-stats">${slot.totalWorkouts} workouts</div>
-                </div>
-            `;
+
+    // Filter slots based on login status
+    // Online: only show slots belonging to current user
+    // Offline: only show slots without an onlineUserId
+    const filteredSlots = saveSlots.map((slot, index) => ({ slot, index })).filter(({ slot }) => {
+        if (isOnlineMode && currentUser) {
+            // Online: show only this user's characters
+            return slot && slot.onlineUserId === currentUser.id;
         } else {
-            return `
-                <div class="character-slot empty" onclick="createNewCharacter(${index})">
+            // Offline: show only offline characters (no onlineUserId)
+            return slot && !slot.onlineUserId;
+        }
+    });
+
+    // If no characters found for this mode, show empty slot option
+    if (filteredSlots.length === 0) {
+        // Find first available slot
+        const emptySlotIndex = saveSlots.findIndex(s => !s);
+        const slotIndex = emptySlotIndex !== -1 ? emptySlotIndex : 0;
+
+        container.innerHTML = `
+            <div class="character-slot empty" onclick="createNewCharacter(${slotIndex})">
+                <div class="empty-slot-icon">+</div>
+                <div class="slot-name">CREATE WARRIOR</div>
+            </div>
+        `;
+        return;
+    }
+
+    // Render filtered slots
+    container.innerHTML = filteredSlots.map(({ slot, index }) => {
+        return `
+            <div class="character-slot" onclick="selectCharacter(${index})">
+                <button class="delete-btn" onclick="event.stopPropagation(); deleteCharacter(${index})">×</button>
+                <div class="slot-avatar">${getAvatarHTML(slot.avatar, slot.customAvatar)}</div>
+                <div class="slot-name">${slot.playerName || slot.name}</div>
+                <div class="slot-level">LEVEL ${slot.level || 1}</div>
+                <div class="slot-stats">${slot.totalWorkouts || 0} workouts</div>
+            </div>
+        `;
+    }).join('');
+
+    // Add option to create additional character if logged in and has room
+    if (isOnlineMode && currentUser && filteredSlots.length < 4) {
+        const emptySlotIndex = saveSlots.findIndex(s => !s);
+        if (emptySlotIndex !== -1) {
+            container.innerHTML += `
+                <div class="character-slot empty" onclick="createNewCharacter(${emptySlotIndex})">
                     <div class="empty-slot-icon">+</div>
                     <div class="slot-name">NEW WARRIOR</div>
                 </div>
             `;
         }
-    }).join('');
+    }
 }
 
 function selectCharacter(index) {
@@ -1745,7 +1779,8 @@ function startGame() {
         personalRecords: hasImport ? importedWorkoutData.personalRecords : {},
         workoutHistory: hasImport ? importedWorkoutData.workouts : [],
         createdAt: new Date().toISOString(),
-        testCompletedAt: hasImport ? new Date().toISOString() : null // Skip strength test if importing
+        testCompletedAt: hasImport ? new Date().toISOString() : null, // Skip strength test if importing
+        onlineUserId: (isOnlineMode && currentUser) ? currentUser.id : null // Tie character to account
     };
 
     // Clear imported data after use
@@ -2595,9 +2630,9 @@ function showStatHistory(type) {
         listHTML = tableHeader + `<div class="stat-table-body">${rows}</div>`;
 
     } else if (type === 'volume') {
-        titleEl.textContent = 'VOLUME HISTORY';
+        titleEl.textContent = 'TONNAGE HISTORY';
 
-        // Calculate volume stats
+        // Calculate tonnage stats
         const volumes = history.map(w => w.totalVolume || 0);
         const avgVolume = volumes.length > 0 ? Math.round(volumes.reduce((a, b) => a + b, 0) / volumes.length) : 0;
         const maxVolume = Math.max(...volumes, 0);
@@ -2606,7 +2641,7 @@ function showStatHistory(type) {
             <div class="stat-summary-grid">
                 <div class="summary-item">
                     <div class="summary-value">${formatNumber(gameState.totalWeight || 0)}</div>
-                    <div class="summary-label">Total Volume</div>
+                    <div class="summary-label">Total Tonnage</div>
                 </div>
                 <div class="summary-item">
                     <div class="summary-value">${formatNumber(avgVolume)}</div>
@@ -2619,13 +2654,13 @@ function showStatHistory(type) {
             </div>
         `;
 
-        // Table header + rows for volume
+        // Table header + rows for tonnage
         const tableHeader = `
             <div class="stat-table-header volume-view">
                 <div class="stat-col-name">Workout</div>
                 <div class="stat-col-date">Date</div>
                 <div class="stat-col-sets">Sets</div>
-                <div class="stat-col-vol">Volume</div>
+                <div class="stat-col-vol">Tonnage</div>
             </div>
         `;
 
@@ -4339,7 +4374,7 @@ function renderVolumeChart() {
                 <div class="volume-week">Week</div>
                 <div class="volume-workouts">Workouts</div>
                 <div class="volume-sets">Sets</div>
-                <div class="volume-amount">Volume (lbs)</div>
+                <div class="volume-amount">Tonnage (lbs)</div>
             </div>
             ${rows}
         </div>
@@ -4916,9 +4951,89 @@ function startCustomWorkout(id) {
 // ============================================
 
 function renderCustomLists() {
+    renderWorkoutGallery();
     renderCustomProgramList();
     renderCustomWorkoutList();
     renderCustomExerciseList();
+}
+
+function renderWorkoutGallery() {
+    const gallery = document.getElementById('workoutGallery');
+    const moreBtn = document.getElementById('moreWorkoutsBtn');
+    if (!gallery) return;
+
+    // Start with the 3 default workout tiles (already in HTML)
+    // Remove any previously added custom tiles
+    const existingCustomTiles = gallery.querySelectorAll('.workout-tile.custom');
+    existingCustomTiles.forEach(tile => tile.remove());
+
+    // Add custom workouts (up to 6 more for total of 9)
+    const maxCustomInGallery = 6;
+    const customToShow = customWorkouts.slice(0, maxCustomInGallery);
+
+    customToShow.forEach(workout => {
+        const tile = document.createElement('div');
+        tile.className = 'workout-tile custom';
+        tile.onclick = () => startCustomWorkout(workout.id);
+        tile.innerHTML = `
+            <div class="tile-icon">${workout.icon || '🏋️'}</div>
+            <div class="tile-name">${workout.name}</div>
+        `;
+        gallery.appendChild(tile);
+    });
+
+    // Show/hide "More Workouts" button
+    if (moreBtn) {
+        if (customWorkouts.length > maxCustomInGallery) {
+            moreBtn.style.display = 'block';
+            moreBtn.textContent = `+ ${customWorkouts.length - maxCustomInGallery} MORE WORKOUTS`;
+        } else {
+            moreBtn.style.display = 'none';
+        }
+    }
+}
+
+function openAllWorkoutsModal() {
+    // Create a modal showing all workouts
+    const modal = document.createElement('div');
+    modal.id = 'allWorkoutsModal';
+    modal.className = 'modal active';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>ALL WORKOUTS</h2>
+                <button class="close-btn" onclick="closeAllWorkoutsModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="workout-gallery" style="max-height: 60vh; overflow-y: auto;">
+                    <div class="workout-tile push" onclick="startWorkout('push'); closeAllWorkoutsModal();">
+                        <div class="tile-icon">💪</div>
+                        <div class="tile-name">PUSH</div>
+                    </div>
+                    <div class="workout-tile pull" onclick="startWorkout('pull'); closeAllWorkoutsModal();">
+                        <div class="tile-icon">🏋️</div>
+                        <div class="tile-name">PULL</div>
+                    </div>
+                    <div class="workout-tile legs" onclick="startWorkout('legs'); closeAllWorkoutsModal();">
+                        <div class="tile-icon">🦵</div>
+                        <div class="tile-name">LEGS</div>
+                    </div>
+                    ${customWorkouts.map(w => `
+                        <div class="workout-tile custom" onclick="startCustomWorkout('${w.id}'); closeAllWorkoutsModal();">
+                            <div class="tile-icon">${w.icon || '🏋️'}</div>
+                            <div class="tile-name">${w.name}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+function closeAllWorkoutsModal() {
+    const modal = document.getElementById('allWorkoutsModal');
+    if (modal) modal.remove();
 }
 
 function renderCustomWorkoutList() {
@@ -4986,60 +5101,187 @@ function renderCustomExerciseList() {
     const container = document.getElementById('customExerciseList');
     if (!container) return;
 
-    // Group all exercises by muscle
-    const muscleGroups = {
-        chest: { name: 'CHEST', icon: '🫁', exercises: [] },
-        back: { name: 'BACK', icon: '🔙', exercises: [] },
-        shoulders: { name: 'SHOULDERS', icon: '🎯', exercises: [] },
-        biceps: { name: 'BICEPS', icon: '💪', exercises: [] },
-        triceps: { name: 'TRICEPS', icon: '💪', exercises: [] },
-        quads: { name: 'QUADS', icon: '🦵', exercises: [] },
-        hamstrings: { name: 'HAMSTRINGS', icon: '🦵', exercises: [] },
-        glutes: { name: 'GLUTES', icon: '🍑', exercises: [] },
-        calves: { name: 'CALVES', icon: '🦶', exercises: [] },
-        core: { name: 'CORE', icon: '🎯', exercises: [] },
-        custom: { name: 'MY EXERCISES', icon: '⭐', exercises: [] }
-    };
+    // Combine all exercises and get last performed info
+    const workoutHistory = gameState.workoutHistory || [];
+    const allExercisesList = [
+        ...allExercises.map(ex => ({ ...ex, isCustom: false })),
+        ...customExercises.map(ex => ({ ...ex, isCustom: true }))
+    ];
 
-    // Add built-in exercises
-    allExercises.forEach(ex => {
-        if (muscleGroups[ex.muscle]) {
-            muscleGroups[ex.muscle].exercises.push({ ...ex, isCustom: false });
+    // Get last performed data for each exercise
+    const exerciseData = allExercisesList.map(ex => {
+        let lastPerformed = null;
+        let lastSet = null;
+
+        // Search through workout history for this exercise
+        for (const workout of workoutHistory) {
+            if (!workout.exercises) continue;
+            const exerciseEntry = workout.exercises.find(e => e.id === ex.id);
+            if (exerciseEntry && exerciseEntry.sets?.length > 0) {
+                if (!lastPerformed || new Date(workout.date) > new Date(lastPerformed)) {
+                    lastPerformed = workout.date;
+                    lastSet = exerciseEntry.sets[exerciseEntry.sets.length - 1];
+                }
+            }
+        }
+
+        return {
+            ...ex,
+            lastPerformed,
+            lastSet
+        };
+    });
+
+    // Sort: recently performed first, then alphabetically
+    exerciseData.sort((a, b) => {
+        if (a.lastPerformed && !b.lastPerformed) return -1;
+        if (!a.lastPerformed && b.lastPerformed) return 1;
+        if (a.lastPerformed && b.lastPerformed) {
+            return new Date(b.lastPerformed) - new Date(a.lastPerformed);
+        }
+        return a.name.localeCompare(b.name);
+    });
+
+    // Render as gallery
+    container.innerHTML = `
+        <div class="exercise-gallery">
+            ${exerciseData.map(ex => {
+                const lastDateText = ex.lastPerformed
+                    ? formatRelativeDate(ex.lastPerformed)
+                    : 'Never';
+                const lastSetText = ex.lastSet
+                    ? `${ex.lastSet.weight}lbs × ${ex.lastSet.reps}`
+                    : '—';
+                const equipmentType = getEquipmentType(ex.equipment);
+
+                return `
+                    <div class="exercise-card" onclick="openExerciseHistory('${ex.id}')">
+                        <div class="exercise-card-header">
+                            <span class="exercise-card-name">${ex.name}</span>
+                            ${ex.isCustom ? '<span class="custom-badge">★</span>' : ''}
+                        </div>
+                        <div class="exercise-card-details">
+                            <div class="exercise-card-row">
+                                <span class="detail-label">Body</span>
+                                <span class="detail-value">${capitalizeFirst(ex.muscle || 'other')}</span>
+                            </div>
+                            <div class="exercise-card-row">
+                                <span class="detail-label">Type</span>
+                                <span class="detail-value">${equipmentType}</span>
+                            </div>
+                            <div class="exercise-card-row">
+                                <span class="detail-label">Last</span>
+                                <span class="detail-value">${lastDateText}</span>
+                            </div>
+                            <div class="exercise-card-row">
+                                <span class="detail-label">Set</span>
+                                <span class="detail-value highlight">${lastSetText}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
+}
+
+function getEquipmentType(equipment) {
+    const types = {
+        barbell: 'Free Weight',
+        dumbbell: 'Free Weight',
+        kettlebell: 'Free Weight',
+        cable: 'Cable',
+        machine: 'Machine',
+        bodyweight: 'Bodyweight',
+        band: 'Band',
+        other: 'Other'
+    };
+    return types[equipment] || 'Other';
+}
+
+function formatRelativeDate(dateStr) {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays}d ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function capitalizeFirst(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function openExerciseHistory(exerciseId) {
+    // Find the exercise
+    const exercise = allExercises.find(e => e.id === exerciseId) ||
+                     customExercises.find(e => e.id === exerciseId);
+    if (!exercise) return;
+
+    // Get history for this exercise
+    const workoutHistory = gameState.workoutHistory || [];
+    const exerciseHistory = [];
+
+    workoutHistory.forEach(workout => {
+        if (!workout.exercises) return;
+        const exerciseEntry = workout.exercises.find(e => e.id === exerciseId);
+        if (exerciseEntry && exerciseEntry.sets?.length > 0) {
+            exerciseHistory.push({
+                date: workout.date,
+                workoutName: workout.name,
+                sets: exerciseEntry.sets
+            });
         }
     });
 
-    // Add custom exercises
-    customExercises.forEach(ex => {
-        muscleGroups.custom.exercises.push({ ...ex, isCustom: true });
-    });
+    // Sort by date descending
+    exerciseHistory.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-    // Render grouped exercises
-    let html = '';
-    Object.entries(muscleGroups).forEach(([key, group]) => {
-        if (group.exercises.length === 0) return;
-
-        html += `
-            <div class="exercise-library-group">
-                <div class="exercise-library-header" onclick="toggleLibraryGroup('${key}')">
-                    <span>${group.icon} ${group.name}</span>
-                    <span class="group-badge">${group.exercises.length}</span>
-                </div>
-                <div class="exercise-library-items collapsed" id="libraryGroup_${key}">
-                    ${group.exercises.map(ex => `
-                        <div class="exercise-library-item">
-                            <div class="exercise-info">
-                                <div class="exercise-name">${ex.name}</div>
-                                <div class="exercise-meta">${getEquipmentIcon(ex.equipment)} ${ex.equipment || 'other'}</div>
-                            </div>
-                            ${ex.isCustom ? `<button class="delete-btn" onclick="deleteCustomExercise('${ex.id}')">×</button>` : ''}
-                        </div>
-                    `).join('')}
-                </div>
+    // Create modal
+    const modal = document.createElement('div');
+    modal.id = 'exerciseHistoryModal';
+    modal.className = 'modal active';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>${exercise.name}</h2>
+                <button class="close-btn" onclick="closeExerciseHistoryModal()">×</button>
             </div>
-        `;
-    });
+            <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
+                ${exerciseHistory.length === 0 ? '<div class="empty-hint">No history for this exercise</div>' :
+                    exerciseHistory.map(h => {
+                        const date = new Date(h.date);
+                        const dateStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                        const bestSet = h.sets.reduce((best, s) => (!best || s.weight > best.weight) ? s : best, null);
+                        return `
+                            <div class="history-entry">
+                                <div class="history-entry-header">
+                                    <span class="history-date">${dateStr}</span>
+                                    <span class="history-workout">${h.workoutName || 'Workout'}</span>
+                                </div>
+                                <div class="history-sets">
+                                    ${h.sets.map((s, i) => `
+                                        <span class="history-set ${s === bestSet ? 'best' : ''}">
+                                            ${s.weight}×${s.reps}
+                                        </span>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `;
+                    }).join('')
+                }
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
 
-    container.innerHTML = html;
+function closeExerciseHistoryModal() {
+    const modal = document.getElementById('exerciseHistoryModal');
+    if (modal) modal.remove();
 }
 
 function toggleLibraryGroup(groupKey) {
@@ -5936,16 +6178,66 @@ async function createTeam() {
     try {
         const response = await API.createTeam(name, description, avatar);
         closeCreateTeamModal();
-        showToast('TEAM CREATED!');
         loadTeams();
 
-        // Automatically open the new team
-        if (response.team) {
-            openTeam(response.team.id);
+        // Show success modal with invite code
+        if (response.team && response.team.invite_code) {
+            showTeamCreatedModal(response.team);
+        } else {
+            showToast('TEAM CREATED!');
+            if (response.team) {
+                openTeam(response.team.id);
+            }
         }
     } catch (error) {
         showToast(error.message || 'FAILED TO CREATE');
     }
+}
+
+function showTeamCreatedModal(team) {
+    const modal = document.createElement('div');
+    modal.id = 'teamCreatedModal';
+    modal.className = 'modal active';
+    modal.innerHTML = `
+        <div class="modal-content" style="text-align: center;">
+            <div style="font-size: 48px; margin-bottom: 16px;">🎉</div>
+            <h2>TEAM CREATED!</h2>
+            <p style="color: var(--text-secondary); margin: 16px 0;">
+                Share this code with others to invite them to join:
+            </p>
+            <div class="invite-code-display" style="
+                background: var(--bg-tertiary);
+                border: 2px dashed var(--accent-primary);
+                border-radius: var(--radius-md);
+                padding: 16px;
+                margin: 16px 0;
+            ">
+                <div style="font-size: 28px; font-weight: 700; letter-spacing: 4px; color: var(--accent-primary);">
+                    ${team.invite_code}
+                </div>
+            </div>
+            <button class="dc-button secondary" style="margin-right: 8px;" onclick="copyInviteCode('${team.invite_code}')">
+                📋 COPY CODE
+            </button>
+            <button class="dc-button" onclick="closeTeamCreatedModal(); openTeam('${team.id}');">
+                VIEW TEAM
+            </button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+function closeTeamCreatedModal() {
+    const modal = document.getElementById('teamCreatedModal');
+    if (modal) modal.remove();
+}
+
+function copyInviteCode(code) {
+    navigator.clipboard.writeText(code).then(() => {
+        showToast('CODE COPIED!');
+    }).catch(() => {
+        showToast('FAILED TO COPY');
+    });
 }
 
 function openJoinTeamModal() {

@@ -325,58 +325,64 @@
             <div class="menu-nav" id="menuNav">
                 <button class="menu-nav-btn active" data-tab="workout" onclick="switchMenuTab('workout')">
                     <span class="nav-icon">💪</span>
-                    Workout
+                    <span class="nav-label">Workout</span>
                 </button>
                 <button class="menu-nav-btn" data-tab="history" onclick="switchMenuTab('history')">
                     <span class="nav-icon">📅</span>
-                    History
+                    <span class="nav-label">History</span>
                 </button>
                 <button class="menu-nav-btn" data-tab="stats" onclick="switchMenuTab('stats')">
                     <span class="nav-icon">📊</span>
-                    Stats
+                    <span class="nav-label">Stats</span>
                 </button>
                 <button class="menu-nav-btn" data-tab="campaigns" onclick="switchMenuTab('campaigns')" id="campaignsTabBtn">
                     <span class="nav-icon">🎯</span>
-                    Campaigns
+                    <span class="nav-label">Campaigns</span>
                 </button>
                 <button class="menu-nav-btn" data-tab="teams" onclick="switchMenuTab('teams')" id="teamsTabBtn" style="display: none;">
                     <span class="nav-icon">👥</span>
-                    Teams
+                    <span class="nav-label">Teams</span>
                 </button>
                 <button class="menu-nav-btn" data-tab="share" onclick="switchMenuTab('share')">
                     <span class="nav-icon">📤</span>
-                    Share
+                    <span class="nav-label">Share</span>
                 </button>
                 <button class="menu-nav-btn" data-tab="coach" onclick="switchMenuTab('coach')" id="coachTabBtn" style="display: none;">
                     <span class="nav-icon">🏋️</span>
-                    Coach
+                    <span class="nav-label">Coach</span>
                 </button>
             </div>
 
             <!-- Workout Tab -->
             <div class="menu-tab-content active" id="tab-workout">
-                <h2 class="workout-title">SELECT WORKOUT</h2>
-                <div class="workout-grid">
-                    <div class="workout-card push" onclick="startWorkout('push')">
-                        <div class="icon">💪</div>
-                        <div>
-                            <h3>PUSH</h3>
-                            <p>Chest, Shoulders, Triceps</p>
+                <!-- Select Workout Section (Collapsible) -->
+                <div class="custom-section collapsible">
+                    <div class="section-header" onclick="toggleSection('selectWorkoutSection')">
+                        <div class="section-title">
+                            <span class="collapse-icon" id="selectWorkoutSection-icon">▼</span>
+                            <h3>SELECT WORKOUT</h3>
                         </div>
                     </div>
-                    <div class="workout-card pull" onclick="startWorkout('pull')">
-                        <div class="icon">🏋️</div>
-                        <div>
-                            <h3>PULL</h3>
-                            <p>Back, Biceps, Rear Delts</p>
+                    <div class="section-content" id="selectWorkoutSection">
+                        <div class="workout-gallery" id="workoutGallery">
+                            <!-- Default workouts -->
+                            <div class="workout-tile push" onclick="startWorkout('push')">
+                                <div class="tile-icon">💪</div>
+                                <div class="tile-name">PUSH</div>
+                            </div>
+                            <div class="workout-tile pull" onclick="startWorkout('pull')">
+                                <div class="tile-icon">🏋️</div>
+                                <div class="tile-name">PULL</div>
+                            </div>
+                            <div class="workout-tile legs" onclick="startWorkout('legs')">
+                                <div class="tile-icon">🦵</div>
+                                <div class="tile-name">LEGS</div>
+                            </div>
+                            <!-- Custom workouts will be appended here -->
                         </div>
-                    </div>
-                    <div class="workout-card legs" onclick="startWorkout('legs')">
-                        <div class="icon">🦵</div>
-                        <div>
-                            <h3>LEGS</h3>
-                            <p>Quads, Hamstrings, Calves</p>
-                        </div>
+                        <button class="more-workouts-btn" id="moreWorkoutsBtn" style="display: none;" onclick="openAllWorkoutsModal()">
+                            + MORE WORKOUTS
+                        </button>
                     </div>
                 </div>
 
@@ -416,7 +422,7 @@
                                 <div class="wkt-col-name">Workout</div>
                                 <div class="wkt-col-exercises">Exercises</div>
                                 <div class="wkt-col-last">Last Done</div>
-                                <div class="wkt-col-volume">Volume</div>
+                                <div class="wkt-col-volume">Tonnage</div>
                             </div>
                             <div class="workout-table-body" id="customWorkoutList"></div>
                         </div>
@@ -456,7 +462,7 @@
                         <div class="hist-col-workout">Workout</div>
                         <div class="hist-col-date">Date</div>
                         <div class="hist-col-sets">Sets</div>
-                        <div class="hist-col-volume">Volume</div>
+                        <div class="hist-col-volume">Tonnage</div>
                         <div class="hist-col-vs">vs Last</div>
                     </div>
                     <div class="history-table-body" id="historyList"></div>
@@ -477,7 +483,7 @@
                 </div>
 
                 <div class="chart-container">
-                    <div class="chart-title">WEEKLY VOLUME</div>
+                    <div class="chart-title">WEEKLY TONNAGE</div>
                     <div class="chart-area" id="volumeChart"></div>
                 </div>
             </div>
@@ -651,7 +657,7 @@
                 </div>
                 <div class="summary-stat">
                     <div class="summary-stat-value" id="summaryVolume">0</div>
-                    <div class="summary-stat-label">Volume (lbs)</div>
+                    <div class="summary-stat-label">Tonnage (lbs)</div>
                 </div>
                 <div class="summary-stat highlight">
                     <div class="summary-stat-value" id="summaryXP">+0</div>
@@ -709,7 +715,7 @@
                 </div>
                 <div class="profile-stat">
                     <div class="profile-stat-value" id="profileVolume">0</div>
-                    <div class="profile-stat-label">Total Volume</div>
+                    <div class="profile-stat-label">Total Tonnage</div>
                 </div>
                 <div class="profile-stat">
                     <div class="profile-stat-value" id="profileAchievementCount">0</div>
@@ -894,7 +900,7 @@
                 <div class="leaderboard-filters">
                     <button class="filter-btn active" onclick="changeLeaderboardType('xp')">XP</button>
                     <button class="filter-btn" onclick="changeLeaderboardType('workouts')">Workouts</button>
-                    <button class="filter-btn" onclick="changeLeaderboardType('volume')">Volume</button>
+                    <button class="filter-btn" onclick="changeLeaderboardType('volume')">Tonnage</button>
                 </div>
                 <div class="leaderboard-list" id="teamLeaderboard"></div>
             </div>
@@ -936,7 +942,7 @@
             </div>
             <div class="input-group">
                 <label>DESCRIPTION</label>
-                <textarea id="newTeamDesc" class="dc-input textarea-md" placeholder="A team for dedicated lifters..." maxlength="200"></textarea>
+                <textarea id="newTeamDescription" class="dc-input textarea-md" placeholder="A team for dedicated lifters..." maxlength="200"></textarea>
             </div>
             <div class="modal-buttons">
                 <button class="dc-button secondary" onclick="closeCreateTeamModal()">CANCEL</button>
@@ -976,7 +982,7 @@
                 <select id="challengeType" class="dc-input">
                     <option value="xp">Total XP</option>
                     <option value="workouts">Workouts Completed</option>
-                    <option value="volume">Volume (lbs)</option>
+                    <option value="volume">Tonnage (lbs)</option>
                 </select>
             </div>
             <div class="input-group">
@@ -1440,7 +1446,7 @@
                         <div class="pr-hist-col-date">Date</div>
                         <div class="pr-hist-col-sets">Sets</div>
                         <div class="pr-hist-col-best">Best Set</div>
-                        <div class="pr-hist-col-volume">Volume</div>
+                        <div class="pr-hist-col-volume">Tonnage</div>
                     </div>
                     <div class="pr-history-body" id="prDetailHistoryBody"></div>
                 </div>
