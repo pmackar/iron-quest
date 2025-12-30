@@ -911,6 +911,199 @@ function handleAvatarUpload(event) {
     reader.readAsDataURL(file);
 }
 
+// ============================================
+// CSV IMPORT (Strong App Format)
+// ============================================
+
+let importedWorkoutData = null;
+
+function triggerCsvImport() {
+    document.getElementById('csvFileInput').click();
+}
+
+function handleCsvImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const statusEl = document.getElementById('importStatus');
+    statusEl.innerHTML = '<span style="color: var(--text-muted);">Processing...</span>';
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const csvData = e.target.result;
+            const result = parseStrongCsv(csvData);
+            importedWorkoutData = result;
+
+            statusEl.innerHTML = `
+                <span style="color: var(--accent-green);">
+                    Imported ${result.workouts.length} workouts, ${result.totalSets} sets, ${formatNumber(result.totalVolume)} lbs
+                </span>
+            `;
+            showToast(`IMPORTED ${result.workouts.length} WORKOUTS!`);
+        } catch (error) {
+            console.error('CSV import error:', error);
+            statusEl.innerHTML = `<span style="color: var(--accent-red);">Error: ${error.message}</span>`;
+        }
+    };
+    reader.readAsText(file);
+}
+
+function parseStrongCsv(csvText) {
+    const lines = csvText.split('\n');
+    if (lines.length < 2) throw new Error('CSV file is empty');
+
+    // Parse header
+    const header = parseCSVLine(lines[0]);
+    const dateIdx = header.indexOf('Date');
+    const workoutNameIdx = header.indexOf('Workout Name');
+    const durationIdx = header.indexOf('Duration');
+    const exerciseNameIdx = header.indexOf('Exercise Name');
+    const setOrderIdx = header.indexOf('Set Order');
+    const weightIdx = header.indexOf('Weight');
+    const repsIdx = header.indexOf('Reps');
+    const notesIdx = header.indexOf('Notes');
+    const workoutNotesIdx = header.indexOf('Workout Notes');
+
+    if (dateIdx === -1 || exerciseNameIdx === -1) {
+        throw new Error('Invalid CSV format. Expected Strong app export.');
+    }
+
+    // Group rows by workout (same date + workout name)
+    const workoutMap = new Map();
+    const personalRecords = {};
+    let totalSets = 0;
+    let totalVolume = 0;
+
+    for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+
+        const cols = parseCSVLine(line);
+        const date = cols[dateIdx];
+        const workoutName = cols[workoutNameIdx] || 'Workout';
+        const exerciseName = cols[exerciseNameIdx];
+        const weight = parseFloat(cols[weightIdx]) || 0;
+        const reps = parseInt(cols[repsIdx]) || 0;
+        const setOrder = parseInt(cols[setOrderIdx]) || 1;
+
+        if (!date || !exerciseName) continue;
+
+        const workoutKey = `${date}_${workoutName}`;
+
+        if (!workoutMap.has(workoutKey)) {
+            workoutMap.set(workoutKey, {
+                date: date,
+                name: workoutName,
+                duration: parseDuration(cols[durationIdx]),
+                notes: cols[workoutNotesIdx] || '',
+                exercises: new Map()
+            });
+        }
+
+        const workout = workoutMap.get(workoutKey);
+        const exerciseId = normalizeExerciseName(exerciseName);
+
+        if (!workout.exercises.has(exerciseId)) {
+            workout.exercises.set(exerciseId, {
+                id: exerciseId,
+                name: exerciseName,
+                sets: []
+            });
+        }
+
+        workout.exercises.get(exerciseId).sets.push({
+            setNumber: setOrder,
+            weight: Math.round(weight),
+            reps: reps
+        });
+
+        // Track totals
+        totalSets++;
+        totalVolume += weight * reps;
+
+        // Track PRs (highest weight for each exercise)
+        if (weight > (personalRecords[exerciseId] || 0)) {
+            personalRecords[exerciseId] = Math.round(weight);
+        }
+    }
+
+    // Convert to workout array
+    const workouts = Array.from(workoutMap.values()).map(w => ({
+        id: generateId(),
+        name: w.name,
+        type: categorizeWorkout(w.name),
+        date: w.date,
+        duration: w.duration,
+        notes: w.notes,
+        exercises: Array.from(w.exercises.values()),
+        totalSets: Array.from(w.exercises.values()).reduce((sum, ex) => sum + ex.sets.length, 0),
+        totalVolume: Array.from(w.exercises.values()).reduce((sum, ex) =>
+            sum + ex.sets.reduce((s, set) => s + (set.weight * set.reps), 0), 0)
+    }));
+
+    // Sort by date (oldest first)
+    workouts.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    return {
+        workouts,
+        totalSets,
+        totalVolume: Math.round(totalVolume),
+        personalRecords
+    };
+}
+
+function parseCSVLine(line) {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') {
+            inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+            result.push(current.trim());
+            current = '';
+        } else {
+            current += char;
+        }
+    }
+    result.push(current.trim());
+    return result;
+}
+
+function parseDuration(durationStr) {
+    if (!durationStr) return 0;
+    let seconds = 0;
+    const hourMatch = durationStr.match(/(\d+)\s*h/);
+    const minMatch = durationStr.match(/(\d+)\s*m/);
+    if (hourMatch) seconds += parseInt(hourMatch[1]) * 3600;
+    if (minMatch) seconds += parseInt(minMatch[1]) * 60;
+    return seconds;
+}
+
+function normalizeExerciseName(name) {
+    // Convert exercise name to a consistent ID format
+    return name.toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_|_$/g, '');
+}
+
+function categorizeWorkout(name) {
+    const nameLower = name.toLowerCase();
+    if (nameLower.includes('push') || nameLower.includes('chest') || nameLower.includes('bench')) return 'push';
+    if (nameLower.includes('pull') || nameLower.includes('back')) return 'pull';
+    if (nameLower.includes('leg') || nameLower.includes('squat')) return 'legs';
+    if (nameLower.includes('upper')) return 'upper';
+    if (nameLower.includes('lower')) return 'lower';
+    return 'full';
+}
+
+function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+}
+
 function getAvatarHTML(avatar, customAvatar = null) {
     if (avatar === 'custom' && customAvatar) {
         return `<img src="${customAvatar}" alt="Avatar" class="custom-avatar-img">`;
@@ -1527,6 +1720,10 @@ function startGame() {
     // Calculate total height in inches
     const totalHeight = (heightFeet * 12) + heightInches;
 
+    // Check if we have imported data
+    const hasImport = importedWorkoutData && importedWorkoutData.workouts.length > 0;
+    const importStats = hasImport ? calculateLevelFromImport(importedWorkoutData) : null;
+
     gameState = {
         name: nameInput.value.toUpperCase() || 'PLAYER_01',
         playerName: nameInput.value.toUpperCase() || 'PLAYER_01', // Keep for backwards compat
@@ -1537,17 +1734,22 @@ function startGame() {
         heightInches: heightInches,
         weight: weight,
         gender: gender,
-        level: 1,
-        xp: 0,
-        xpToNext: 100,
-        totalWorkouts: 0,
-        totalSets: 0,
-        totalWeight: 0,
+        level: hasImport ? importStats.level : 1,
+        xp: hasImport ? importStats.xp : 0,
+        xpToNext: hasImport ? importStats.xpToNext : 100,
+        totalWorkouts: hasImport ? importedWorkoutData.workouts.length : 0,
+        totalSets: hasImport ? importedWorkoutData.totalSets : 0,
+        totalWeight: hasImport ? importedWorkoutData.totalVolume : 0,
         achievements: [],
-        personalRecords: {},
-        workoutHistory: [],
-        createdAt: new Date().toISOString()
+        personalRecords: hasImport ? importedWorkoutData.personalRecords : {},
+        workoutHistory: hasImport ? importedWorkoutData.workouts : [],
+        createdAt: new Date().toISOString(),
+        testCompletedAt: hasImport ? new Date().toISOString() : null // Skip strength test if importing
     };
+
+    // Clear imported data after use
+    importedWorkoutData = null;
+    document.getElementById('importStatus').innerHTML = '';
 
     saveSlots[currentSlotIndex] = gameState;
     saveSaveSlots();
@@ -1566,9 +1768,42 @@ function startGame() {
         }).catch(err => console.error('Failed to sync profile:', err));
     }
 
+    // Skip strength test if importing data, go directly to menu
+    if (hasImport) {
+        showToast(`WELCOME BACK, ${gameState.name}!`);
+        showScreen('menuScreen');
+        return;
+    }
+
     // Go to strength test for new characters
     renderStrengthTest();
     showScreen('testScreen');
+}
+
+function calculateLevelFromImport(importData) {
+    // Calculate XP based on imported stats
+    // XP formula: 10 per workout + 1 per set + 0.01 per lb volume
+    const workoutXp = importData.workouts.length * 10;
+    const setXp = importData.totalSets;
+    const volumeXp = Math.floor(importData.totalVolume * 0.01);
+    const totalXp = workoutXp + setXp + volumeXp;
+
+    // Calculate level from XP (each level requires more XP)
+    let level = 1;
+    let xpForLevel = 100;
+    let remainingXp = totalXp;
+
+    while (remainingXp >= xpForLevel && level < 100) {
+        remainingXp -= xpForLevel;
+        level++;
+        xpForLevel = Math.floor(100 * Math.pow(1.1, level - 1)); // 10% more each level
+    }
+
+    return {
+        level,
+        xp: remainingXp,
+        xpToNext: xpForLevel
+    };
 }
 
 // ============================================
