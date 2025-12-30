@@ -7,19 +7,32 @@
     <meta name="description" content="Transform every rep into XP. Track workouts, unlock achievements, compete with your squad. The RPG-style fitness tracker that makes gains addictive.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         :root {
-            --gold: #D4A853;
-            --gold-light: #F4D58D;
-            --gold-dark: #B8860B;
-            --bg-dark: #0a0a0f;
-            --bg-card: rgba(255, 255, 255, 0.03);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --glass-highlight: rgba(255, 255, 255, 0.1);
+            /* SNES Platformer Palette */
+            --sky-light: #87CEEB;
+            --sky-mid: #5BA3D9;
+            --sky-dark: #2E86C1;
+            --grass-light: #7FE07F;
+            --grass-mid: #32CD32;
+            --grass-dark: #228B22;
+            --gold: #FFD700;
+            --gold-light: #FFEB3B;
+            --gold-dark: #FFA000;
+            --coin-yellow: #FFE135;
+            --brick-red: #C0392B;
+            --pipe-green: #27AE60;
+            --cloud-white: #FFFFFF;
+
+            /* Modern accents */
+            --bg-dark: #1a1a2e;
+            --bg-card: rgba(255, 255, 255, 0.15);
+            --glass-border: rgba(255, 255, 255, 0.3);
+            --glass-highlight: rgba(255, 255, 255, 0.5);
             --text-primary: #ffffff;
-            --text-secondary: rgba(255, 255, 255, 0.7);
-            --text-muted: rgba(255, 255, 255, 0.4);
+            --text-secondary: rgba(255, 255, 255, 0.9);
+            --text-dark: #1a1a2e;
         }
 
         * {
@@ -34,13 +47,18 @@
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg-dark);
+            background: linear-gradient(180deg, var(--sky-light) 0%, var(--sky-mid) 50%, var(--sky-dark) 100%);
             color: var(--text-primary);
             overflow-x: hidden;
             line-height: 1.6;
+            min-height: 100vh;
         }
 
-        /* Animated Background */
+        .pixel-font {
+            font-family: 'Press Start 2P', cursive;
+        }
+
+        /* Animated Sky Background */
         .bg-animation {
             position: fixed;
             top: 0;
@@ -49,80 +67,161 @@
             height: 100%;
             z-index: -1;
             overflow: hidden;
+            background: linear-gradient(180deg,
+                #87CEEB 0%,
+                #5BA3D9 30%,
+                #4A90C2 60%,
+                #2E86C1 100%);
         }
 
-        .bg-animation::before {
+        /* Pixel Clouds */
+        .cloud {
+            position: absolute;
+            background: var(--cloud-white);
+            border-radius: 50px;
+            box-shadow:
+                0 8px 0 rgba(0,0,0,0.05),
+                inset 0 -8px 0 rgba(0,0,0,0.05);
+            animation: cloudFloat 30s linear infinite;
+        }
+
+        .cloud::before,
+        .cloud::after {
             content: '';
             position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background:
-                radial-gradient(ellipse at 20% 20%, rgba(212, 168, 83, 0.15) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
-                radial-gradient(ellipse at 40% 60%, rgba(59, 130, 246, 0.08) 0%, transparent 40%);
-            animation: bgFloat 20s ease-in-out infinite;
-        }
-
-        @keyframes bgFloat {
-            0%, 100% { transform: translate(0, 0) rotate(0deg); }
-            33% { transform: translate(2%, 2%) rotate(1deg); }
-            66% { transform: translate(-1%, 1%) rotate(-1deg); }
-        }
-
-        /* Floating Orbs */
-        .orb {
-            position: absolute;
+            background: var(--cloud-white);
             border-radius: 50%;
-            filter: blur(60px);
-            opacity: 0.5;
-            animation: orbFloat 15s ease-in-out infinite;
         }
 
-        .orb-1 {
-            width: 400px;
-            height: 400px;
-            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
-            top: 10%;
-            right: 10%;
-            animation-delay: 0s;
+        .cloud-1 {
+            width: 200px;
+            height: 60px;
+            top: 8%;
+            left: -200px;
+            animation-duration: 45s;
         }
+        .cloud-1::before { width: 80px; height: 80px; top: -40px; left: 30px; }
+        .cloud-1::after { width: 60px; height: 60px; top: -30px; left: 100px; }
 
-        .orb-2 {
-            width: 300px;
-            height: 300px;
-            background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%);
-            bottom: 20%;
-            left: 5%;
-            animation-delay: -5s;
+        .cloud-2 {
+            width: 150px;
+            height: 45px;
+            top: 15%;
+            left: -150px;
+            animation-duration: 55s;
+            animation-delay: -20s;
         }
+        .cloud-2::before { width: 60px; height: 60px; top: -30px; left: 20px; }
+        .cloud-2::after { width: 45px; height: 45px; top: -22px; left: 75px; }
 
-        .orb-3 {
-            width: 250px;
-            height: 250px;
-            background: linear-gradient(135deg, #3B82F6 0%, #06B6D4 100%);
-            top: 50%;
-            left: 30%;
+        .cloud-3 {
+            width: 180px;
+            height: 55px;
+            top: 25%;
+            left: -180px;
+            animation-duration: 50s;
+            animation-delay: -35s;
+        }
+        .cloud-3::before { width: 70px; height: 70px; top: -35px; left: 25px; }
+        .cloud-3::after { width: 55px; height: 55px; top: -27px; left: 90px; }
+
+        .cloud-4 {
+            width: 120px;
+            height: 36px;
+            top: 5%;
+            left: -120px;
+            animation-duration: 60s;
             animation-delay: -10s;
         }
+        .cloud-4::before { width: 48px; height: 48px; top: -24px; left: 16px; }
+        .cloud-4::after { width: 36px; height: 36px; top: -18px; left: 60px; }
 
-        @keyframes orbFloat {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            25% { transform: translate(30px, -30px) scale(1.05); }
-            50% { transform: translate(-20px, 20px) scale(0.95); }
-            75% { transform: translate(10px, 10px) scale(1.02); }
+        @keyframes cloudFloat {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(calc(100vw + 300px)); }
         }
 
-        /* Glass Card */
+        /* Floating Coins */
+        .coin {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 50%, var(--gold-dark) 100%);
+            border-radius: 50%;
+            box-shadow:
+                inset -4px -4px 0 rgba(0,0,0,0.2),
+                0 4px 8px rgba(0,0,0,0.2);
+            animation: coinBounce 2s ease-in-out infinite;
+        }
+
+        .coin::after {
+            content: '★';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 14px;
+            color: var(--gold-dark);
+        }
+
+        .coin-1 { top: 20%; right: 10%; animation-delay: 0s; }
+        .coin-2 { top: 40%; right: 5%; animation-delay: 0.3s; }
+        .coin-3 { top: 60%; right: 15%; animation-delay: 0.6s; }
+        .coin-4 { top: 30%; left: 8%; animation-delay: 0.2s; }
+        .coin-5 { top: 55%; left: 12%; animation-delay: 0.5s; }
+
+        @keyframes coinBounce {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(180deg); }
+        }
+
+        /* Pixel Stars */
+        .pixel-star {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: var(--gold-light);
+            animation: starTwinkle 1.5s ease-in-out infinite;
+        }
+
+        .pixel-star::before,
+        .pixel-star::after {
+            content: '';
+            position: absolute;
+            background: var(--gold-light);
+        }
+
+        .pixel-star::before {
+            width: 8px;
+            height: 8px;
+            top: -8px;
+            left: 0;
+        }
+
+        .pixel-star::after {
+            width: 8px;
+            height: 24px;
+            top: -8px;
+            left: -8px;
+            transform: rotate(90deg);
+            transform-origin: center;
+        }
+
+        @keyframes starTwinkle {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        /* Glass Card - Brighter for sky */
         .glass {
-            background: var(--bg-card);
+            background: rgba(255, 255, 255, 0.2);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
+            border: 2px solid rgba(255, 255, 255, 0.4);
             border-radius: 24px;
             position: relative;
             overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
 
         .glass::before {
@@ -131,8 +230,8 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--glass-highlight), transparent);
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
         }
 
         /* Navigation */
@@ -142,40 +241,49 @@
             left: 0;
             right: 0;
             z-index: 100;
-            padding: 20px 40px;
+            padding: 16px 40px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: rgba(10, 10, 15, 0.8);
+            background: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--glass-border);
+            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
         }
 
         .logo {
-            font-size: 24px;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 50%, var(--gold-dark) 100%);
+            font-family: 'Press Start 2P', cursive;
+            font-size: 18px;
+            background: linear-gradient(180deg, var(--gold-light) 0%, var(--gold) 50%, var(--gold-dark) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            text-shadow: 3px 3px 0 rgba(0,0,0,0.1);
+            filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.2));
         }
 
         .nav-cta {
-            padding: 12px 28px;
-            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
-            border: none;
+            padding: 14px 28px;
+            background: linear-gradient(180deg, var(--grass-light) 0%, var(--grass-mid) 100%);
+            border: 3px solid var(--grass-dark);
             border-radius: 50px;
-            color: #000;
-            font-weight: 700;
+            color: #fff;
+            font-weight: 800;
             font-size: 14px;
             cursor: pointer;
             transition: all 0.3s ease;
             text-decoration: none;
+            text-shadow: 1px 1px 0 rgba(0,0,0,0.3);
+            box-shadow: 0 4px 0 var(--grass-dark);
         }
 
         .nav-cta:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 40px rgba(212, 168, 83, 0.4);
+            box-shadow: 0 6px 0 var(--grass-dark);
+        }
+
+        .nav-cta:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 var(--grass-dark);
         }
 
         /* Hero Section */
@@ -189,7 +297,7 @@
         }
 
         .hero-content {
-            max-width: 800px;
+            max-width: 900px;
             text-align: center;
             z-index: 1;
         }
@@ -198,72 +306,83 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            padding: 8px 16px;
-            background: rgba(212, 168, 83, 0.1);
-            border: 1px solid rgba(212, 168, 83, 0.3);
+            padding: 10px 20px;
+            background: rgba(255, 215, 0, 0.3);
+            border: 2px solid var(--gold);
             border-radius: 50px;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--gold);
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-dark);
             margin-bottom: 24px;
+            font-family: 'Press Start 2P', cursive;
+            text-transform: uppercase;
         }
 
         .hero-badge::before {
-            content: '';
-            width: 8px;
-            height: 8px;
-            background: var(--gold);
-            border-radius: 50%;
-            animation: pulse 2s ease-in-out infinite;
+            content: '●';
+            color: var(--grass-mid);
+            animation: pulse 1s ease-in-out infinite;
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(1.2); }
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
         }
 
         h1 {
-            font-size: clamp(48px, 8vw, 80px);
-            font-weight: 900;
-            line-height: 1.1;
+            font-family: 'Press Start 2P', cursive;
+            font-size: clamp(28px, 5vw, 48px);
+            line-height: 1.4;
             margin-bottom: 24px;
-            letter-spacing: -2px;
+            color: #fff;
+            text-shadow:
+                4px 4px 0 var(--sky-dark),
+                -1px -1px 0 rgba(255,255,255,0.5);
         }
 
         h1 span {
-            background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 50%, var(--gold-dark) 100%);
+            background: linear-gradient(180deg, var(--gold-light) 0%, var(--gold) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            filter: drop-shadow(3px 3px 0 var(--gold-dark));
         }
 
         .hero-subtitle {
-            font-size: clamp(18px, 2.5vw, 22px);
-            color: var(--text-secondary);
-            max-width: 600px;
+            font-size: clamp(16px, 2vw, 20px);
+            color: #fff;
+            max-width: 650px;
             margin: 0 auto 40px;
-            line-height: 1.7;
+            line-height: 1.8;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
         }
 
         .hero-cta {
             display: inline-flex;
             align-items: center;
             gap: 12px;
-            padding: 18px 40px;
-            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
-            border: none;
+            padding: 20px 44px;
+            background: linear-gradient(180deg, var(--gold-light) 0%, var(--gold) 100%);
+            border: 4px solid var(--gold-dark);
             border-radius: 60px;
-            color: #000;
-            font-weight: 700;
+            color: var(--text-dark);
+            font-weight: 800;
             font-size: 18px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
             text-decoration: none;
+            box-shadow: 0 6px 0 var(--gold-dark);
+            text-shadow: none;
         }
 
         .hero-cta:hover {
-            transform: translateY(-3px) scale(1.02);
-            box-shadow: 0 20px 60px rgba(212, 168, 83, 0.5);
+            transform: translateY(-3px);
+            box-shadow: 0 9px 0 var(--gold-dark);
+        }
+
+        .hero-cta:active {
+            transform: translateY(3px);
+            box-shadow: 0 3px 0 var(--gold-dark);
         }
 
         .hero-cta svg {
@@ -279,10 +398,13 @@
         .hero-stats {
             display: flex;
             justify-content: center;
-            gap: 60px;
+            gap: 40px;
             margin-top: 60px;
-            padding-top: 40px;
-            border-top: 1px solid var(--glass-border);
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
         }
 
         .hero-stat {
@@ -290,22 +412,24 @@
         }
 
         .hero-stat-value {
-            font-size: 36px;
-            font-weight: 800;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 24px;
             color: var(--gold);
+            text-shadow: 2px 2px 0 var(--gold-dark);
         }
 
         .hero-stat-label {
-            font-size: 13px;
-            color: var(--text-muted);
+            font-size: 12px;
+            color: #fff;
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-top: 4px;
+            margin-top: 8px;
+            font-weight: 600;
         }
 
         /* Mockup Section */
         .mockup-section {
-            padding: 80px 40px;
+            padding: 60px 40px;
             position: relative;
         }
 
@@ -313,25 +437,25 @@
             max-width: 1200px;
             margin: 0 auto;
             display: flex;
-            gap: 40px;
+            gap: 30px;
             align-items: center;
             justify-content: center;
             flex-wrap: wrap;
         }
 
         .mockup-phone {
-            width: 280px;
-            height: 580px;
-            background: linear-gradient(180deg, #1a1a24 0%, #0d0d14 100%);
-            border-radius: 40px;
-            border: 3px solid #2a2a3a;
-            padding: 12px;
+            width: 260px;
+            height: 540px;
+            background: linear-gradient(180deg, #2a2a3e 0%, #1a1a28 100%);
+            border-radius: 36px;
+            border: 4px solid #3a3a4e;
+            padding: 10px;
             position: relative;
             box-shadow:
-                0 50px 100px rgba(0, 0, 0, 0.5),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+                0 20px 60px rgba(0, 0, 0, 0.3),
+                inset 0 2px 0 rgba(255, 255, 255, 0.1);
             transform: perspective(1000px) rotateY(-5deg);
-            transition: transform 0.5s ease;
+            transition: transform 0.4s ease;
         }
 
         .mockup-phone:hover {
@@ -339,12 +463,12 @@
         }
 
         .mockup-phone:nth-child(2) {
-            transform: perspective(1000px) rotateY(0deg) scale(1.05);
+            transform: perspective(1000px) rotateY(0deg) scale(1.08);
             z-index: 2;
         }
 
         .mockup-phone:nth-child(2):hover {
-            transform: perspective(1000px) rotateY(0deg) scale(1.08) translateY(-10px);
+            transform: perspective(1000px) rotateY(0deg) scale(1.12) translateY(-10px);
         }
 
         .mockup-phone:nth-child(3) {
@@ -356,12 +480,12 @@
         }
 
         .mockup-notch {
-            width: 100px;
-            height: 28px;
+            width: 90px;
+            height: 26px;
             background: #000;
             border-radius: 20px;
             position: absolute;
-            top: 20px;
+            top: 18px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 10;
@@ -371,67 +495,90 @@
             width: 100%;
             height: 100%;
             background: linear-gradient(180deg, #12121a 0%, #0a0a10 100%);
-            border-radius: 32px;
+            border-radius: 28px;
             overflow: hidden;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 40px 20px;
+            padding: 40px 16px;
             text-align: center;
         }
 
         .mockup-screen .screen-icon {
-            font-size: 48px;
+            font-size: 44px;
             margin-bottom: 16px;
         }
 
         .mockup-screen .screen-title {
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 8px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
+            margin-bottom: 12px;
+            color: var(--gold);
         }
 
         .mockup-screen .screen-desc {
             font-size: 12px;
-            color: var(--text-muted);
+            color: rgba(255,255,255,0.6);
+        }
+
+        /* Ground/Grass Section Divider */
+        .grass-divider {
+            height: 40px;
+            background:
+                linear-gradient(180deg, transparent 0%, var(--grass-mid) 40%, var(--grass-dark) 100%);
+            position: relative;
+            margin-top: 40px;
+        }
+
+        .grass-divider::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: 0;
+            right: 0;
+            height: 30px;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 30'%3E%3Cpath fill='%2332CD32' d='M0,30 L5,10 L10,30 L15,8 L20,30 L25,12 L30,30 L35,6 L40,30 L45,14 L50,30 L55,8 L60,30 L65,10 L70,30 L75,12 L80,30 L85,6 L90,30 L95,14 L100,30 Z'/%3E%3C/svg%3E") repeat-x;
+            background-size: 100px 30px;
         }
 
         /* Features Section */
         .features {
-            padding: 100px 40px;
+            padding: 80px 40px;
             max-width: 1400px;
             margin: 0 auto;
+            background: linear-gradient(180deg, var(--grass-dark) 0%, var(--bg-dark) 15%);
         }
 
         .section-header {
             text-align: center;
-            margin-bottom: 80px;
+            margin-bottom: 60px;
         }
 
         .section-tag {
             display: inline-block;
-            padding: 6px 14px;
-            background: rgba(212, 168, 83, 0.1);
-            border: 1px solid rgba(212, 168, 83, 0.2);
-            border-radius: 50px;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--gold);
+            padding: 8px 16px;
+            background: var(--gold);
+            border: 3px solid var(--gold-dark);
+            border-radius: 8px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            color: var(--text-dark);
             text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 0 var(--gold-dark);
         }
 
         .section-title {
-            font-size: clamp(36px, 5vw, 52px);
-            font-weight: 800;
+            font-family: 'Press Start 2P', cursive;
+            font-size: clamp(20px, 4vw, 32px);
             margin-bottom: 16px;
-            letter-spacing: -1px;
+            color: #fff;
+            text-shadow: 3px 3px 0 rgba(0,0,0,0.3);
         }
 
         .section-subtitle {
-            font-size: 18px;
+            font-size: 16px;
             color: var(--text-secondary);
             max-width: 600px;
             margin: 0 auto;
@@ -439,169 +586,196 @@
 
         .features-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 24px;
         }
 
         .feature-card {
-            padding: 40px;
+            padding: 32px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
             transition: all 0.3s ease;
         }
 
         .feature-card:hover {
             transform: translateY(-8px);
-            border-color: rgba(212, 168, 83, 0.3);
-            box-shadow: 0 20px 60px rgba(212, 168, 83, 0.1);
+            border-color: var(--gold);
+            box-shadow: 0 8px 0 rgba(212, 168, 83, 0.3);
         }
 
         .feature-icon {
             width: 60px;
             height: 60px;
-            background: linear-gradient(135deg, rgba(212, 168, 83, 0.2) 0%, rgba(212, 168, 83, 0.05) 100%);
-            border-radius: 16px;
+            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 28px;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 0 var(--gold-dark);
         }
 
         .feature-title {
-            font-size: 22px;
-            font-weight: 700;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
             margin-bottom: 12px;
+            color: var(--gold);
         }
 
         .feature-desc {
-            font-size: 15px;
+            font-size: 14px;
             color: var(--text-secondary);
             line-height: 1.7;
         }
 
         /* Gamification Section */
         .gamification {
-            padding: 100px 40px;
-            background: linear-gradient(180deg, transparent 0%, rgba(212, 168, 83, 0.03) 50%, transparent 100%);
+            padding: 80px 40px;
+            background: var(--bg-dark);
         }
 
         .gamification-content {
-            max-width: 1200px;
+            max-width: 1100px;
             margin: 0 auto;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 80px;
+            gap: 60px;
             align-items: center;
         }
 
         .gamification-text h2 {
-            font-size: clamp(32px, 4vw, 44px);
-            font-weight: 800;
+            font-family: 'Press Start 2P', cursive;
+            font-size: clamp(16px, 3vw, 24px);
             margin-bottom: 24px;
-            letter-spacing: -1px;
+            color: #fff;
+            line-height: 1.6;
+        }
+
+        .gamification-text h2 span {
+            color: var(--gold);
         }
 
         .gamification-text p {
-            font-size: 17px;
+            font-size: 15px;
             color: var(--text-secondary);
-            margin-bottom: 32px;
+            margin-bottom: 24px;
             line-height: 1.8;
         }
 
         .xp-preview {
-            padding: 32px;
+            padding: 28px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
         }
 
         .xp-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
 
         .xp-level {
-            font-size: 14px;
-            font-weight: 600;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 11px;
             color: var(--gold);
         }
 
         .xp-amount {
-            font-size: 13px;
+            font-size: 12px;
             color: var(--text-muted);
         }
 
         .xp-bar {
-            height: 12px;
+            height: 20px;
             background: rgba(255, 255, 255, 0.1);
-            border-radius: 6px;
+            border-radius: 10px;
             overflow: hidden;
             margin-bottom: 24px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
         }
 
         .xp-fill {
             height: 100%;
             width: 68%;
-            background: linear-gradient(90deg, var(--gold-dark) 0%, var(--gold) 50%, var(--gold-light) 100%);
-            border-radius: 6px;
+            background: linear-gradient(90deg, var(--grass-mid) 0%, var(--grass-light) 50%, var(--gold) 100%);
+            border-radius: 8px;
             animation: xpGlow 2s ease-in-out infinite;
+            position: relative;
+        }
+
+        .xp-fill::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 4px;
+            right: 4px;
+            height: 6px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 4px;
         }
 
         @keyframes xpGlow {
-            0%, 100% { box-shadow: 0 0 10px rgba(212, 168, 83, 0.5); }
-            50% { box-shadow: 0 0 20px rgba(212, 168, 83, 0.8); }
+            0%, 100% { box-shadow: 0 0 10px rgba(50, 205, 50, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(50, 205, 50, 0.8); }
         }
 
         .xp-stats {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
+            gap: 12px;
         }
 
         .xp-stat {
             text-align: center;
-            padding: 16px;
-            background: rgba(255, 255, 255, 0.03);
+            padding: 16px 8px;
+            background: rgba(255, 255, 255, 0.05);
             border-radius: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
         }
 
         .xp-stat-value {
-            font-size: 24px;
-            font-weight: 800;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 14px;
             color: var(--gold);
         }
 
         .xp-stat-label {
-            font-size: 11px;
+            font-size: 10px;
             color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            margin-top: 4px;
+            margin-top: 6px;
         }
 
         /* Roadmap Section */
         .roadmap {
-            padding: 100px 40px;
-            max-width: 1000px;
+            padding: 80px 40px;
+            max-width: 900px;
             margin: 0 auto;
+            background: var(--bg-dark);
         }
 
         .roadmap-timeline {
             position: relative;
-            padding-left: 40px;
+            padding-left: 50px;
         }
 
         .roadmap-timeline::before {
             content: '';
             position: absolute;
-            left: 7px;
+            left: 11px;
             top: 0;
             bottom: 0;
-            width: 2px;
-            background: linear-gradient(180deg, var(--gold) 0%, rgba(212, 168, 83, 0.2) 100%);
+            width: 4px;
+            background: linear-gradient(180deg, var(--gold) 0%, var(--grass-mid) 50%, var(--sky-mid) 100%);
+            border-radius: 2px;
         }
 
         .roadmap-item {
             position: relative;
-            padding-bottom: 48px;
+            padding-bottom: 40px;
         }
 
         .roadmap-item:last-child {
@@ -610,38 +784,39 @@
 
         .roadmap-dot {
             position: absolute;
-            left: -40px;
+            left: -50px;
             top: 4px;
-            width: 16px;
-            height: 16px;
+            width: 24px;
+            height: 24px;
             background: var(--gold);
             border-radius: 50%;
-            box-shadow: 0 0 20px rgba(212, 168, 83, 0.5);
+            border: 4px solid var(--bg-dark);
+            box-shadow: 0 0 0 3px var(--gold);
         }
 
         .roadmap-dot.upcoming {
             background: var(--bg-dark);
-            border: 2px solid var(--gold);
-            box-shadow: none;
+            border: 4px solid var(--sky-mid);
+            box-shadow: 0 0 0 3px var(--sky-mid);
         }
 
         .roadmap-phase {
-            font-size: 12px;
-            font-weight: 600;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 9px;
             color: var(--gold);
             text-transform: uppercase;
-            letter-spacing: 1px;
             margin-bottom: 8px;
         }
 
         .roadmap-title {
-            font-size: 22px;
+            font-size: 18px;
             font-weight: 700;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
+            color: #fff;
         }
 
         .roadmap-desc {
-            font-size: 15px;
+            font-size: 14px;
             color: var(--text-secondary);
             line-height: 1.7;
         }
@@ -650,79 +825,89 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 4px 12px;
-            border-radius: 50px;
+            padding: 6px 14px;
+            border-radius: 8px;
             font-size: 11px;
-            font-weight: 600;
+            font-weight: 700;
             margin-top: 12px;
         }
 
         .roadmap-status.live {
-            background: rgba(34, 197, 94, 0.1);
-            color: #22C55E;
-        }
-
-        .roadmap-status.building {
-            background: rgba(59, 130, 246, 0.1);
-            color: #3B82F6;
+            background: var(--grass-mid);
+            color: #fff;
+            box-shadow: 0 3px 0 var(--grass-dark);
         }
 
         .roadmap-status.planned {
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text-muted);
+            background: rgba(91, 163, 217, 0.2);
+            color: var(--sky-light);
+            border: 2px solid var(--sky-mid);
         }
 
         /* CTA Section */
         .cta-section {
-            padding: 100px 40px;
-            text-align: center;
+            padding: 80px 40px;
+            background: linear-gradient(180deg, var(--bg-dark) 0%, var(--sky-dark) 100%);
         }
 
         .cta-card {
             max-width: 700px;
             margin: 0 auto;
-            padding: 60px;
-            background: linear-gradient(135deg, rgba(212, 168, 83, 0.1) 0%, rgba(212, 168, 83, 0.02) 100%);
-            border: 1px solid rgba(212, 168, 83, 0.2);
+            padding: 50px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 3px solid var(--gold);
+            text-align: center;
+            box-shadow: 0 8px 0 var(--gold-dark);
         }
 
         .cta-card h2 {
-            font-size: clamp(28px, 4vw, 40px);
-            font-weight: 800;
+            font-family: 'Press Start 2P', cursive;
+            font-size: clamp(14px, 3vw, 20px);
             margin-bottom: 16px;
+            color: #fff;
+            line-height: 1.6;
         }
 
         .cta-card p {
-            font-size: 17px;
+            font-size: 15px;
             color: var(--text-secondary);
-            margin-bottom: 32px;
+            margin-bottom: 28px;
         }
 
         /* Footer */
         footer {
-            padding: 40px;
+            padding: 30px 40px;
             text-align: center;
-            border-top: 1px solid var(--glass-border);
+            background: var(--sky-dark);
+            border-top: 4px solid var(--grass-mid);
         }
 
         footer p {
-            font-size: 14px;
-            color: var(--text-muted);
+            font-size: 13px;
+            color: rgba(255,255,255,0.7);
+        }
+
+        footer p span {
+            color: var(--gold);
         }
 
         /* Responsive */
         @media (max-width: 900px) {
             nav {
-                padding: 16px 24px;
+                padding: 14px 20px;
+            }
+
+            .logo {
+                font-size: 14px;
             }
 
             .hero {
-                padding: 100px 24px 60px;
+                padding: 100px 20px 60px;
             }
 
             .hero-stats {
                 flex-direction: column;
-                gap: 24px;
+                gap: 20px;
             }
 
             .mockup-container {
@@ -742,16 +927,12 @@
                 gap: 40px;
             }
 
-            .features {
-                padding: 60px 24px;
-            }
-
-            .roadmap {
-                padding: 60px 24px;
+            .features, .roadmap {
+                padding: 60px 20px;
             }
 
             .cta-card {
-                padding: 40px 24px;
+                padding: 30px 20px;
             }
         }
 
@@ -761,20 +942,39 @@
             }
 
             .feature-card {
-                padding: 28px;
+                padding: 24px;
             }
 
             .mockup-phone {
-                width: 240px;
-                height: 500px;
+                width: 220px;
+                height: 460px;
             }
 
             .hero-badge {
-                font-size: 11px;
+                font-size: 9px;
+                padding: 8px 14px;
+            }
+
+            .hero-stat-value {
+                font-size: 18px;
             }
 
             .xp-stats {
                 grid-template-columns: 1fr;
+            }
+
+            .nav-cta {
+                padding: 10px 18px;
+                font-size: 12px;
+            }
+
+            .coin {
+                width: 20px;
+                height: 20px;
+            }
+
+            .coin::after {
+                font-size: 10px;
             }
         }
     </style>
@@ -782,29 +982,38 @@
 <body>
     <!-- Animated Background -->
     <div class="bg-animation">
-        <div class="orb orb-1"></div>
-        <div class="orb orb-2"></div>
-        <div class="orb orb-3"></div>
+        <!-- Pixel Clouds -->
+        <div class="cloud cloud-1"></div>
+        <div class="cloud cloud-2"></div>
+        <div class="cloud cloud-3"></div>
+        <div class="cloud cloud-4"></div>
+
+        <!-- Floating Coins -->
+        <div class="coin coin-1"></div>
+        <div class="coin coin-2"></div>
+        <div class="coin coin-3"></div>
+        <div class="coin coin-4"></div>
+        <div class="coin coin-5"></div>
     </div>
 
     <!-- Navigation -->
     <nav>
         <div class="logo">IRON QUEST</div>
-        <a href="app.html" class="nav-cta">Enter the Arena</a>
+        <a href="app.html" class="nav-cta">Play Now!</a>
     </nav>
 
     <!-- Hero Section -->
     <section class="hero">
         <div class="hero-content">
-            <div class="hero-badge">Now in Open Beta</div>
+            <div class="hero-badge">Open Beta</div>
             <h1>Level Up Your <span>Gains</span></h1>
             <p class="hero-subtitle">
                 Transform every rep into XP. Track your lifts, unlock legendary achievements,
-                and compete with your squad. The RPG-style fitness tracker that makes gains addictive.
+                and compete with your squad. The RPG fitness tracker that makes gains addictive.
             </p>
             <a href="app.html" class="hero-cta">
                 Start Your Quest
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M5 12h14M12 5l7 7-7 7"/>
                 </svg>
             </a>
@@ -818,7 +1027,7 @@
                     <div class="hero-stat-label">Achievements</div>
                 </div>
                 <div class="hero-stat">
-                    <div class="hero-stat-value">&infin;</div>
+                    <div class="hero-stat-value">∞</div>
                     <div class="hero-stat-label">XP to Earn</div>
                 </div>
             </div>
@@ -831,67 +1040,70 @@
             <div class="mockup-phone">
                 <div class="mockup-notch"></div>
                 <div class="mockup-screen">
-                    <div class="screen-icon">&#127947;</div>
+                    <div class="screen-icon">🏋️</div>
                     <div class="screen-title">Track Workouts</div>
-                    <div class="screen-desc">Log sets, reps & weight with one tap</div>
+                    <div class="screen-desc">Log sets, reps & weight</div>
                 </div>
             </div>
             <div class="mockup-phone">
                 <div class="mockup-notch"></div>
                 <div class="mockup-screen">
-                    <div class="screen-icon">&#9876;</div>
+                    <div class="screen-icon">⚔️</div>
                     <div class="screen-title">Level Up</div>
-                    <div class="screen-desc">Earn XP and unlock achievements</div>
+                    <div class="screen-desc">Earn XP & achievements</div>
                 </div>
             </div>
             <div class="mockup-phone">
                 <div class="mockup-notch"></div>
                 <div class="mockup-screen">
-                    <div class="screen-icon">&#128081;</div>
+                    <div class="screen-icon">👑</div>
                     <div class="screen-title">Compete</div>
-                    <div class="screen-desc">Join teams and crush leaderboards</div>
+                    <div class="screen-desc">Crush the leaderboards</div>
                 </div>
             </div>
         </div>
     </section>
+
+    <!-- Grass Divider -->
+    <div class="grass-divider"></div>
 
     <!-- Features Section -->
     <section class="features">
         <div class="section-header">
             <div class="section-tag">Power-Ups</div>
             <h2 class="section-title">Forged for Warriors</h2>
-            <p class="section-subtitle">Every feature designed to maximize your gains and keep you coming back for more.</p>
+            <p class="section-subtitle">Every feature designed to maximize your gains and keep you coming back.</p>
         </div>
         <div class="features-grid">
             <div class="feature-card glass">
-                <div class="feature-icon">&#127942;</div>
-                <h3 class="feature-title">XP & Leveling System</h3>
-                <p class="feature-desc">Every set earns XP. Compound lifts reward 3x multipliers. Watch your character evolve from rookie to legend.</p>
+                <div class="feature-icon">🏆</div>
+                <h3 class="feature-title">XP System</h3>
+                <p class="feature-desc">Every set earns XP. Compound lifts get 3x multipliers. Watch your character evolve from rookie to legend.</p>
             </div>
             <div class="feature-card glass">
-                <div class="feature-icon">&#128200;</div>
+                <div class="feature-icon">📈</div>
                 <h3 class="feature-title">PR Tracking</h3>
-                <p class="feature-desc">Automatic personal record detection. Never forget your max again. Chase new PRs with visual progress charts.</p>
+                <p class="feature-desc">Automatic personal record detection. Never forget your max. Chase new PRs with visual progress charts.</p>
             </div>
             <div class="feature-card glass">
-                <div class="feature-icon">&#9876;</div>
-                <h3 class="feature-title">Achievement System</h3>
-                <p class="feature-desc">100+ badges to unlock. First workout, week streaks, volume milestones. Flex your achievements on your profile.</p>
+                <div class="feature-icon">⚔️</div>
+                <h3 class="feature-title">Achievements</h3>
+                <p class="feature-desc">100+ badges to unlock. First workout, week streaks, volume milestones. Flex your collection.</p>
             </div>
             <div class="feature-card glass">
-                <div class="feature-icon">&#128101;</div>
+                <div class="feature-icon">👥</div>
                 <h3 class="feature-title">Squad Mode</h3>
-                <p class="feature-desc">Create or join teams. Weekly challenges, live leaderboards, and real-time activity feeds keep the competition fierce.</p>
+                <p class="feature-desc">Create or join teams. Weekly challenges, live leaderboards, and activity feeds keep competition fierce.</p>
             </div>
             <div class="feature-card glass">
-                <div class="feature-icon">&#128172;</div>
+                <div class="feature-icon">💬</div>
                 <h3 class="feature-title">Team Chat</h3>
-                <p class="feature-desc">Coordinate workouts, share wins, and hype up your squad. Real-time messaging keeps everyone connected.</p>
+                <p class="feature-desc">Coordinate workouts, share wins, hype up your squad. Real-time messaging keeps everyone connected.</p>
             </div>
             <div class="feature-card glass">
-                <div class="feature-icon">&#128202;</div>
-                <h3 class="feature-title">Coach Sharing</h3>
-                <p class="feature-desc">Generate a share code for your coach. They get read-only access to your stats, progress, and workout history.</p>
+                <div class="feature-icon">📊</div>
+                <h3 class="feature-title">Coach Mode</h3>
+                <p class="feature-desc">Generate a share code for your coach. Read-only access to your stats, progress, and history.</p>
             </div>
         </div>
     </section>
@@ -900,21 +1112,19 @@
     <section class="gamification">
         <div class="gamification-content">
             <div class="gamification-text">
-                <h2>Your Gains, <span style="color: var(--gold)">Quantified</span></h2>
+                <h2>Your Gains, <span>Quantified</span></h2>
                 <p>
                     Stop guessing. Start progressing. Iron Quest transforms raw gym data into
-                    meaningful stats that show exactly how far you've come. Track total volume,
-                    monitor consistency streaks, and watch your estimated 1RMs climb.
+                    meaningful stats. Track total volume, monitor streaks, watch your estimated 1RMs climb.
                 </p>
                 <p>
-                    The XP system rewards consistency over intensity. Show up, put in work,
-                    and watch your character level up. Compound movements earn bonus XP
-                    because we know what really builds strength.
+                    The XP system rewards consistency. Show up, put in work, level up.
+                    Compound movements earn bonus XP because we know what builds real strength.
                 </p>
             </div>
             <div class="xp-preview glass">
                 <div class="xp-header">
-                    <span class="xp-level">Level 24 Warrior</span>
+                    <span class="xp-level">LVL 24 Warrior</span>
                     <span class="xp-amount">6,840 / 10,000 XP</span>
                 </div>
                 <div class="xp-bar">
@@ -941,51 +1151,51 @@
     <!-- Roadmap Section -->
     <section class="roadmap">
         <div class="section-header">
-            <div class="section-tag">The Journey</div>
+            <div class="section-tag">Quest Log</div>
             <h2 class="section-title">Roadmap</h2>
-            <p class="section-subtitle">Where we've been and where we're going. Built by lifters, for lifters.</p>
+            <p class="section-subtitle">Where we've been and where we're going.</p>
         </div>
         <div class="roadmap-timeline">
             <div class="roadmap-item">
                 <div class="roadmap-dot"></div>
-                <div class="roadmap-phase">Phase 1</div>
+                <div class="roadmap-phase">World 1</div>
                 <h3 class="roadmap-title">Multi-Character System</h3>
-                <p class="roadmap-desc">Create up to 4 unique warrior profiles. Each with their own stats, achievements, and progression path.</p>
-                <span class="roadmap-status live">&#10003; Live</span>
+                <p class="roadmap-desc">Create up to 4 unique warrior profiles with individual stats and progression.</p>
+                <span class="roadmap-status live">✓ Complete</span>
             </div>
             <div class="roadmap-item">
                 <div class="roadmap-dot"></div>
-                <div class="roadmap-phase">Phase 2</div>
+                <div class="roadmap-phase">World 2</div>
                 <h3 class="roadmap-title">Workout History & Analytics</h3>
-                <p class="roadmap-desc">Complete workout logging with calendar view. Track every session, review past performance, add notes.</p>
-                <span class="roadmap-status live">&#10003; Live</span>
+                <p class="roadmap-desc">Complete workout logging with calendar view. Track every session, add notes.</p>
+                <span class="roadmap-status live">✓ Complete</span>
             </div>
             <div class="roadmap-item">
                 <div class="roadmap-dot"></div>
-                <div class="roadmap-phase">Phase 3</div>
+                <div class="roadmap-phase">World 3</div>
                 <h3 class="roadmap-title">Teams & Social</h3>
-                <p class="roadmap-desc">Create squads, compete on leaderboards, complete team challenges. Real-time chat and activity feeds.</p>
-                <span class="roadmap-status live">&#10003; Live</span>
+                <p class="roadmap-desc">Create squads, compete on leaderboards, complete team challenges. Real-time chat.</p>
+                <span class="roadmap-status live">✓ Complete</span>
             </div>
             <div class="roadmap-item">
                 <div class="roadmap-dot"></div>
-                <div class="roadmap-phase">Phase 4</div>
+                <div class="roadmap-phase">World 4</div>
                 <h3 class="roadmap-title">Coach Integration</h3>
-                <p class="roadmap-desc">Share your progress with coaches via unique codes. Read-only dashboard for trainers to monitor athletes.</p>
-                <span class="roadmap-status live">&#10003; Live</span>
+                <p class="roadmap-desc">Share progress with coaches via unique codes. Read-only dashboard for trainers.</p>
+                <span class="roadmap-status live">✓ Complete</span>
             </div>
             <div class="roadmap-item">
                 <div class="roadmap-dot upcoming"></div>
-                <div class="roadmap-phase">Phase 5</div>
+                <div class="roadmap-phase">World 5</div>
                 <h3 class="roadmap-title">Mobile App</h3>
-                <p class="roadmap-desc">Native iOS and Android apps with offline support. Sync seamlessly across all your devices.</p>
+                <p class="roadmap-desc">Native iOS and Android apps with offline support. Sync across all devices.</p>
                 <span class="roadmap-status planned">Coming Soon</span>
             </div>
             <div class="roadmap-item">
                 <div class="roadmap-dot upcoming"></div>
-                <div class="roadmap-phase">Phase 6</div>
+                <div class="roadmap-phase">World 6</div>
                 <h3 class="roadmap-title">Wearable Integration</h3>
-                <p class="roadmap-desc">Connect Apple Watch, Garmin, and Fitbit. Auto-log workouts and track heart rate zones.</p>
+                <p class="roadmap-desc">Connect Apple Watch, Garmin, Fitbit. Auto-log workouts and track heart rate.</p>
                 <span class="roadmap-status planned">Coming Soon</span>
             </div>
         </div>
@@ -994,11 +1204,11 @@
     <!-- CTA Section -->
     <section class="cta-section">
         <div class="cta-card glass">
-            <h2>Ready to Begin Your Quest?</h2>
-            <p>Join thousands of warriors already leveling up their fitness journey. Your gains await.</p>
+            <h2>Ready to Begin?</h2>
+            <p>Join warriors already leveling up their fitness journey. Your quest awaits.</p>
             <a href="app.html" class="hero-cta">
                 Enter the Arena
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M5 12h14M12 5l7 7-7 7"/>
                 </svg>
             </a>
@@ -1007,7 +1217,7 @@
 
     <!-- Footer -->
     <footer>
-        <p>&copy; 2025 Iron Quest. All rights reserved. Built with &#128170; by lifters, for lifters.</p>
+        <p>© 2025 <span>Iron Quest</span>. Built with 💪 by lifters, for lifters.</p>
     </footer>
 </body>
 </html>
