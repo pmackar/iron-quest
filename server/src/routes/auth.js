@@ -132,7 +132,10 @@ router.post('/clerk', async (req, res) => {
 
     } catch (error) {
         console.error('Clerk auth error:', error);
-        res.status(500).json({ error: 'Clerk authentication failed' });
+        res.status(500).json({
+            error: 'Clerk authentication failed',
+            details: error.message
+        });
     }
 });
 
