@@ -1039,7 +1039,8 @@ function parseStrongCsv(csvText) {
         exercises: Array.from(w.exercises.values()),
         totalSets: Array.from(w.exercises.values()).reduce((sum, ex) => sum + ex.sets.length, 0),
         totalVolume: Array.from(w.exercises.values()).reduce((sum, ex) =>
-            sum + ex.sets.reduce((s, set) => s + (set.weight * set.reps), 0), 0)
+            sum + ex.sets.reduce((s, set) => s + (set.weight * set.reps), 0), 0),
+        imported: true // Mark as imported for achievement tracking
     }));
 
     // Sort by date (oldest first)
@@ -8260,22 +8261,27 @@ function getUnlockedAchievements() {
     const unlocked = [];
     const history = gameState.workoutHistory || [];
     const prs = gameState.personalRecords || {};
-    const totalVolume = history.reduce((sum, w) => sum + (w.totalVolume || 0), 0);
+
+    // Filter out imported workouts for count/volume achievements
+    const organicWorkouts = history.filter(w => !w.imported);
+    const organicWorkoutCount = organicWorkouts.length;
+    const organicVolume = organicWorkouts.reduce((sum, w) => sum + (w.totalVolume || 0), 0);
+
     const prCount = Object.keys(prs).length;
 
-    // Workout count achievements
-    if (gameState.totalWorkouts >= 1) unlocked.push({ ...ACHIEVEMENTS.find(a => a.id === 'first_workout'), date: history[history.length - 1]?.date });
-    if (gameState.totalWorkouts >= 5) unlocked.push({ ...ACHIEVEMENTS.find(a => a.id === 'five_workouts') });
-    if (gameState.totalWorkouts >= 10) unlocked.push({ ...ACHIEVEMENTS.find(a => a.id === 'ten_workouts') });
-    if (gameState.totalWorkouts >= 25) unlocked.push({ ...ACHIEVEMENTS.find(a => a.id === 'twenty_five_workouts') });
-    if (gameState.totalWorkouts >= 50) unlocked.push({ ...ACHIEVEMENTS.find(a => a.id === 'fifty_workouts') });
-    if (gameState.totalWorkouts >= 100) unlocked.push({ ...ACHIEVEMENTS.find(a => a.id === 'hundred_workouts') });
+    // Workout count achievements (only count non-imported workouts)
+    if (organicWorkoutCount >= 1) unlocked.push({ ...ACHIEVEMENTS.find(a => a.id === 'first_workout'), date: organicWorkouts[organicWorkouts.length - 1]?.date });
+    if (organicWorkoutCount >= 5) unlocked.push({ ...ACHIEVEMENTS.find(a => a.id === 'five_workouts') });
+    if (organicWorkoutCount >= 10) unlocked.push({ ...ACHIEVEMENTS.find(a => a.id === 'ten_workouts') });
+    if (organicWorkoutCount >= 25) unlocked.push({ ...ACHIEVEMENTS.find(a => a.id === 'twenty_five_workouts') });
+    if (organicWorkoutCount >= 50) unlocked.push({ ...ACHIEVEMENTS.find(a => a.id === 'fifty_workouts') });
+    if (organicWorkoutCount >= 100) unlocked.push({ ...ACHIEVEMENTS.find(a => a.id === 'hundred_workouts') });
 
-    // PR achievements
+    // PR achievements (PRs from imports still count - they represent real lifts)
     if (prCount >= 1) unlocked.push({ ...ACHIEVEMENTS.find(a => a.id === 'first_pr') });
     if (prCount >= 5) unlocked.push({ ...ACHIEVEMENTS.find(a => a.id === 'five_prs') });
 
-    // Specific lift achievements
+    // Specific lift achievements (imports count - these are real accomplishments)
     if (prs.bench && prs.bench.weight >= 135) unlocked.push({ ...ACHIEVEMENTS.find(a => a.id === 'bench_135') });
     if (prs.bench && prs.bench.weight >= 225) unlocked.push({ ...ACHIEVEMENTS.find(a => a.id === 'bench_225') });
     if (prs.squat && prs.squat.weight >= 225) unlocked.push({ ...ACHIEVEMENTS.find(a => a.id === 'squat_225') });
@@ -8283,10 +8289,10 @@ function getUnlockedAchievements() {
     if (prs.deadlift && prs.deadlift.weight >= 315) unlocked.push({ ...ACHIEVEMENTS.find(a => a.id === 'deadlift_315') });
     if (prs.deadlift && prs.deadlift.weight >= 405) unlocked.push({ ...ACHIEVEMENTS.find(a => a.id === 'deadlift_405') });
 
-    // Volume achievements
-    if (totalVolume >= 10000) unlocked.push({ ...ACHIEVEMENTS.find(a => a.id === 'volume_10k') });
-    if (totalVolume >= 100000) unlocked.push({ ...ACHIEVEMENTS.find(a => a.id === 'volume_100k') });
-    if (totalVolume >= 1000000) unlocked.push({ ...ACHIEVEMENTS.find(a => a.id === 'volume_1m') });
+    // Volume achievements (only count non-imported volume)
+    if (organicVolume >= 10000) unlocked.push({ ...ACHIEVEMENTS.find(a => a.id === 'volume_10k') });
+    if (organicVolume >= 100000) unlocked.push({ ...ACHIEVEMENTS.find(a => a.id === 'volume_100k') });
+    if (organicVolume >= 1000000) unlocked.push({ ...ACHIEVEMENTS.find(a => a.id === 'volume_1m') });
 
     // Level achievements
     if (gameState.level >= 5) unlocked.push({ ...ACHIEVEMENTS.find(a => a.id === 'level_5') });
