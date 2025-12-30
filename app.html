@@ -271,6 +271,18 @@
                 </div>
             </div>
 
+            <!-- Sync Status Indicator -->
+            <div class="sync-indicator" id="syncIndicator" style="display: none;">
+                <div class="sync-icon" id="syncIcon"></div>
+                <span class="sync-text" id="syncText">Synced</span>
+                <button class="sync-btn" id="syncBtn" onclick="manualSync()" title="Sync now">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M23 4v6h-6M1 20v-6h6"/>
+                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                    </svg>
+                </button>
+            </div>
+
             <div class="stats-grid">
                 <div class="stat-box clickable" onclick="showStatHistory('workouts')">
                     <div class="stat-value" id="totalWorkouts">0</div>

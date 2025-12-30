@@ -16,6 +16,7 @@ const authRoutes = require('./routes/auth');
 const workoutRoutes = require('./routes/workouts');
 const teamRoutes = require('./routes/teams');
 const chatRoutes = require('./routes/chat');
+const syncRoutes = require('./routes/sync');
 
 // Import socket handler
 const { initializeSocket } = require('./socket/handler');
@@ -72,6 +73,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/workouts', workoutRoutes);
 app.use('/api/teams', teamRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/sync', syncRoutes);
 
 // API documentation
 app.get('/api', (req, res) => {

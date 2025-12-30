@@ -736,6 +736,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Check for existing auth token
     checkAuthState();
 
+    // Initialize sync UI
+    initSyncUI();
+
     // Load save slots
     loadSaveSlots();
 
@@ -1214,6 +1217,94 @@ function updateOnlineUI() {
             menuFooter.innerHTML = '';
         }
     }
+
+    // Update sync indicator visibility
+    updateSyncIndicator();
+}
+
+// ============================================
+// SYNC STATUS UI
+// ============================================
+
+function initSyncUI() {
+    // Listen for sync status changes
+    API.onSyncStatusChange(updateSyncIndicator);
+
+    // Initial update
+    updateSyncIndicator();
+}
+
+async function updateSyncIndicator() {
+    const indicator = document.getElementById('syncIndicator');
+    const icon = document.getElementById('syncIcon');
+    const text = document.getElementById('syncText');
+
+    if (!indicator) return;
+
+    // Only show sync indicator when online mode is active
+    if (!isOnlineMode || !currentUser) {
+        indicator.style.display = 'none';
+        return;
+    }
+
+    indicator.style.display = 'flex';
+
+    // Remove all status classes
+    indicator.classList.remove('synced', 'syncing', 'offline', 'pending');
+
+    const status = API.syncStatus;
+    const pendingCount = await API.getPendingSyncCount();
+
+    if (!API.isOnline()) {
+        indicator.classList.add('offline');
+        text.textContent = 'Offline';
+    } else if (status === 'syncing') {
+        indicator.classList.add('syncing');
+        text.textContent = 'Syncing...';
+    } else if (pendingCount > 0) {
+        indicator.classList.add('pending');
+        text.textContent = `${pendingCount} pending`;
+    } else {
+        indicator.classList.add('synced');
+        text.textContent = 'Synced';
+    }
+}
+
+async function manualSync() {
+    if (!API.isOnline()) {
+        showToast('NO CONNECTION');
+        return;
+    }
+
+    if (!API.isAuthenticated()) {
+        showToast('NOT LOGGED IN');
+        return;
+    }
+
+    showToast('SYNCING...');
+    const result = await API.fullSync();
+
+    if (result.push?.status === 'success' || result.pull?.status === 'success') {
+        showToast('SYNC COMPLETE!');
+
+        // Update local state with pulled data if any
+        if (result.pull?.userStats) {
+            if (gameState) {
+                gameState.level = result.pull.userStats.level;
+                gameState.xp = result.pull.userStats.xp;
+                gameState.xpToNext = result.pull.userStats.xpToNext;
+                gameState.totalWorkouts = result.pull.userStats.totalWorkouts;
+                gameState.totalSets = result.pull.userStats.totalSets;
+                gameState.totalWeight = result.pull.userStats.totalWeight;
+                saveGame();
+                updateMenuStats();
+            }
+        }
+    } else if (result.status === 'error') {
+        showToast('SYNC FAILED');
+    }
+
+    updateSyncIndicator();
 }
 
 // ============================================

@@ -341,8 +341,333 @@ const API = {
         if (this.socket) {
             this.socket.on('activity', callback);
         }
+    },
+
+    // ============================================
+    // OFFLINE SYNC
+    // ============================================
+
+    // IndexedDB database name and version
+    DB_NAME: 'ironquest_offline',
+    DB_VERSION: 1,
+    db: null,
+
+    // Initialize IndexedDB
+    async initOfflineDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
+
+            request.onerror = () => reject(request.error);
+
+            request.onsuccess = () => {
+                this.db = request.result;
+                resolve(this.db);
+            };
+
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+
+                // Store for pending sync actions
+                if (!db.objectStoreNames.contains('syncQueue')) {
+                    const syncStore = db.createObjectStore('syncQueue', { keyPath: 'clientId' });
+                    syncStore.createIndex('timestamp', 'clientTimestamp', { unique: false });
+                    syncStore.createIndex('type', 'type', { unique: false });
+                }
+
+                // Store for offline workouts
+                if (!db.objectStoreNames.contains('offlineWorkouts')) {
+                    const workoutStore = db.createObjectStore('offlineWorkouts', { keyPath: 'clientId' });
+                    workoutStore.createIndex('date', 'completedAt', { unique: false });
+                }
+
+                // Store for sync metadata
+                if (!db.objectStoreNames.contains('syncMeta')) {
+                    db.createObjectStore('syncMeta', { keyPath: 'key' });
+                }
+            };
+        });
+    },
+
+    // Get IndexedDB database
+    async getDB() {
+        if (!this.db) {
+            await this.initOfflineDB();
+        }
+        return this.db;
+    },
+
+    // Add action to sync queue
+    async queueSyncAction(type, payload) {
+        const db = await this.getDB();
+        const clientId = `${type}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const action = {
+            clientId,
+            type,
+            payload: { ...payload, clientId },
+            clientTimestamp: new Date().toISOString(),
+            synced: false
+        };
+
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction('syncQueue', 'readwrite');
+            const store = tx.objectStore('syncQueue');
+            const request = store.add(action);
+
+            request.onsuccess = () => resolve(action);
+            request.onerror = () => reject(request.error);
+        });
+    },
+
+    // Get all pending sync actions
+    async getPendingSyncActions() {
+        const db = await this.getDB();
+
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction('syncQueue', 'readonly');
+            const store = tx.objectStore('syncQueue');
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                const actions = request.result.filter(a => !a.synced);
+                resolve(actions);
+            };
+            request.onerror = () => reject(request.error);
+        });
+    },
+
+    // Mark actions as synced
+    async markActionsSynced(clientIds) {
+        const db = await this.getDB();
+
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction('syncQueue', 'readwrite');
+            const store = tx.objectStore('syncQueue');
+
+            clientIds.forEach(clientId => {
+                const getRequest = store.get(clientId);
+                getRequest.onsuccess = () => {
+                    const action = getRequest.result;
+                    if (action) {
+                        action.synced = true;
+                        store.put(action);
+                    }
+                };
+            });
+
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject(tx.error);
+        });
+    },
+
+    // Clear synced actions
+    async clearSyncedActions() {
+        const db = await this.getDB();
+
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction('syncQueue', 'readwrite');
+            const store = tx.objectStore('syncQueue');
+            const request = store.openCursor();
+
+            request.onsuccess = (event) => {
+                const cursor = event.target.result;
+                if (cursor) {
+                    if (cursor.value.synced) {
+                        cursor.delete();
+                    }
+                    cursor.continue();
+                }
+            };
+
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject(tx.error);
+        });
+    },
+
+    // Save last sync timestamp
+    async setLastSyncTimestamp(timestamp) {
+        const db = await this.getDB();
+
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction('syncMeta', 'readwrite');
+            const store = tx.objectStore('syncMeta');
+            store.put({ key: 'lastSync', value: timestamp });
+
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject(tx.error);
+        });
+    },
+
+    // Get last sync timestamp
+    async getLastSyncTimestamp() {
+        const db = await this.getDB();
+
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction('syncMeta', 'readonly');
+            const store = tx.objectStore('syncMeta');
+            const request = store.get('lastSync');
+
+            request.onsuccess = () => resolve(request.result?.value || null);
+            request.onerror = () => reject(request.error);
+        });
+    },
+
+    // Sync status
+    syncStatus: 'idle', // 'idle', 'syncing', 'error', 'offline'
+    syncListeners: [],
+
+    onSyncStatusChange(callback) {
+        this.syncListeners.push(callback);
+    },
+
+    setSyncStatus(status) {
+        this.syncStatus = status;
+        this.syncListeners.forEach(cb => cb(status));
+    },
+
+    // Check if online
+    isOnline() {
+        return navigator.onLine;
+    },
+
+    // Push sync to server
+    async pushSync() {
+        if (!this.isOnline() || !this.isAuthenticated()) {
+            return { status: 'offline' };
+        }
+
+        const pending = await this.getPendingSyncActions();
+        if (pending.length === 0) {
+            return { status: 'no_pending' };
+        }
+
+        this.setSyncStatus('syncing');
+
+        try {
+            const lastSync = await this.getLastSyncTimestamp();
+            const response = await this.post('/sync/push', {
+                actions: pending.map(a => ({
+                    type: a.type,
+                    clientTimestamp: a.clientTimestamp,
+                    payload: a.payload
+                })),
+                lastSyncTimestamp: lastSync
+            });
+
+            // Mark successful syncs
+            const syncedIds = response.results
+                .filter(r => r.status === 'synced' || r.status === 'already_synced')
+                .map(r => pending.find(p => p.clientTimestamp === r.clientTimestamp)?.clientId)
+                .filter(Boolean);
+
+            await this.markActionsSynced(syncedIds);
+            await this.setLastSyncTimestamp(response.serverTimestamp);
+            await this.clearSyncedActions();
+
+            this.setSyncStatus('idle');
+
+            return {
+                status: 'success',
+                synced: syncedIds.length,
+                conflicts: response.conflicts || []
+            };
+
+        } catch (error) {
+            console.error('Sync push error:', error);
+            this.setSyncStatus('error');
+            return { status: 'error', error: error.message };
+        }
+    },
+
+    // Pull changes from server
+    async pullSync() {
+        if (!this.isOnline() || !this.isAuthenticated()) {
+            return { status: 'offline' };
+        }
+
+        this.setSyncStatus('syncing');
+
+        try {
+            const lastSync = await this.getLastSyncTimestamp();
+            const response = await this.get(`/sync/pull?since=${lastSync || ''}`);
+
+            await this.setLastSyncTimestamp(response.serverTimestamp);
+            this.setSyncStatus('idle');
+
+            return {
+                status: 'success',
+                workouts: response.workouts || [],
+                personalRecords: response.personalRecords || {},
+                userStats: response.userStats
+            };
+
+        } catch (error) {
+            console.error('Sync pull error:', error);
+            this.setSyncStatus('error');
+            return { status: 'error', error: error.message };
+        }
+    },
+
+    // Full sync (push then pull)
+    async fullSync() {
+        const pushResult = await this.pushSync();
+        if (pushResult.status === 'error') {
+            return pushResult;
+        }
+
+        const pullResult = await this.pullSync();
+        return {
+            push: pushResult,
+            pull: pullResult
+        };
+    },
+
+    // Save workout with offline support
+    async saveWorkoutWithSync(workoutData) {
+        // Always queue locally first
+        const action = await this.queueSyncAction('workout', workoutData);
+
+        // Try to sync immediately if online
+        if (this.isOnline() && this.isAuthenticated()) {
+            const syncResult = await this.pushSync();
+            return {
+                ...workoutData,
+                clientId: action.clientId,
+                synced: syncResult.status === 'success'
+            };
+        }
+
+        return {
+            ...workoutData,
+            clientId: action.clientId,
+            synced: false,
+            offline: true
+        };
+    },
+
+    // Get pending sync count
+    async getPendingSyncCount() {
+        const pending = await this.getPendingSyncActions();
+        return pending.length;
     }
 };
+
+// Initialize offline DB on load
+API.initOfflineDB().catch(err => console.error('Failed to init offline DB:', err));
+
+// Listen for online/offline events
+window.addEventListener('online', async () => {
+    console.log('Back online - attempting sync');
+    API.setSyncStatus('idle');
+    if (API.isAuthenticated()) {
+        const result = await API.fullSync();
+        console.log('Auto-sync result:', result);
+    }
+});
+
+window.addEventListener('offline', () => {
+    console.log('Gone offline');
+    API.setSyncStatus('offline');
+});
 
 // Export for use in app.js
 window.API = API;
