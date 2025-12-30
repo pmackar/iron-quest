@@ -1781,6 +1781,24 @@ button.avatar-profile-link:active {
     opacity: 1;
 }
 
+/* .modal class for dynamically created modals */
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-md);
+    z-index: 1000;
+}
+
+.modal.active {
+    display: flex;
+}
+
 .modal-content {
     position: relative;
     background: var(--bg-secondary);
