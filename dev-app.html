@@ -26,6 +26,16 @@
     <link rel="stylesheet" href="css/styles.css">
     <!-- Google Sign-In SDK -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <!-- App Configuration - Update these for your deployment -->
+    <script>
+        window.APP_CONFIG = {
+            // Google OAuth Client ID - get from Google Cloud Console
+            // Add your Vercel domain to Authorized JavaScript origins
+            GOOGLE_CLIENT_ID: '1022977955769-tjbbf5tnfhb4dhmsr6aq30f1rqs3t48v.apps.googleusercontent.com',
+            // API URL - your backend server
+            API_URL: 'http://localhost:3001'
+        };
+    </script>
 </head>
 <body>
     <!-- Dev Branch Banner -->

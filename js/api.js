@@ -4,13 +4,18 @@
  */
 
 const API = {
-    // Production API URL
-    PRODUCTION_API_URL: 'https://iron-quest-production.up.railway.app',
-
-    // Use production URL or localhost in development
-    baseUrl: window.location.hostname === 'localhost'
-        ? 'http://localhost:3001/api'
-        : 'https://iron-quest-production.up.railway.app/api',
+    // Get API URL from config or use defaults
+    // Priority: APP_CONFIG > hostname detection > default
+    baseUrl: (function() {
+        if (window.APP_CONFIG?.API_URL) {
+            return window.APP_CONFIG.API_URL + '/api';
+        }
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            return 'http://localhost:3001/api';
+        }
+        // Production default
+        return 'https://iron-quest-production.up.railway.app/api';
+    })(),
     token: null,
     socket: null,
 

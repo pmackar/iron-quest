@@ -1030,9 +1030,8 @@ function hideAuthForms() {
 let pendingGoogleCredential = null;
 
 function initGoogleSignIn() {
-    // Set the Google Client ID (should be configured in your deployment)
-    // For development, this can be set in the HTML or a config file
-    const clientId = window.GOOGLE_CLIENT_ID || '1022977955769-tjbbf5tnfhb4dhmsr6aq30f1rqs3t48v.apps.googleusercontent.com';
+    // Get Client ID from config (set in HTML) or use default
+    const clientId = window.APP_CONFIG?.GOOGLE_CLIENT_ID || window.GOOGLE_CLIENT_ID || '1022977955769-tjbbf5tnfhb4dhmsr6aq30f1rqs3t48v.apps.googleusercontent.com';
     API.GOOGLE_CLIENT_ID = clientId;
 
     if (!window.google) {
@@ -5736,6 +5735,7 @@ function getTimeAgo(date) {
 // CAMPAIGNS
 // ============================================
 
+let teamsData = []; // Teams the user belongs to
 let campaignsData = { personal: [], team: [] };
 let campaignWizardState = {
     type: 'personal',
@@ -6158,6 +6158,13 @@ function populateCampaignReview() {
 }
 
 async function createCampaign() {
+    // Check if online
+    if (!isOnlineMode) {
+        showToast('SIGN IN TO CREATE CAMPAIGNS');
+        closeCreateCampaignModal();
+        return;
+    }
+
     try {
         const campaignData = {
             title: campaignWizardState.title,
