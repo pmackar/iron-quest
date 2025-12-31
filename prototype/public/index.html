@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Iron Quest Prototype</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Courier New', monospace;
+      background: #1a1a2e;
+      color: #eee;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container { max-width: 800px; margin: 0 auto; }
+    h1 { color: #ff6b6b; text-align: center; margin-bottom: 20px; }
+    h2 { color: #4ecdc4; margin: 20px 0 10px; border-bottom: 1px solid #4ecdc4; padding-bottom: 5px; }
+
+    .card {
+      background: #16213e;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      border: 1px solid #0f3460;
+    }
+
+    .form-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; color: #a8a8a8; }
+    input, select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #0f3460;
+      background: #1a1a2e;
+      color: #eee;
+      border-radius: 4px;
+    }
+    input:focus, select:focus { outline: none; border-color: #4ecdc4; }
+
+    button {
+      background: #4ecdc4;
+      color: #1a1a2e;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      margin-right: 10px;
+      margin-top: 10px;
+    }
+    button:hover { background: #45b7aa; }
+    button.danger { background: #ff6b6b; }
+    button.danger:hover { background: #ee5a5a; }
+    button.secondary { background: #6c757d; color: #eee; }
+
+    .hidden { display: none; }
+    .message { padding: 10px; border-radius: 4px; margin: 10px 0; }
+    .success { background: #2d5a27; border: 1px solid #4ecdc4; }
+    .error { background: #5a2727; border: 1px solid #ff6b6b; }
+
+    .user-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #0f3460;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .user-stats span { margin-left: 15px; color: #4ecdc4; }
+
+    .workout-list, .exercise-list, .record-list {
+      list-style: none;
+    }
+    .workout-list li, .exercise-list li, .record-list li {
+      background: #1a1a2e;
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .tab {
+      padding: 10px 20px;
+      background: #0f3460;
+      border: none;
+      color: #eee;
+      cursor: pointer;
+      border-radius: 4px 4px 0 0;
+    }
+    .tab.active { background: #4ecdc4; color: #1a1a2e; }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    pre {
+      background: #0f3460;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>⚔️ IRON QUEST PROTOTYPE</h1>
+
+    <!-- Auth Section -->
+    <div id="auth-section" class="card">
+      <h2>Authentication</h2>
+      <div class="tabs">
+        <button class="tab active" onclick="showAuthTab('login')">Login</button>
+        <button class="tab" onclick="showAuthTab('register')">Register</button>
+      </div>
+
+      <div id="login-tab" class="tab-content active">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="login-email" placeholder="test@example.com">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="login-password" placeholder="password123">
+        </div>
+        <button onclick="login()">Login</button>
+      </div>
+
+      <div id="register-tab" class="tab-content">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="register-email">
+        </div>
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="register-username">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="register-password">
+        </div>
+        <button onclick="register()">Register</button>
+      </div>
+
+      <div id="auth-message"></div>
+    </div>
+
+    <!-- Main App Section (hidden until logged in) -->
+    <div id="app-section" class="hidden">
+      <div class="user-info">
+        <div>
+          <strong id="user-name">Username</strong>
+          <span id="user-email"></span>
+        </div>
+        <div class="user-stats">
+          <span>Level: <strong id="user-level">1</strong></span>
+          <span>XP: <strong id="user-xp">0</strong></span>
+          <span>Workouts: <strong id="user-workouts">0</strong></span>
+        </div>
+        <button class="danger" onclick="logout()">Logout</button>
+      </div>
+
+      <!-- Workouts Section -->
+      <div class="card">
+        <h2>Log Workout</h2>
+        <div class="form-group">
+          <label>Workout Name</label>
+          <input type="text" id="workout-name" placeholder="Push Day">
+        </div>
+        <div class="form-group">
+          <label>Type</label>
+          <select id="workout-type">
+            <option value="Push">Push</option>
+            <option value="Pull">Pull</option>
+            <option value="Legs">Legs</option>
+            <option value="Upper">Upper</option>
+            <option value="Lower">Lower</option>
+            <option value="Full Body">Full Body</option>
+            <option value="Custom">Custom</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Duration (minutes)</label>
+          <input type="number" id="workout-duration" value="45">
+        </div>
+        <div class="form-group">
+          <label>Exercise (JSON format)</label>
+          <textarea id="workout-exercises" rows="4" style="width:100%; background:#1a1a2e; color:#eee; border:1px solid #0f3460; padding:10px; font-family:monospace;">[{"exerciseId":"bench_press","exerciseName":"Bench Press","sets":[{"setNumber":1,"weight":135,"reps":10},{"setNumber":2,"weight":155,"reps":8}]}]</textarea>
+        </div>
+        <button onclick="logWorkout()">Log Workout</button>
+      </div>
+
+      <!-- Workout History -->
+      <div class="card">
+        <h2>Workout History</h2>
+        <button onclick="loadWorkouts()">Refresh</button>
+        <ul id="workout-list" class="workout-list"></ul>
+      </div>
+
+      <!-- Personal Records -->
+      <div class="card">
+        <h2>Personal Records</h2>
+        <button onclick="loadRecords()">Refresh</button>
+        <ul id="record-list" class="record-list"></ul>
+      </div>
+
+      <!-- Export Section -->
+      <div class="card">
+        <h2>Export Data</h2>
+        <p style="color:#a8a8a8; margin-bottom:10px;">Download all your data as JSON (can be imported later)</p>
+        <button onclick="exportData()">Export My Data</button>
+        <button class="secondary" onclick="viewCSVFiles()">View Raw CSV Files</button>
+      </div>
+
+      <!-- Debug Section -->
+      <div class="card">
+        <h2>Debug Info</h2>
+        <pre id="debug-output">API responses will appear here...</pre>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = '';
+    let token = localStorage.getItem('token');
+
+    // Check if already logged in
+    if (token) {
+      checkAuth();
+    }
+
+    function showAuthTab(tab) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelector(`#${tab}-tab`).classList.add('active');
+      event.target.classList.add('active');
+    }
+
+    async function api(endpoint, options = {}) {
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      try {
+        const res = await fetch(`${API_URL}${endpoint}`, { ...options, headers });
+        const data = await res.json();
+        document.getElementById('debug-output').textContent = JSON.stringify(data, null, 2);
+        if (!res.ok) throw new Error(data.error || 'API error');
+        return data;
+      } catch (err) {
+        document.getElementById('debug-output').textContent = `Error: ${err.message}`;
+        throw err;
+      }
+    }
+
+    async function register() {
+      try {
+        const email = document.getElementById('register-email').value;
+        const username = document.getElementById('register-username').value;
+        const password = document.getElementById('register-password').value;
+
+        const data = await api('/api/auth/register', {
+          method: 'POST',
+          body: JSON.stringify({ email, username, password })
+        });
+
+        token = data.token;
+        localStorage.setItem('token', token);
+        showMessage('auth-message', 'Registration successful!', 'success');
+        showApp(data.user);
+      } catch (err) {
+        showMessage('auth-message', err.message, 'error');
+      }
+    }
+
+    async function login() {
+      try {
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+
+        const data = await api('/api/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ email, password })
+        });
+
+        token = data.token;
+        localStorage.setItem('token', token);
+        showMessage('auth-message', 'Login successful!', 'success');
+        showApp(data.user);
+      } catch (err) {
+        showMessage('auth-message', err.message, 'error');
+      }
+    }
+
+    async function checkAuth() {
+      try {
+        const user = await api('/api/auth/me');
+        showApp(user);
+      } catch {
+        localStorage.removeItem('token');
+        token = null;
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('token');
+      token = null;
+      document.getElementById('auth-section').classList.remove('hidden');
+      document.getElementById('app-section').classList.add('hidden');
+    }
+
+    function showApp(user) {
+      document.getElementById('auth-section').classList.add('hidden');
+      document.getElementById('app-section').classList.remove('hidden');
+      document.getElementById('user-name').textContent = user.username;
+      document.getElementById('user-email').textContent = `(${user.email})`;
+      document.getElementById('user-level').textContent = user.level || 1;
+      document.getElementById('user-xp').textContent = user.xp || 0;
+      document.getElementById('user-workouts').textContent = user.totalWorkouts || 0;
+      loadWorkouts();
+      loadRecords();
+    }
+
+    function showMessage(elementId, message, type) {
+      const el = document.getElementById(elementId);
+      el.innerHTML = `<div class="message ${type}">${message}</div>`;
+      setTimeout(() => el.innerHTML = '', 3000);
+    }
+
+    async function logWorkout() {
+      try {
+        const name = document.getElementById('workout-name').value;
+        const type = document.getElementById('workout-type').value;
+        const duration = parseInt(document.getElementById('workout-duration').value);
+        const exercisesJson = document.getElementById('workout-exercises').value;
+
+        let exercises = [];
+        try {
+          exercises = JSON.parse(exercisesJson);
+        } catch {
+          alert('Invalid exercises JSON');
+          return;
+        }
+
+        // Calculate totals
+        let totalSets = 0;
+        let totalVolume = 0;
+        exercises.forEach(ex => {
+          ex.sets.forEach(set => {
+            totalSets++;
+            totalVolume += set.weight * set.reps;
+          });
+        });
+
+        const xpEarned = Math.round(totalVolume / 100) + (totalSets * 5);
+
+        await api('/api/workouts', {
+          method: 'POST',
+          body: JSON.stringify({
+            name,
+            type,
+            duration,
+            exercises,
+            totalSets,
+            totalVolume,
+            xpEarned,
+            completedAt: new Date().toISOString()
+          })
+        });
+
+        alert('Workout logged!');
+        loadWorkouts();
+        loadRecords();
+        checkAuth(); // Refresh user stats
+      } catch (err) {
+        alert(`Error: ${err.message}`);
+      }
+    }
+
+    async function loadWorkouts() {
+      try {
+        const workouts = await api('/api/workouts?limit=10');
+        const list = document.getElementById('workout-list');
+        list.innerHTML = workouts.map(w => `
+          <li>
+            <div>
+              <strong>${w.name}</strong> (${w.type})
+              <br><small>${new Date(w.completedAt).toLocaleDateString()} - ${w.totalVolume} lbs, +${w.xpEarned} XP</small>
+            </div>
+            <button class="danger" onclick="deleteWorkout('${w.id}')">Delete</button>
+          </li>
+        `).join('') || '<li>No workouts yet</li>';
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function deleteWorkout(id) {
+      if (!confirm('Delete this workout?')) return;
+      try {
+        await api(`/api/workouts/${id}`, { method: 'DELETE' });
+        loadWorkouts();
+      } catch (err) {
+        alert(`Error: ${err.message}`);
+      }
+    }
+
+    async function loadRecords() {
+      try {
+        const records = await api('/api/records');
+        const list = document.getElementById('record-list');
+        list.innerHTML = records.map(r => `
+          <li>
+            <strong>${r.exerciseName}</strong>
+            <span style="color:#4ecdc4">${r.weight} lbs</span>
+          </li>
+        `).join('') || '<li>No personal records yet</li>';
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function exportData() {
+      try {
+        const res = await fetch('/api/export', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ironquest-export-${Date.now()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        alert(`Export failed: ${err.message}`);
+      }
+    }
+
+    function viewCSVFiles() {
+      alert('CSV files are stored in the ./data/ directory on the server.\n\nFiles:\n- users.csv\n- workouts.csv\n- exercises.csv\n- records.csv\n- characters.csv');
+    }
+  </script>
+</body>
+</html>
