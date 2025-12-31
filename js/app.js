@@ -1116,46 +1116,63 @@ function getAvatarHTML(avatar, customAvatar = null) {
 // SAVE/LOAD SYSTEM
 // ============================================
 
+// Get the storage key for save slots - scoped by user when online
+function getSaveSlotsKey() {
+    if (isOnlineMode && currentUser) {
+        return `ironquest_slots_${currentUser.id}`;
+    }
+    return 'ironquest_slots_offline';
+}
+
 function loadSaveSlots() {
     try {
-        const saved = localStorage.getItem('ironquest_slots');
+        const key = getSaveSlotsKey();
+        const saved = localStorage.getItem(key);
         if (saved) {
             saveSlots = JSON.parse(saved);
+        } else {
+            saveSlots = [null, null, null, null];
         }
         renderCharacterSlots();
     } catch (e) {
         console.warn('Could not load save slots:', e);
+        saveSlots = [null, null, null, null];
     }
 }
 
 function saveSaveSlots() {
     try {
-        localStorage.setItem('ironquest_slots', JSON.stringify(saveSlots));
+        const key = getSaveSlotsKey();
+        localStorage.setItem(key, JSON.stringify(saveSlots));
     } catch (e) {
         console.warn('Could not save slots:', e);
     }
 }
 
-function saveCurrentCharacter() {
+async function saveCurrentCharacter() {
     if (currentSlotIndex !== null && gameState) {
         saveSlots[currentSlotIndex] = { ...gameState };
         saveSaveSlots();
 
-        // Sync to server if online
+        // Sync to server immediately if online
         if (isOnlineMode && currentUser) {
-            syncCharacterToServer(currentSlotIndex, gameState);
+            await syncCharacterToServer(currentSlotIndex, gameState);
         }
     }
 }
 
 // Sync character to server (non-blocking)
 async function syncCharacterToServer(slotIndex, characterData) {
+    console.log('[SYNC] Attempting to sync character:', slotIndex, 'Online:', isOnlineMode, 'User:', currentUser?.id);
+    if (!isOnlineMode || !currentUser) {
+        console.warn('[SYNC] Skipped - not online or no user');
+        return;
+    }
     try {
-        await API.saveCharacter(slotIndex, characterData);
-        console.log('Character synced to server:', slotIndex);
+        const result = await API.saveCharacter(slotIndex, characterData);
+        console.log('[SYNC] Character synced successfully:', slotIndex, result);
     } catch (error) {
-        console.warn('Failed to sync character to server:', error);
-        // Character is still saved locally, will sync on next opportunity
+        console.error('[SYNC] Failed to sync character:', error);
     }
 }
 
@@ -1306,15 +1323,17 @@ async function checkAuthState() {
             setupSocketListeners();
             updateOnlineUI();
 
+            // Reload save slots with user-scoped key (data isolation)
+            loadSaveSlots();
+
             // Load characters and workouts from server
             await loadCharactersFromServer();
             await loadWorkoutsFromServer();
 
-            // Restore game state from save slot
-            const slotIndex = saveSlots.findIndex(slot => slot && slot.onlineUserId === currentUser.id);
-            if (slotIndex !== -1 && saveSlots[slotIndex].testCompletedAt) {
-                currentSlotIndex = slotIndex;
-                gameState = { ...saveSlots[slotIndex] };
+            // Restore game state from slot 0 (each user has their own localStorage)
+            if (saveSlots[0] && saveSlots[0].testCompletedAt) {
+                currentSlotIndex = 0;
+                gameState = { ...saveSlots[0] };
                 updateMenuStats();
                 renderCustomLists();
                 showScreen('menuScreen');
@@ -1450,6 +1469,9 @@ async function completeSignIn(result) {
     API.connectSocket();
     setupSocketListeners();
 
+    // Reload save slots with user-scoped key (important for data isolation)
+    loadSaveSlots();
+
     // Load characters from server FIRST (this ensures persistence across devices)
     await loadCharactersFromServer();
 
@@ -1458,12 +1480,8 @@ async function completeSignIn(result) {
 
     // Sync server profile to local save slot
     if (currentUser && currentUser.username) {
-        // Find existing slot with matching user or first empty slot
-        let slotIndex = saveSlots.findIndex(slot => slot && slot.onlineUserId === currentUser.id);
-        if (slotIndex === -1) {
-            slotIndex = saveSlots.findIndex(slot => !slot);
-        }
-        if (slotIndex === -1) slotIndex = 0; // Overwrite first slot if all full
+        // For online mode, use slot 0 for this user (each user has their own localStorage)
+        let slotIndex = 0;
 
         // Create or update the save slot with server data
         const existingSlot = saveSlots[slotIndex] || {};
@@ -1472,26 +1490,26 @@ async function completeSignIn(result) {
             onlineUserId: currentUser.id,
             name: currentUser.username,
             playerName: currentUser.username,
-            avatar: currentUser.avatar || 1,
+            avatar: currentUser.avatar || existingSlot.avatar || 1,
             heightFeet: currentUser.heightFeet || existingSlot.heightFeet || 0,
             heightInches: currentUser.heightInches || existingSlot.heightInches || 0,
             weight: currentUser.weight || existingSlot.weight || 0,
             gender: currentUser.gender || existingSlot.gender || '',
-            level: currentUser.level || 1,
-            xp: currentUser.xp || 0,
-            xpToNext: currentUser.xpToNext || 100,
-            totalWorkouts: currentUser.totalWorkouts || 0,
-            totalSets: currentUser.totalSets || 0,
-            totalWeight: parseInt(currentUser.totalWeight) || 0,
-            achievements: currentUser.achievements || [],
-            personalRecords: currentUser.personalRecords || {},
+            level: existingSlot.level || currentUser.level || 1,
+            xp: existingSlot.xp || currentUser.xp || 0,
+            xpToNext: existingSlot.xpToNext || currentUser.xpToNext || 100,
+            totalWorkouts: existingSlot.totalWorkouts || currentUser.totalWorkouts || 0,
+            totalSets: existingSlot.totalSets || currentUser.totalSets || 0,
+            totalWeight: existingSlot.totalWeight || parseInt(currentUser.totalWeight) || 0,
+            achievements: existingSlot.achievements || currentUser.achievements || [],
+            personalRecords: existingSlot.personalRecords || currentUser.personalRecords || {},
             workoutHistory: existingSlot.workoutHistory || [],
             testCompletedAt: existingSlot.testCompletedAt || null
         };
         saveSaveSlots();
 
-        // Also sync this to server immediately
-        syncCharacterToServer(slotIndex, saveSlots[slotIndex]);
+        // Sync this to server immediately (await to ensure it completes)
+        await syncCharacterToServer(slotIndex, saveSlots[slotIndex]);
 
         // If user has completed profile, auto-select and go to menu
         if (currentUser.totalWorkouts > 0 || saveSlots[slotIndex].testCompletedAt) {
