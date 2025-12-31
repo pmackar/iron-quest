@@ -1184,47 +1184,45 @@ async function loadCharactersFromServer() {
         const response = await API.getCharacters();
         const serverSlots = response.characters || [];
 
-        // Merge server characters into local slots
-        serverSlots.forEach((serverChar, index) => {
-            if (serverChar && serverChar.onlineUserId === currentUser.id) {
-                // Server character exists for this user
-                const localChar = saveSlots[index];
-
-                // Use server version if local doesn't exist or server is newer
-                if (!localChar || !localChar.onlineUserId ||
-                    (serverChar._savedAt && localChar._savedAt && serverChar._savedAt > localChar._savedAt)) {
-                    saveSlots[index] = serverChar;
-                }
+        // Server is the source of truth - replace local slots with server data
+        // The backend only returns characters for the authenticated user
+        for (let i = 0; i < 4; i++) {
+            if (serverSlots[i]) {
+                // Server has a character at this slot - use it
+                saveSlots[i] = {
+                    ...serverSlots[i],
+                    onlineUserId: currentUser.id
+                };
             }
-        });
+            // Don't clear local slots that don't exist on server
+            // (they might be newly created and not synced yet)
+        }
 
         saveSaveSlots();
         renderCharacterSlots();
-        console.log('Characters loaded from server');
+        console.log('Characters loaded from server for user:', currentUser.id);
     } catch (error) {
         console.warn('Failed to load characters from server:', error);
     }
 }
 
-// Load workouts from server and merge with local history
+// Load workouts from server for this user
 async function loadWorkoutsFromServer() {
     if (!isOnlineMode || !currentUser) return;
 
     try {
-        // Load all workouts from server (get a large batch)
+        // Load all workouts from server (backend filters by user_id)
         const response = await API.getWorkouts(1000, 0);
         const serverWorkouts = response.workouts || [];
 
-        if (serverWorkouts.length === 0) {
-            console.log('No server workouts to sync');
-            return;
+        console.log('Loaded', serverWorkouts.length, 'workouts from server for user:', currentUser.id);
+
+        // Use slot 0 for online users
+        if (!saveSlots[0]) {
+            saveSlots[0] = { onlineUserId: currentUser.id, workoutHistory: [] };
         }
 
-        // Get the current slot's workout history
-        const slotIndex = saveSlots.findIndex(slot => slot && slot.onlineUserId === currentUser.id);
-        if (slotIndex === -1) return;
-
-        const localHistory = saveSlots[slotIndex].workoutHistory || [];
+        const localHistory = saveSlots[0].workoutHistory || [];
 
         // Create a map of local workouts by ID for quick lookup
         const localWorkoutMap = new Map();
@@ -1253,12 +1251,12 @@ async function loadWorkoutsFromServer() {
             }
         });
 
-        if (newWorkoutsAdded > 0) {
+        if (newWorkoutsAdded > 0 || serverWorkouts.length > 0) {
             // Sort by date (newest first)
             localHistory.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-            // Update save slot
-            saveSlots[slotIndex].workoutHistory = localHistory;
+            // Update save slot 0 (used for online users)
+            saveSlots[0].workoutHistory = localHistory;
 
             // Recalculate totals from workout history
             const totals = localHistory.reduce((acc, w) => ({
@@ -1267,12 +1265,12 @@ async function loadWorkoutsFromServer() {
                 volume: acc.volume + (w.totalVolume || 0)
             }), { workouts: 0, sets: 0, volume: 0 });
 
-            saveSlots[slotIndex].totalWorkouts = totals.workouts;
-            saveSlots[slotIndex].totalSets = totals.sets;
-            saveSlots[slotIndex].totalWeight = totals.volume;
+            saveSlots[0].totalWorkouts = totals.workouts;
+            saveSlots[0].totalSets = totals.sets;
+            saveSlots[0].totalWeight = totals.volume;
 
             saveSaveSlots();
-            console.log(`Synced ${newWorkoutsAdded} workouts from server`);
+            console.log(`Synced ${newWorkoutsAdded} new workouts from server (total: ${localHistory.length})`);
         }
     } catch (error) {
         console.warn('Failed to load workouts from server:', error);
