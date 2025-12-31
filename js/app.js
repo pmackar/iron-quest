@@ -1910,7 +1910,7 @@ async function deleteCharacter(index) {
     }
 }
 
-function startGame() {
+async function startGame() {
     const nameInput = document.getElementById('playerName');
     const selectedAvatar = document.querySelector('.avatar-option.selected');
     const avatarValue = selectedAvatar ? selectedAvatar.dataset.avatar : '1';
@@ -1965,7 +1965,7 @@ function startGame() {
     // Sync profile AND character to server if online
     if (isOnlineMode && currentUser) {
         // Save character to server immediately
-        syncCharacterToServer(currentSlotIndex, gameState);
+        await syncCharacterToServer(currentSlotIndex, gameState);
 
         // Also update profile
         API.updateProfile({
@@ -2411,7 +2411,7 @@ function updateTestProgress() {
     }
 }
 
-function completeStrengthTest() {
+async function completeStrengthTest() {
     // Collect baseline values (handling swapped exercises)
     const baselines = {};
     const bestSets = {};
@@ -2447,7 +2447,7 @@ function completeStrengthTest() {
     gameState.testCompletedAt = new Date().toISOString();
     gameState.achievedMilestones = {};
 
-    saveCurrentCharacter();
+    await saveCurrentCharacter();
     showScreen('menuScreen');
 
     const enteredCount = Object.keys(baselines).length;
@@ -2530,8 +2530,8 @@ function showMilestonePopup(exerciseId, milestone) {
     }, 2000);
 }
 
-function backToCharacterSelect() {
-    saveCurrentCharacter();
+async function backToCharacterSelect() {
+    await saveCurrentCharacter();
     currentSlotIndex = null;
     gameState = null;
     renderCharacterSlots();
@@ -3362,7 +3362,7 @@ function deleteSet(index) {
     }
 }
 
-function logSet() {
+async function logSet() {
     const weight = parseInt(document.getElementById('weightInput').value) || 0;
     const reps = parseInt(document.getElementById('repsInput').value) || 0;
     const rpe = document.getElementById('rpeInput').value || null;
@@ -3457,7 +3457,7 @@ function logSet() {
         });
     }
 
-    saveCurrentCharacter();
+    await saveCurrentCharacter();
     renderLoggedSets();
     renderExercises();
     showXPPopup(xpGain);
@@ -4165,7 +4165,7 @@ async function finishWorkout() {
         showXPPopup(bonusXP);
     }
 
-    saveCurrentCharacter();
+    await saveCurrentCharacter();
     updateMenuStats();
 
     // Save notes if any
@@ -7949,9 +7949,9 @@ function openCharacterProfile() {
     showScreen('characterScreen');
 }
 
-function switchCharacter() {
+async function switchCharacter() {
     // Save current character before switching
-    saveCurrentCharacter();
+    await saveCurrentCharacter();
 
     // Reset current character
     gameState = null;
@@ -7962,10 +7962,10 @@ function switchCharacter() {
     renderCharacterSlots();
 }
 
-function confirmLogout() {
+async function confirmLogout() {
     if (confirm('Log out and return to character selection?')) {
         // Save current progress
-        saveCurrentCharacter();
+        await saveCurrentCharacter();
 
         // If online mode, disconnect
         if (isOnlineMode && typeof API !== 'undefined') {
