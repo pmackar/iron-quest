@@ -8,7 +8,12 @@
     "dev": "nodemon src/index.js",
     "build": "npm run db:init || true",
     "db:init": "node src/db/init.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest --coverage --detectOpenHandles --forceExit",
+    "cron:nightly": "node src/jobs/run-cron.js nightly",
+    "cron:weekly": "node src/jobs/run-cron.js weekly",
+    "cron:wagers": "node src/jobs/run-cron.js wagers",
+    "cron:encounters": "node src/jobs/run-cron.js encounters",
+    "cron:cleanup": "node src/jobs/run-cron.js cleanup"
   },
   "keywords": [
     "fitness",
@@ -31,6 +36,7 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
+    "jest": "^30.2.0",
     "nodemon": "^3.1.11"
   }
 }

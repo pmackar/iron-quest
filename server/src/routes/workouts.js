@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../db/config');
 const { authenticate } = require('../middleware/auth');
+const { processWorkoutCompletion } = require('../lib/workout-hooks');
 
 const router = express.Router();
 
@@ -197,6 +198,14 @@ router.post('/', authenticate, async (req, res) => {
             [req.user.id]
         );
 
+        // Process workout completion hooks (streak, clubs, rivals, loot)
+        const hookResults = await processWorkoutCompletion(client, req.user.id, {
+            workoutId,
+            totalVolume,
+            totalSets,
+            xpEarned
+        });
+
         await client.query('COMMIT');
 
         res.status(201).json({
@@ -209,7 +218,11 @@ router.post('/', authenticate, async (req, res) => {
                 totalVolume,
                 xpEarned,
                 completedAt: workoutResult.rows[0].completed_at
-            }
+            },
+            // Include hook results for client display
+            streak: hookResults.streak,
+            lootDrop: hookResults.lootDrop,
+            rivalUpdates: hookResults.rivals ? hookResults.rivals.length : 0
         });
 
     } catch (error) {

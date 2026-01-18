@@ -20,6 +20,13 @@ const syncRoutes = require('./routes/sync');
 const campaignsRoutes = require('./routes/campaigns');
 const coachRoutes = require('./routes/coach');
 const charactersRoutes = require('./routes/characters');
+// New feature routes
+const streaksRoutes = require('./routes/streaks');
+const clubsRoutes = require('./routes/clubs');
+const checkinsRoutes = require('./routes/checkins');
+const rivalsRoutes = require('./routes/rivals');
+const sessionsRoutes = require('./routes/sessions');
+const predictionsRoutes = require('./routes/predictions');
 
 // Import socket handler
 const { initializeSocket } = require('./socket/handler');
@@ -107,6 +114,13 @@ app.use('/api/sync', syncRoutes);
 app.use('/api/campaigns', campaignsRoutes);
 app.use('/api/coach', coachRoutes);
 app.use('/api/characters', charactersRoutes);
+// New feature routes
+app.use('/api/streaks', streaksRoutes);
+app.use('/api/clubs', clubsRoutes);
+app.use('/api/checkins', checkinsRoutes);
+app.use('/api/rivals', rivalsRoutes);
+app.use('/api/sessions', sessionsRoutes);
+app.use('/api/predictions', predictionsRoutes);
 
 // API documentation
 app.get('/api', (req, res) => {
@@ -161,6 +175,88 @@ app.get('/api', (req, res) => {
                 'DELETE /api/coach/clients/:id': 'Remove client',
                 'DELETE /api/coach/my-coaches/:id': 'Disconnect from coach',
                 'POST /api/coach/clients/:id/assign-campaign': 'Assign campaign to client'
+            },
+            streaks: {
+                'GET /api/streaks': 'Get streak info',
+                'POST /api/streaks/freeze': 'Activate streak freeze',
+                'POST /api/streaks/shield': 'Use streak shield',
+                'GET /api/streaks/history': 'Get freeze/shield history',
+                'POST /api/streaks/wagers': 'Create streak wager',
+                'GET /api/streaks/wagers': 'Get active wagers',
+                'GET /api/streaks/wagers/:id': 'Get wager details',
+                'POST /api/streaks/wagers/:id/cancel': 'Cancel wager',
+                'POST /api/streaks/update': 'Update streak after workout'
+            },
+            clubs: {
+                'GET /api/clubs/guilds': 'Get all archetype guilds',
+                'GET /api/clubs/guilds/my': 'Get user\'s guild',
+                'GET /api/clubs/guilds/:id': 'Get guild details',
+                'POST /api/clubs/guilds/join': 'Join guild by archetype',
+                'GET /api/clubs/guilds/:id/messages': 'Get guild messages',
+                'POST /api/clubs/guilds/:id/messages': 'Post guild message',
+                'GET /api/clubs/guilds/:id/leaderboard': 'Get guild leaderboard',
+                'GET /api/clubs': 'Get user\'s clubs',
+                'POST /api/clubs': 'Create club',
+                'GET /api/clubs/:id': 'Get club details',
+                'PUT /api/clubs/:id': 'Update club',
+                'POST /api/clubs/join': 'Join club by invite code',
+                'POST /api/clubs/:id/leave': 'Leave club',
+                'GET /api/clubs/:id/messages': 'Get club messages',
+                'POST /api/clubs/:id/messages': 'Post club message',
+                'POST /api/clubs/:id/challenges': 'Create club challenge',
+                'GET /api/clubs/:id/leaderboard': 'Get club leaderboard'
+            },
+            checkins: {
+                'GET /api/checkins': 'Get today\'s check-in',
+                'GET /api/checkins/history': 'Get check-in history',
+                'POST /api/checkins': 'Create daily check-in',
+                'PUT /api/checkins': 'Update today\'s check-in',
+                'GET /api/checkins/streak': 'Get check-in streak',
+                'GET /api/checkins/quests': 'Get available quests',
+                'POST /api/checkins/quests/:id/complete': 'Complete quest',
+                'GET /api/checkins/quests/history': 'Get quest history',
+                'GET /api/checkins/summary': 'Get wellness summary'
+            },
+            rivals: {
+                'GET /api/rivals': 'Get all rivals',
+                'GET /api/rivals/:id': 'Get rival details',
+                'POST /api/rivals/phantom': 'Create AI phantom rival',
+                'POST /api/rivals/challenge': 'Challenge friend as rival',
+                'DELETE /api/rivals/:id': 'Dismiss rival',
+                'GET /api/rivals/:id/messages': 'Get rival chat',
+                'POST /api/rivals/:id/messages': 'Send message to rival',
+                'GET /api/rivals/:id/encounter': 'Get active encounter',
+                'POST /api/rivals/:id/showdown': 'Start weekly showdown',
+                'GET /api/rivals/:id/showdown/preview': 'Get showdown prediction',
+                'POST /api/rivals/:id/revenge': 'Request revenge match'
+            },
+            sessions: {
+                'GET /api/sessions': 'Get active workout sessions',
+                'GET /api/sessions/history': 'Get session history',
+                'POST /api/sessions': 'Create workout session',
+                'GET /api/sessions/:id': 'Get session details',
+                'POST /api/sessions/join': 'Join session by code',
+                'POST /api/sessions/:id/leave': 'Leave session',
+                'GET /api/sessions/:id/updates': 'Get session updates (polling)',
+                'POST /api/sessions/:id/updates': 'Post session update',
+                'POST /api/sessions/:id/cheer': 'Send cheer to partner',
+                'POST /api/sessions/share': 'Create share template',
+                'GET /api/sessions/share/:url': 'Get share template (public)',
+                'GET /api/sessions/shares': 'Get user\'s shares',
+                'DELETE /api/sessions/share/:id': 'Delete share'
+            },
+            predictions: {
+                'GET /api/predictions/pr': 'Get PR predictions',
+                'GET /api/predictions/pr/:exerciseId': 'Get PR prediction for exercise',
+                'POST /api/predictions/pr/generate': 'Generate PR prediction',
+                'POST /api/predictions/pr/:id/achieved': 'Mark PR as achieved',
+                'GET /api/predictions/plateau': 'Get plateau predictions',
+                'POST /api/predictions/plateau/analyze': 'Analyze for plateaus',
+                'POST /api/predictions/plateau/:id/acknowledge': 'Acknowledge plateau',
+                'GET /api/predictions/recovery': 'Get recovery status',
+                'POST /api/predictions/recovery/calculate': 'Calculate fatigue/recovery',
+                'GET /api/predictions/recovery/history': 'Get recovery history',
+                'GET /api/predictions/readiness': 'Get training readiness'
             }
         },
         socketEvents: {
